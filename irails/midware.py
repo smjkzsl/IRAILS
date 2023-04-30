@@ -1,0 +1,171 @@
+from typing import List, Tuple
+
+import os,time,typing
+from fastapi import FastAPI, HTTPException,exceptions,Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse,FileResponse,Response
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+import traceback
+
+from starlette.staticfiles import PathLike
+from .config import _log,config
+from .midware_session import (SessionMiddleware,FileStorage,MemoryStorage,RedisStorage,SessionStorage,_SESSION_STORAGES)
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.types import   Scope 
+from .view import _View
+from .config import config
+
+from fastapi.middleware import Middleware
+from starlette.middleware import Middleware as StarletteMiddleware
+from starlette.types import Receive, Scope, Send
+ 
+def mount_statics(app,static_paths={},debug=False):
+    __roots = {}
+    if not static_paths:
+        static_paths = app._app_views_dirs
+    for _dir  in  static_paths: 
+        
+        _url:str = static_paths[_dir] 
+        if not _url.startswith('/'):
+            _url='/'+_url
+        _dir = os.path.normpath(_dir)
+        if _url=='/':
+            __roots[_dir] = _url
+        else:
+            if not _url.endswith("/"):_url+="/"
+            _url = _url.lower()
+            if debug:
+                _log.info(f"StaticDir:{_dir} mounted: {_url}")
+            app.mount(_url,StaticFiles(directory=_dir),name=_dir)       
+    #mount public resources
+    public_dir =  os.path.abspath(config.get("public_dir"))
+    if not os.path.exists(public_dir):
+        os.makedirs(public_dir) 
+    app.mount('/public/',  StaticFiles(directory=public_dir), name='public') 
+    
+    if config.get("upload"):
+            updir = config.get("upload")['dir'] or "uploads"
+    else:
+        updir = 'uploads'
+
+    if os.path.exists(updir):
+        app.mount('/uploads/',  StaticFiles(directory=updir), name='uploads') 
+    #root mount must the last
+    for _dir in __roots:
+        if debug:
+            _log.info(f"StaticDir:{_dir} mounted: {__roots[_dir]}")
+        app.mount(__roots[_dir],StaticFiles(directory=_dir),name=_dir)
+def init(app :FastAPI,debug:bool = False): 
+    cors_cfg = config.get("cors")
+    if cors_cfg:
+        app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_cfg.get('allow_origins'),
+        allow_credentials=cors_cfg.get("allow_credentials"),
+        allow_methods=cors_cfg.get("allow_methods",["*"]),
+        allow_headers=cors_cfg.get("allow_headers",["*"]),
+        )
+    
+    
+    mount_statics(app=app,debug=debug)
+    
+    #session midware
+    _session_cfg:typing.Dict = config.get("session")
+    _session_options = {}
+    if _session_cfg:
+        _storageType=_session_cfg.get("type","")
+        if _storageType!="":
+            if _storageType=='file':
+                _session_options["storage"] = _SESSION_STORAGES[_storageType](dir=_session_cfg.get("dir","./sessions"))
+            else:
+                _session_options["storage"] = _SESSION_STORAGES[_storageType]()
+            
+        _session_options['secret_key'] = _session_cfg.get("secret_key","") 
+    app.add_middleware(SessionMiddleware,**_session_options)
+
+    def error_page(code:int,request,e):
+        page = config.get(f"error_{code}_page")
+        if page and os.path.exists(page):
+            viewObj = _View(request=request,response=None,tmpl_path=os.path.abspath(os.path.dirname(page)))
+            file = os.path.basename(page)
+            content=[]
+            if debug:
+                exc_traceback = e.__traceback__ 
+                # show traceback the last files and location
+                tb_summary = traceback.extract_tb(exc_traceback) 
+                
+                for filename, line, func, text in tb_summary: 
+                    content.append(f"{filename}:{line} in {func}") 
+                 
+            context = {'error':e,'debug':debug,'debug_info':content}
+            
+            return viewObj(file,context,status_code=404)
+        return None
+    
+    @app.exception_handler(StarletteHTTPException)
+    async def custom_http_exception_handler(request, e:StarletteHTTPException):
+        
+        ret = error_page(404,request=request,e=e)
+        if ret:
+            return ret
+        else:
+            content = "<h1>404 Not Found(URL Exception)</h1>"
+            content += '<h3>please check url</h3>'
+            if debug:
+                content += '<p>' + str(e.detail) + '</p>'
+            return HTMLResponse(content=content, status_code=404)
+   
+    @app.exception_handler(Exception)
+    async def validation_exception_handler(request, e:Exception):
+        ret = error_page(500,request=request,e=e)
+        if ret:
+            return ret
+        else:
+            content = "<h1>500 Internal Server Error</h1>"
+            if debug: 
+                exc_traceback = e.__traceback__ 
+                # show traceback the last files and location
+                tb_summary = traceback.extract_tb(exc_traceback) 
+                content += '<p>'
+                for filename, line, func, text in tb_summary: 
+                    content += (f"{filename}:{line} in {func}</br>") 
+                content += '</p>'
+                content += '<p>Error description:' + str(e.args)  + '</p>'
+            return HTMLResponse(content=content, status_code=500)
+
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request, exc):
+        _log.error(f"OMG! The client sent invalid data!: {exc}")
+        return await request_validation_exception_handler(request, exc)
+
+    #denied to access error page for directly
+    @app.route('/public/error_404.html',['GET','POST','HEAD','OPTION','PUT','DELETE'])
+    def _error1(request):
+        raise HTTPException(404,"Not Found.") 
+    @app.route('/public/error_500.html',['GET','POST','HEAD','OPTION','PUT','DELETE'])
+    def _error2(request):
+        raise HTTPException(404,"Not Found.")
+     
+    @app.get("/favicon.ico")
+    def _get_favicon():
+        if os.path.exists("./public/favicon.ico"): 
+            return FileResponse("./public/favicon.ico")
+        else:
+            return Response(content = None,status_code= 404)
+        
+    if debug:    
+        @app.middleware("http")
+        async def preprocess_request(request: Request, call_next): 
+            start_time = time.time()  
+            response:Response = await call_next(request) 
+            process_time = time.time() - start_time
+            response.headers["X-Process-Time"] = str(process_time)  
+            return response 
+    
+    

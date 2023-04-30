@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Vue3 + Element Plus 示例</title>
+    <!-- 引入Vue3的库文件 -->
+    <script src="/public/vue@3.2.36/dist/vue.global.js"></script>
+    <!-- 引入Element Plus的CSS样式 -->
+    <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css">
+</head>
+
+<body>
+    <!-- 在HTML文件中创建Vue应用的容器元素 -->
+    <div id="app">
+        <my-component></my-component>
+        <add-sub1></add-sub1>
+        <el-button @click="handleClick">点击我</el-button>
+
+    </div>
+
+    <!-- 引入Element Plus的库文件 -->
+    <script src="/public/libs/element-plus@2.3.3/dist/index.full.js"></script>
+    <script src="/public/libs/vue3-sfc-loader.js"></script>
+    <script src="/public/libs/vue3-sfc-loader-config.js"></script>
+    <script>
+        const {
+            loadModule
+        } = window['vue3-sfc-loader'];
+        const addsub1 = Vue.defineAsyncComponent(() => loadModule("add-sub.vue", vue3_loader_options))
+
+        const myComponent1 = Vue.defineAsyncComponent(() => loadModule('my-component.vue', vue3_loader_options))
+
+
+
+        //Vue.defineAsyncComponent(() => loadModule('addsub.vue', vue3_loader_options))
+
+        const app = Vue.createApp({
+            // Vue应用的代码
+            methods: {
+                handleClick() {
+                    this.show = true
+                    this.$message({
+                        type: 'success',
+                        message: 'Hello, Element Plus!',
+
+                    })
+                }
+            },
+            data: () => {
+                return {
+                    show: true
+                }
+            },
+            components: {
+                'my-component': myComponent1,
+                'add-sub': addsub1,
+            },
+
+        })
+
+        // 在Vue应用中使用Element Plus的组件
+        app.use(ElementPlus)
+
+        // 将Vue应用挂载到HTML中的容器元素上
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

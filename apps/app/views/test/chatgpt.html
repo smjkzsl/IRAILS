@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>ChatGPT Demo</title>
+    <style>
+        body {
+            background-color: #eee;
+        }
+        
+        .chat-container {
+            margin: auto;
+            width: 80%;
+            max-width: 800px;
+            height: 70%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            padding-bottom: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background-color: #f1f1f1;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+        
+        .chat-box {
+            background-color: white;
+            padding: 20px;
+            height: 60%;
+            flex-grow: 1;
+            overflow-y: scroll;
+        }
+        
+        .chat-input {
+            background-color: #f1f1f1;
+            padding: 20px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-input input[type="text"] {
+            flex: 1;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .chat-input button {
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .chat-message {
+            background-color: #e6f7ff;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 60%;
+        }
+        
+        .chat-message-right {
+            background-color: #f2f2f2;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 60%;
+            margin-left: auto;
+        }
+        
+        .chat-message p {
+            margin: 0;
+        }
+        
+        @media only screen and (max-width: 768px) {
+            .chat-container {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>ChatGPT</h1>
+        </div>
+        <div class="chat-box" id="chat-box">
+        </div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script src="{{url_for('chatgpt.js')}}"></script>
+</body>
+
+</html>

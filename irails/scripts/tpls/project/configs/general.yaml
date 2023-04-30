@@ -1,0 +1,35 @@
+app:
+  appdir: ['apps']
+  enabled: []
+ 
+
+upload:
+  dir: "./uploads"
+  max: 1024*1024*10
+  extensions: ["ppt", "txt","xls", "xlsx", "docx", "doc","pdf","png", "jpg", "jpeg", "gif", "bmp", "svg","mp3", "wav", "ogg", "flac", "aac","mp4", "avi", "mkv", "wmv", "mov"]
+
+public_dir: "./public"
+error_404_page: "{public_dir}/error_404.html"
+error_500_page: "{public_dir}/error_500.html"
+
+debug: true
+
+log:
+  name: 'Test'
+  level: 'DEBUG'
+  file: ''
+  
+cors:
+  allow_origins: ["*"]
+  allow_credentials: true
+  allow_methods: ['*']
+  allow_headers: ['*']
+
+auth:
+  type: "jwt" #or 'basic' or ''(disabled)
+  auth_model: "./configs/casbin-model.conf"
+  casbin_adapter: "file" #current support only
+  adapter_uri: "./configs/casbin-adapter.csv"
+  jwt_key: '123456'
+  basic_key: '123456'
+  session_name: 'user'

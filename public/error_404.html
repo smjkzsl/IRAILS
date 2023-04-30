@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Page Not Found</title>
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 50px 20px;
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin: 0 0 20px;
+            color: #444;
+            text-align: center;
+        }
+        
+        p {
+            font-size: 24px;
+            margin: 0 0 20px;
+            color: #666;
+            text-align: center;
+        }
+        
+        a {
+            color: #069;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Page Not Found</h1>
+        <p>We're sorry, but the page you requested could not be found.</p>
+        <p>Please check the URL and try again, or return to the <a href="/">homepage</a>.</p>
+        <p>{{error.detail}}.</p>
+    </div>
+</body>
+
+</html>

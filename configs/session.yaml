@@ -1,0 +1,7 @@
+session:
+  key: 'session_id' #the cookies key for store session
+  type: "" #none is use cookies to store session info,[file=filesystem,redis=redis cache,memory=use memory]
+  secret_key: "123456ABC%$@@#5"
+  dir: "./sessions" #for type=file
+  auto_refresh_token: true #true,even request will continue to refresh token(for jwt only)
+ 
