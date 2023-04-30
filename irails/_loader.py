@@ -1,5 +1,6 @@
+import importlib
 import sys,os
-from .config import config,ROOT_PATH
+from .config import config,ROOT_PATH,_log
 app_cfg=config.get('app')
 app_dirs = app_cfg.get("appdir")
 app_enabled = app_cfg.get("enabled")
@@ -21,14 +22,28 @@ def __check_if_enabled(app_name):
             not app_enabled or 
             (isinstance(app_enabled,list) and app_name in app_enabled))
 
-sys.path.insert(-1,ROOT_PATH)
-def _load_apps():
+def load_module(module_name:str,module_path:str):
+    if os.path.exists(module_path):
+        spec = importlib.util.spec_from_file_location(module_name, module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    return None
+
+def _load_apps(debug=False):
+    sys.path.insert(-1,ROOT_PATH)
+    unloaded = 0
+    loaded = 0
     for app_dir in app_dirs:
         app_list =  __list_directories(app_dir)
         for app in app_list:
             if __check_if_enabled(app): 
+                if debug:
+                    _log.info(f'Loading {app_dir}.{app}')
                 __import__(f'{app_dir}.{app}')
- 
+                loaded = loaded + 1
+            else:
+                unloaded = unloaded + 1
         
-        
- 
+    
+    return loaded,unloaded

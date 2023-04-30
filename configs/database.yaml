@@ -13,7 +13,7 @@ database:
   # sqlite:///absolute/path/to/db/file.db 3times of '/'
   # Mssql
   # mssql+pymssql://username:password@hostname:port/database_name 
-  #uri:  #'sqlite:///{dbname}' #empty to disable database connection
+  uri:  sqlite:///{dbname} #empty to disable database connection
   # uri: 'mongodb+srv://dbbruce:smjk123@atlascluster.siz4vrp.mongodb.net/?retryWrites=true&w=majority'
   # uri: 'mssql+pymssql://{dbuser}:{dbpassword}@{dbhost}/{dbname}'
   alembic_ini: 'configs/alembic.ini' #empty or none will disable auto migrate

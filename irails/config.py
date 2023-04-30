@@ -44,6 +44,7 @@ def _extract_name(string):
         return None
 
 class YamlConfig:
+    _raw_config = {}
     def __init__(self, filename:str="",config:Dict={}):
         self.filename = filename
         self.config = config
@@ -54,8 +55,11 @@ class YamlConfig:
         if os.path.isfile(self.filename):
             with open(self.filename, "r") as f:
                 self.config = yaml.safe_load(f)
+                YamlConfig._raw_config = self.config
+
         elif os.path.isdir(self.filename):
             self.config = self._merge_yaml_files(self.filename)
+            YamlConfig._raw_config = self.config
         elif self.config:
             return True
         else:
@@ -73,16 +77,34 @@ class YamlConfig:
             yaml.safe_dump(self.config, f)
         return True
     def get(self, key:str, default=None): 
+        
+        
         value = self.config.get(key, default)
         if isinstance(value,str) and value.find("{")>-1:
-            while value.find("{")>-1 and value.find("}")>-1:
+            while value.find("{")>-1 and value.find("}")>0:
                 name = _extract_name(value)
                 if name:
                     if name==key:
-                        raise RuntimeError(f"circular reference `{name}`")
+                        raise RuntimeError(f"configure file error circular reference `{name}`")
+                    
+                    if name.find(".")>0:
+                        paris = name.split(".")
+                        _root_value = self._raw_config[paris.pop(0)]
+                        _value = _root_value
+                        while paris:
+                            _value = _value[paris.pop(0)]
+                            while _value.find("{")>-1 and value.find("}")>0:
+                                _name = _extract_name(_value)
+                                if _name:
+                                    _expr = _root_value.get(_name,"")
+                                    _x = f"{_name}"
+                                    _value = _value.replace('{'+_x+'}',_expr)
+                        return _value
+                        pass
+                    
                     expr = self.config.get(name,"")
-                    x = f"{name}"
-                    value = value.replace('{'+x+'}',expr)
+                x = f"{name}"
+                value = value.replace('{'+x+'}',expr)
         elif isinstance(value,dict):
             return YamlConfig(filename="",config=value)
         return value
@@ -127,6 +149,7 @@ def __init_log(__logCfg):
     __log_level = __logCfg['level'] or 'DEBUG'
     __log_file = __logCfg['file'] or None 
     __isdebug = config.get("debug") or False
+    logger.name = __logCfg.get("name",'iRails')
     if __log_file:
         __log_file = os.path.abspath(__log_file)
     log_format="%(asctime)s %(name)s:%(levelname)s:%(message)s"
@@ -147,6 +170,7 @@ def __init_log(__logCfg):
     handler.setLevel(logging._nameToLevel[__log_level]) 
     handler.setFormatter(logging.Formatter(fmt= log_format,datefmt=datefmt)) 
     logger.addHandler(handler)
+    
     logger.setLevel(logging._nameToLevel[__log_level]) 
     return logger
     # return logging.getLogger(__logCfg['name'] or 'FastapiMvcFramework')

@@ -81,20 +81,19 @@ def __init_database():
             db_directory = os.path.dirname(db_uri.split(':///')[1])
             os.makedirs(db_directory, exist_ok=True) 
         application.data_engine=database.init_database(db_uri,__is_debug, alembic_ini,cfg=db_cfg)
+    return db_cfg
 
-def __init_auth(app,auth_type:str):
-    __type_casbin_adapter = config.get("auth").get("casbin_adapter","file")
-    casbin_adapter =  auth._adapters[__type_casbin_adapter] if __type_casbin_adapter in auth._adapters else None
-    if not casbin_adapter:
-        raise f"Not support {__type_casbin_adapter} ,Adapter config error in auth.casbin_adapter"
+def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
     
-    auth_class = auth._auth_types[auth_type] if auth_type in auth._auth_types else None
+    
+    auth_class = auth.get_auth_backend(auth_type)
     if not auth_class:
         raise f"{auth_type} auth type not support"
-    __adapter_uri = config.get("auth").get("adapter_uri",'./configs/casbin-adapter.csv') 
+    
+    
     secret_key = config.get("auth").get(f"{auth_type}_key","")
-    kwargs = {'secret_key':secret_key} 
-    return auth.init(app=app, backend = auth_class,**kwargs)
+    kwargs = {'secret_key':secret_key,'adapter_uri':__adapter_uri} 
+    return auth.init(app=app, backend = auth_class,adapter_class=casbin_adapter_class, **kwargs)
 
 
 def api_router(path:str="", version:str="",**allargs):  
@@ -260,11 +259,12 @@ def generate_mvc_app( ):
     global __is_debug
     _log.disabled = False
     from ._loader import _load_apps
-    _load_apps()
-    if __is_debug:
-        _log.info("\n\n=================================generating mvc app===========================================")
+   
+    _log.info("\n\init mvc app...")
+    loaded,unloaded=_load_apps(debug=__is_debug) 
+    _log.info(f'Load Apps Completed,{loaded} loaded,{unloaded} unloaded')  
     if not len(__all_controller__)>0:
-        raise "must use @api_route to define a controller class"
+        raise RuntimeError("must use @api_route to define a controller class")
     all_routers = []
     all_routers_map = {}
     for ctrl in __all_controller__:
@@ -280,19 +280,39 @@ def generate_mvc_app( ):
             else:
                 methods = r.name
             if __is_debug:  
-                _log.info('{:20}-->{:50}-->{}'.format(str(methods),r.path,funcname) )
+                _log.info((str(methods),r.path,funcname) )
             all_routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type}
     application.routers_map = all_routers_map  
+    if __is_debug:
+        _log.info("----------------------------------------------------------")
     midware.init(app=application,debug=__is_debug)
-    
+    db_cfg = __init_database()
     auth_type = config.get("auth",None)
+    _casbin_adapter_class=None
+    _adapter_uri:str=None
     if auth_type:
         auth_type=auth_type.get("type" )
         if auth_type:
-            application.authObj = __init_auth(application,auth_type)
-    __init_database()
-    if __is_debug:
-        _log.info("=================================generating mvc app end===========================================")
+            __type_casbin_adapter = config.get("auth").get("casbin_adapter","file")
+            _casbin_adapter_class =  auth.get_adapter_module(__type_casbin_adapter)
+            _adapter_uri = config.get("auth").get("adapter_uri") 
+            if not _casbin_adapter_class:
+                raise f"Not support {__type_casbin_adapter} ,Adapter config error in auth.casbin_adapter"
+            
+    
+    if __is_debug and db_cfg:
+        _log.info("checking database migrations....")
+        try:
+            #Base.metadata.create_all(engine)
+            alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
+            uri = db_cfg.get("uri")
+            database.check_migration(application.data_engine,uri,alembic_ini)
+        except Exception as e:
+            _log.disabled = False
+            _log.error(e.args)
+    if _casbin_adapter_class and _adapter_uri:
+        application.authObj = __init_auth(application,auth_type,_casbin_adapter_class,_adapter_uri)
+    _log.info("init mvc app end===========================================")
     return application
 
 def run(app,*args,**kwargs): 

@@ -4,10 +4,10 @@ app:
   enabled:
  
 auth:
-  adapter_uri: ./configs/casbin-adapter.csv
+  casbin_adapter: sqlalchemy
+  adapter_uri: "{database.uri}"  #./configs/casbin-adapter.csv
   auth_model: ./configs/casbin-model.conf
-  basic_key: '123456'
-  casbin_adapter: file
+  basic_key: '123456' 
   jwt_key: '123456'
   session_name: user
   type: jwt
@@ -25,7 +25,7 @@ error_500_page: '{public_dir}/error_500.html'
 log:
   file: ''
   level: DEBUG
-  name: Test
+  name: iRails
 public_dir: ./public
 upload:
   dir: ./uploads

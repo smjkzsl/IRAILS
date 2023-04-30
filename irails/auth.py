@@ -1,5 +1,7 @@
 import base64
 import binascii
+import importlib
+import os
 
 import casbin
 from casbin.enforcer import Enforcer
@@ -15,7 +17,7 @@ from casbin.persist.adapter import Adapter
 from .config import config,_log
 import jwt
 from datetime import datetime, timedelta
-from typing import Optional, Tuple, Union,Dict
+from typing import Optional, Tuple, Type, Union,Dict
 from ._utils import iJSONEncoder,is_datetime_format
 AUTH_EXPIRED='[EXPIRED]!'
 
@@ -219,20 +221,20 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
     
 _casbin_auth:CasbinAuth = None
 
-def init(app:FastAPI,backend:AuthenticationBackend,adapter:Adapter=None,**kwagrs)->AuthenticationBackend:
+def init(app:FastAPI,backend:AuthenticationBackend,adapter_class:Type=None,**kwagrs)->AuthenticationBackend:
     """
         kwargs:secret_key=KEY
     """
     __session_name = config.get("auth").get("session_name",'user')
     global _casbin_auth
     cfg = config.get("auth")
+    adapter_uri = kwagrs.get('adapter_uri',None)
+    del kwagrs['adapter_uri']
     model_file = cfg.get("auth_model",'./configs/casbin-model.conf')    
-    if not adapter:
-        adapter_file = cfg.get("auth_adapter",'./configs/casbin-adapter.csv') 
-        adapter = FileAdapter(adapter_file)   
+    adapter = adapter_class(adapter_uri)
     enforcer = casbin.Enforcer(model_file, adapter)
     _casbin_auth = CasbinAuth(enforcer=enforcer,session_name=__session_name)
-     
+    
     return backend(**kwagrs) 
 def reload_adapter(app:FastAPI,adapter:Adapter=None):
     cfg = config.get("auth")
@@ -243,5 +245,21 @@ def reload_adapter(app:FastAPI,adapter:Adapter=None):
     enforcer = casbin.Enforcer(model_file, adapter) 
     app.router.current_casbin_instance = enforcer
 
-_auth_types = {'basic':BasicAuth,'jwt':JWTAuthenticationBackend}
-_adapters = {'file':FileAdapter,}
+def get_auth_backend(name:str)->AuthenticationBackend: 
+    _auth_types = {'basic':BasicAuth,'jwt':JWTAuthenticationBackend}
+    return _auth_types[name] if name in  _auth_types else None
+
+def get_adapter_module(name:str)->Adapter:
+    from ._loader import load_module
+    if name.lower()=='file':
+        return FileAdapter
+    module_name= f"{name}_adapter"
+    module_dir = os.path.dirname(__file__)
+    module_dir = os.path.join(module_dir,'casbin_adapters')
+    module_path = os.path.join(module_dir, module_name + '.py') 
+    module = load_module(module_name,module_path)
+    if module and hasattr(module,'Adapter'):
+        return getattr(module,'Adapter')   
+    else:
+        raise RuntimeError("Can't load module:{module_path}")
+ 

@@ -86,7 +86,7 @@ def sanitize_path(path):
     sanitized_path = re.sub(illegal_chars, '_', path)
     return sanitized_path
 
-def __check_migration(engine:Engine,uri,alembic_ini): 
+def check_migration(engine:Engine,uri,alembic_ini): 
     def _update_uri_to_ini(): 
         #auto update alembic.ini sqlalchemy.url section 
         config = configparser.ConfigParser() 
@@ -104,9 +104,7 @@ def __check_migration(engine:Engine,uri,alembic_ini):
     Base.metadata.create_all(bind=engine)
     _update_uri_to_ini()
     #  
-    alembic_cfg = Config(alembic_ini)   
-    #  
-    
+    alembic_cfg = Config(alembic_ini)    
     try:
         command.check(config=alembic_cfg)
     except Exception as e: 
@@ -114,33 +112,30 @@ def __check_migration(engine:Engine,uri,alembic_ini):
         command.revision(alembic_cfg, autogenerate=True, message=msg) 
         # upgrade the db
         command.upgrade(alembic_cfg, "head") 
-
+def get_engine():
+    global engine
+    return engine
 def init_database( uri:str,debug:bool=False,alembic_ini:str="",cfg=None):
     '''
     params :uri sqlalchemy connection string
     :params debug mode of debug 
     :params alembic_ini alembic config file path,when debug=True will auto migrate the changes 
     '''
-    global DataMap,mapped_base 
+    global DataMap,mapped_base ,engine
     dbencode = cfg.get('dbencode')
     dbdecode = cfg.get('dbdecode')
-    if ismongo_cloud(uri=uri):
-        from pymongo import MongoClient
-        client = MongoClient(uri)
-        database = client.get_database("<DATABASE>")
-        collection = database.get_collection("<COLLECTION>")
+    # if ismongo_cloud(uri=uri):
+    #     from pymongo import MongoClient
+    #     client = MongoClient(uri)
+    #     database = client.get_database("<DATABASE>")
+    #     collection = database.get_collection("<COLLECTION>")
 
     engine = create_engine(uri,  echo=debug)
     dbfirst = cfg.get("dbfirst")
     maptables = cfg.get("maptables")
     
-    if not dbfirst and debug and alembic_ini:
-        try:
-            #Base.metadata.create_all(engine)
-            __check_migration(engine,uri,alembic_ini)
-        except Exception as e:
-            _log.disabled = False
-            _log.error(e.args)
+    if not dbfirst :
+        pass
     elif dbfirst: 
         def convert_varchar(s): 
             try:
