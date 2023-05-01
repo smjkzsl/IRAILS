@@ -8,22 +8,29 @@
     <script src="/public/vue@3.2.36/dist/vue.global.js"></script>
     <!-- 引入Element Plus的CSS样式 -->
     <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/dist/index.css">
-    <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css"> {% block head %}
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css"> 
+
+    <link rel="stylesheet" href="${url_for('home.css')}" />
+    {% block head %}
     <title>{% block title %}{% endblock %} - My Webpage</title>
     {% endblock %}
-</head>
-
-<body>
-    <!-- 引入Element Plus的库文件 -->
     <script src="/public/libs/element-plus@2.3.3/dist/index.full.js"></script>
     <script src="/public/libs/element-plus@2.3.3/icons-vue@2.1.0/dist/index.iife.min.js"></script>
     <script src="/public/libs/vue3-sfc-loader.js"></script>
     <script src="/public/libs/vue3-sfc-loader-config.js"></script>
-    <div id="content">{% block content %}{% endblock %}</div>
+</head>
+
+<body>
+    <!-- 引入Element Plus的库文件 -->
+
+     
+    {% block content %}{% endblock %}
+    
+    {% block scripts %}{% endblock %}
     <div id="footer">
-        {% block footer %} &copy; Copyright 200 by <a href="http://domain.invalid/">you</a>. {% endblock %}
+        {% block footer %} &copy; Copyright 2023 by <a href="http://domain.invalid/">iRails</a>. {% endblock %}
     </div>
+
 </body>
 
 </html>

@@ -118,15 +118,14 @@ class BaseController:
                     pairs.append(kws['version'].strip())
                 if 'action' in kws  and kws['action'].strip():
                     pairs.append(kws['action'].strip())
-                elif url :
-                    pairs.append(url)
+                 
                 url_path = "/"+"/".join(pairs)
                  
             else: 
                 url_path = self.__template_path__.replace('{controller}',self.__controller_name__).replace("{version}",self.__version__)
-                url_path = url_path + "/" + url.strip()
+                 
         
-            return url_path  
+            return url_path.lower() + "/" + url.strip()
             
         if content:
             if format=='html':
