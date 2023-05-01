@@ -3,9 +3,9 @@ from typing import Any, Mapping
 from fastapi import BackgroundTasks, Request,Response
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
-import jinja2 
  
-from .config import ROOT_PATH,config
+ 
+from .config import ROOT_PATH,config,_log
 
 env_configs = {} 
 static_format = []
@@ -55,8 +55,9 @@ class _View(object):
         try:
             res = self._templates.TemplateResponse(view_path, context,**kwargs)
             return res
-        except jinja2.exceptions.TemplateNotFound:
+        except Exception as e:
+            _log.error("template not found"+e.args)
             view_path = os.path.join(self.views_directory,view_path).replace(ROOT_PATH,"").replace("\\","/")
-            raise HTTPException(500,f"template not found ![{view_path}]")
+            raise HTTPException(500,f"template not found ![{e.args}]")
         
          

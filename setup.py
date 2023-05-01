@@ -1,7 +1,7 @@
 from setuptools import setup,find_packages
 import chardet
 
-version = "1.1.0"
+version = "1.1.1"
 def update_readme(source,spec,content=""):
     assert source or content
 

@@ -1,72 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "layout.html" %} 
 
-<head>
-    <meta charset="UTF-8">
-    <title>Vue3 + Element Plus 示例</title>
-    <!-- 引入Vue3的库文件 -->
-    <script src="/public/vue@3.2.36/dist/vue.global.js"></script>
-    <!-- 引入Element Plus的CSS样式 -->
-    <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css">
-</head>
+{% block title %}Index{% endblock %} 
+{% block head %} 
+    ${ super() }
+    <style type="text/css">
+        .important {
+            color: #336699;
+        }
+    </style>
+{% endblock %} {% block content %}
+<div id="app">
+    <my-component></my-component>
+    <add-sub></add-sub>
+    <el-button @click="handleClick">点击我</el-button>
 
-<body>
-    <!-- 在HTML文件中创建Vue应用的容器元素 -->
-    <div id="app">
-        <my-component></my-component>
-        <add-sub></add-sub>
-        <el-button @click="handleClick">点击我</el-button>
+    <el-row @visible="show" class="mb-4">
+        <el-button>Default</el-button>
+        <el-button type="primary">Primary</el-button>
+        <el-button type="success">Success</el-button>
+        <el-button type="info">Info</el-button>
+        <el-button type="warning">Warning</el-button>
+        <el-button type="danger">Danger</el-button>
+    </el-row>
+
+    <el-button-group>
+        <el-button type="primary">Previous Page
+            <el-icon>
+                <ArrowLeft />
+            </el-icon>
+        </el-button>
+        <el-button type="primary">
+            Next Page
+            <el-icon>
+                <Edit />
+            </el-icon>
+        </el-button>
+    </el-button-group>
 
 
-    </div>
 
-    <!-- 引入Element Plus的库文件 -->
-    <script src="/public/libs/element-plus@2.3.3/dist/index.full.js"></script>
-    <script src="/public/libs/vue3-sfc-loader.js"></script>
-    <script src="/public/libs/vue3-sfc-loader-config.js"></script>
-    <script>
-        const {
-            loadModule
-        } = window['vue3-sfc-loader'];
-        const addsub1 = Vue.defineAsyncComponent(() => loadModule("add-sub.vue", vue3_loader_options))
+</div>
+<script>
+    const {
+        loadModule
+    } = window['vue3-sfc-loader'];
+    const addsub1 = Vue.defineAsyncComponent(() => loadModule("add-sub.vue", vue3_loader_options))
 
-        const myComponent1 = Vue.defineAsyncComponent(() => loadModule('my-component.vue', vue3_loader_options))
+    const myComponent1 = Vue.defineAsyncComponent(() => loadModule('my-component.vue', vue3_loader_options))
 
 
 
 
 
-        const app = Vue.createApp({
-            // Vue应用的代码
-            methods: {
-                handleClick() {
-                    this.show = true
-                    this.$message({
-                        type: 'success',
-                        message: 'Hello, Element Plus!',
+    const app = Vue.createApp({
+        // Vue应用的代码
+        methods: {
+            handleClick() {
+                this.show = true
+                this.$message({
+                    type: 'success',
+                    message: 'Hello, Element Plus!',
 
-                    })
-                }
-            },
-            data: () => {
-                return {
-                    show: true
-                }
-            },
-            components: {
-                'my-component': myComponent1,
-                'add-sub': addsub1,
+                })
+            }
+        },
+        data: () => {
+            return {
+                show: true
+            }
+        },
+        components: {
+            'my-component': myComponent1,
+            'add-sub': addsub1,
 
-            },
+        },
 
-        })
+    })
 
-        // 在Vue应用中使用Element Plus的组件
-        app.use(ElementPlus)
+    // 在Vue应用中使用Element Plus的组件
+    app.use(ElementPlus)
+    app.use(ElementPlusIconsVue)
 
-        // 将Vue应用挂载到HTML中的容器元素上
-        app.mount('#app')
-    </script>
-</body>
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        console.log(key)
+        app.component(key, component)
+    }
 
-</html>
+    // 将Vue应用挂载到HTML中的容器元素上
+    app.mount('#app')
+</script>
+{% endblock %}
