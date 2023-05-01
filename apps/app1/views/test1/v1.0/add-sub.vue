@@ -2,7 +2,7 @@
     <h1>页面组件</h1>
     <h1 v-text='num'></h1>
     <button @click='add'>自增</button>
-    <button @click='sub'>自减</button>
+    <el-button @click='sub'>自减</el-button>
   </template>
   
   <script>

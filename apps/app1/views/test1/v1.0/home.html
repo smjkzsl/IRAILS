@@ -14,8 +14,9 @@
     <!-- 在HTML文件中创建Vue应用的容器元素 -->
     <div id="app">
         <my-component></my-component>
-        <add-sub1></add-sub1>
+        <add-sub></add-sub>
         <el-button @click="handleClick">点击我</el-button>
+
 
     </div>
 
@@ -33,7 +34,7 @@
 
 
 
-        //Vue.defineAsyncComponent(() => loadModule('addsub.vue', vue3_loader_options))
+
 
         const app = Vue.createApp({
             // Vue应用的代码
@@ -55,6 +56,7 @@
             components: {
                 'my-component': myComponent1,
                 'add-sub': addsub1,
+
             },
 
         })

@@ -254,17 +254,8 @@ def get_wrapped_endpoint(func):
     while hasattr(ret,'__wrapped__'):
         ret = getattr(ret,'__wrapped__')
     return ret
-
-def generate_mvc_app( ):
+def _register_controllers():
     global __is_debug
-    _log.disabled = False
-    from ._loader import _load_apps
-   
-    _log.info("\n\init mvc app...")
-    loaded,unloaded=_load_apps(debug=__is_debug) 
-    _log.info(f'Load Apps Completed,{loaded} loaded,{unloaded} unloaded')  
-    if not len(__all_controller__)>0:
-        raise RuntimeError("must use @api_route to define a controller class")
     all_routers = []
     all_routers_map = {}
     for ctrl in __all_controller__:
@@ -283,9 +274,24 @@ def generate_mvc_app( ):
                 _log.info((str(methods),r.path,funcname) )
             all_routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type}
     application.routers_map = all_routers_map  
-    if __is_debug:
-        _log.info("----------------------------------------------------------")
+def generate_mvc_app( ):
+    global __is_debug
+    _log.disabled = False
+    from ._loader import _load_apps
+    
+    _log.info("\n\init mvc app...")
+    loaded,unloaded=_load_apps(debug=__is_debug) 
+    _log.info(f'Load Apps Completed,{loaded} loaded,{unloaded} unloaded')  
+    if not len(__all_controller__)>0:
+        raise RuntimeError("must use @api_route to define a controller class")
+    
+    _register_controllers()
+
+    _log.info("static files mouting...")
     midware.init(app=application,debug=__is_debug)
+
+    if __is_debug:
+        _log.info("checking database configure...")
     db_cfg = __init_database()
     auth_type = config.get("auth",None)
     _casbin_adapter_class=None
@@ -303,7 +309,7 @@ def generate_mvc_app( ):
     if __is_debug and db_cfg:
         _log.info("checking database migrations....")
         try:
-            #Base.metadata.create_all(engine)
+             
             alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
             uri = db_cfg.get("uri")
             database.check_migration(application.data_engine,uri,alembic_ini)
@@ -311,8 +317,9 @@ def generate_mvc_app( ):
             _log.disabled = False
             _log.error(e.args)
     if _casbin_adapter_class and _adapter_uri:
+        _log.info("init casbin auth system...")
         application.authObj = __init_auth(application,auth_type,_casbin_adapter_class,_adapter_uri)
-    _log.info("init mvc app end===========================================")
+    _log.info("init mvc app end.")
     return application
 
 def run(app,*args,**kwargs): 

@@ -17,13 +17,46 @@ from .config import _log,config
 from .midware_session import (SessionMiddleware,FileStorage,MemoryStorage,RedisStorage,SessionStorage,_SESSION_STORAGES)
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import   Scope 
-from .view import _View
+from .view import _View,env_configs,static_format
 from .config import config
 
 from fastapi.middleware import Middleware
 from starlette.middleware import Middleware as StarletteMiddleware
 from starlette.types import Receive, Scope, Send
- 
+import jinja2
+import chardet
+class MvcStaticFiles(StaticFiles):
+    
+    def file_response(
+        self,
+        full_path: PathLike,
+        stat_result: os.stat_result,
+        scope: Scope,
+        status_code: int = 200,
+    ) -> Response:
+        ext = full_path.split(".")[-1] if full_path.find(".")>-1 else ""
+        if ext and ext in static_format: 
+             
+            context = {"request":Request(scope)}
+            with open(full_path, 'rb') as f:
+                bstr = f.read()
+                result = chardet.detect(bstr) 
+                content = bstr.decode(result['encoding'])
+                 
+            tmp = jinja2.Template(source = content,**env_configs)
+            txt =  tmp.render(context)
+            return Response(txt)
+        else:
+            return super().file_response(
+                full_path,
+                stat_result,
+                scope,
+                status_code=status_code,
+                 
+            )
+
+         
+
 def mount_statics(app,static_paths={},debug=False):
     __roots = {}
     if not static_paths:
@@ -41,12 +74,12 @@ def mount_statics(app,static_paths={},debug=False):
             _url = _url.lower()
             if debug:
                 _log.info(f"StaticDir:{_dir} mounted: {_url}")
-            app.mount(_url,StaticFiles(directory=_dir),name=_dir)       
+            app.mount(_url,MvcStaticFiles(directory=_dir),name=_dir)       
     #mount public resources
     public_dir =  os.path.abspath(config.get("public_dir"))
     if not os.path.exists(public_dir):
         os.makedirs(public_dir) 
-    app.mount('/public/',  StaticFiles(directory=public_dir), name='public') 
+    app.mount('/public/',  MvcStaticFiles(directory=public_dir), name='public') 
     
     if config.get("upload"):
             updir = config.get("upload")['dir'] or "uploads"
@@ -59,7 +92,7 @@ def mount_statics(app,static_paths={},debug=False):
     for _dir in __roots:
         if debug:
             _log.info(f"StaticDir:{_dir} mounted: {__roots[_dir]}")
-        app.mount(__roots[_dir],StaticFiles(directory=_dir),name=_dir)
+        app.mount(__roots[_dir],MvcStaticFiles(directory=_dir),name=_dir)
 def init(app :FastAPI,debug:bool = False): 
     cors_cfg = config.get("cors")
     if cors_cfg:

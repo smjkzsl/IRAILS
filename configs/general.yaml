@@ -2,7 +2,17 @@ app:
   appdir:
   - apps
   enabled:
- 
+view: 
+  jinja2:
+    variable_start_string: '${'
+    variable_end_string: '}'
+    block_start_string: '{%'
+    block_end_string: '%}'
+    comment_start_string: '{#'
+    comment_end_string: '#}'
+  static_format:
+  - 'vue'
+  - 'html'
 auth:
   casbin_adapter: sqlalchemy
   adapter_uri: "{database.uri}"  #./configs/casbin-adapter.csv

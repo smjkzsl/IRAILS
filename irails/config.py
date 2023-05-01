@@ -12,14 +12,13 @@ import re
 
 def is_in_irails(directory):
     """
-    check exists configs dir, apps dir, main.py and configs/general.yaml 
+    check exists configs dir,   main.py and configs/general.yaml 
     """
     
     configs_dir = os.path.join(directory, 'configs')
-    apps_dir = os.path.join(directory, 'apps')
     main_file = os.path.join(directory, 'main.py')
 
-    if not os.path.exists(configs_dir) or not os.path.exists(apps_dir) or not os.path.exists(main_file):
+    if not os.path.exists(configs_dir) or not os.path.exists(main_file):
         return False  
     general_file = os.path.join(configs_dir, 'general.yaml')
 

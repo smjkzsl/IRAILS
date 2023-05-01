@@ -4,12 +4,27 @@ from fastapi import BackgroundTasks, Request,Response
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
 import jinja2 
-from .config import ROOT_PATH
  
+from .config import ROOT_PATH,config
+
+env_configs = {} 
+static_format = []
+def __get_view_configure():
+    global static_format,env_configs
+    env_options = config.get("view")# {'variable_start_string':'${','variable_end_string':'}'}
+    if env_options:
+        static_format = env_options.get('static_format',[])
+        env_options = env_options.get("jinja2")
+        env_configs = env_options.config
+     
+
+__get_view_configure()
+
 class _View(object):
     def __init__(self,request,response=None, tmpl_path:str=f"{os.path.abspath('')}/app/views"):
         self._views_directory = tmpl_path
-        self._templates = Jinja2Templates(directory=self.views_directory)
+        
+        self._templates = Jinja2Templates(directory=self.views_directory,**env_configs)
         self.request = request
         self.response = response
        
