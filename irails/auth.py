@@ -34,7 +34,22 @@ class CasbinAuth:
         self.enforcer = enforcer
         self.__session_name = _session_name = session_name
         pass
+    def modify_authorization(self,sub,obj,act,authorize:bool):
+        """
+        :sub(user_name or mainbody),:obj(resource or url),:act(action like 'GET','POST','DELETE')
+        add or remove authorization info by :authorzie
+        """
+        if self.enforcer:
+            if authorize:
+                return self.enforcer.add_policy(sub,obj,act)
+            else:
+                return self.enforcer.remove_policy(sub,obj,act)
+        raise RuntimeError("Casbin Enforcer is None")
+    
     def _auth(self,request:Request,username:str):
+        '''
+        do verity,return True means `Success` and others `Failed`
+        '''
         path = request.url.path
         method = request.method   
         if username:
@@ -68,7 +83,7 @@ class CasbinAuth:
                 try:
                     payload = jwt.decode(token,**kwargs)
                 except jwt.InvalidTokenError as e:
-                    _log.debug('token:'+token + ' has been expired.')
+                    _log.debug('token:'+token + f' has been expired.{e.args}')
                     request.session[self.__session_name] = None
                     return "","",None
                 if is_datetime_format(payload['exp']):
@@ -233,6 +248,7 @@ def init(app:FastAPI,backend:AuthenticationBackend,adapter_class:Type=None,**kwa
     model_file = cfg.get("auth_model",'./configs/casbin-model.conf')    
     adapter = adapter_class(adapter_uri)
     enforcer = casbin.Enforcer(model_file, adapter)
+   
     _casbin_auth = CasbinAuth(enforcer=enforcer,session_name=__session_name)
     
     return backend(**kwagrs) 

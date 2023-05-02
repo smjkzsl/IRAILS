@@ -50,7 +50,8 @@ class Generator():
             if not enabled:
                 enabled = [app_name]
             else:
-                enabled.append(app_name) 
+                if isinstance(enabled,list):
+                    enabled.append(app_name) 
             new_enabled = list(set(enabled))
 
             data['app']['enabled'] = new_enabled

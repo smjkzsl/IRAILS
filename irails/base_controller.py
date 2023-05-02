@@ -14,6 +14,9 @@ import datetime
  
 __session_config = config.get('session') 
 _session_key = "session_id"
+alow_extensions = []
+MAX_UPLOAD_LEN = -1
+MAX_FILES = 1
 if __session_config:
     _session_key = __session_config.get("key","session_id")
 __upload_cfg=config.get("upload")
@@ -82,14 +85,14 @@ class BaseController:
         """
         return RedirectResponse(url,status_code=statu_code)
     
-    def _verity_successed(self,user,redirect,msg="User authentication successed!"):
+    def _verity_successed(self,user,msg="User authentication successed!",redirect='/'):
         """
         return Response for Verity successed information
         if redirect is provide,then redirect to the redirect URL
         """
         pass
         
-    def _user_logout(self,msg="You are successed logout!"):
+    def _user_logout(self,msg="You are successed logout!",redirect='/'):
         """return Response for logout to root('/')"""
         pass
 

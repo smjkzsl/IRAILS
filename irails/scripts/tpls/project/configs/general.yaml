@@ -1,35 +1,66 @@
 app:
-  appdir: ['apps']
-  enabled: []
- 
-
-upload:
-  dir: "./uploads"
-  max: 1024*1024*10
-  extensions: ["ppt", "txt","xls", "xlsx", "docx", "doc","pdf","png", "jpg", "jpeg", "gif", "bmp", "svg","mp3", "wav", "ogg", "flac", "aac","mp4", "avi", "mkv", "wmv", "mov"]
-
-public_dir: "./public"
-error_404_page: "{public_dir}/error_404.html"
-error_500_page: "{public_dir}/error_500.html"
-
-debug: true
-
-log:
-  name: 'Test'
-  level: 'DEBUG'
-  file: ''
-  
-cors:
-  allow_origins: ["*"]
-  allow_credentials: true
-  allow_methods: ['*']
-  allow_headers: ['*']
-
+  appdir:
+  - apps
+  enabled:
+view: 
+  jinja2:
+    variable_start_string: '${'
+    variable_end_string: '}'
+    block_start_string: '{%'
+    block_end_string: '%}'
+    comment_start_string: '{#'
+    comment_end_string: '#}'
+  static_format:
+  - 'vue'
+  - 'html'
 auth:
-  type: "jwt" #or 'basic' or ''(disabled)
-  auth_model: "./configs/casbin-model.conf"
-  casbin_adapter: "file" #current support only
-  adapter_uri: "./configs/casbin-adapter.csv"
+  casbin_adapter: sqlalchemy
+  adapter_uri: "{database.uri}"  #./configs/casbin-adapter.csv
+  auth_model: ./configs/casbin-model.conf
+  basic_key: '123456' 
   jwt_key: '123456'
-  basic_key: '123456'
-  session_name: 'user'
+  session_name: user
+  type: jwt
+cors:
+  allow_credentials: true
+  allow_headers:
+  - '*'
+  allow_methods:
+  - '*'
+  allow_origins:
+  - '*'
+debug: true
+error_404_page: '{public_dir}/error_404.html'
+error_500_page: '{public_dir}/error_500.html'
+log:
+  file: ''
+  level: DEBUG
+  name: iRails
+public_dir: ./public
+upload:
+  dir: ./uploads
+  extensions:
+  - ppt
+  - txt
+  - xls
+  - xlsx
+  - docx
+  - doc
+  - pdf
+  - png
+  - jpg
+  - jpeg
+  - gif
+  - bmp
+  - svg
+  - mp3
+  - wav
+  - ogg
+  - flac
+  - aac
+  - mp4
+  - avi
+  - mkv
+  - wmv
+  - mov
+  max: 1024*1024*10

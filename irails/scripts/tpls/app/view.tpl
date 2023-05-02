@@ -1,1 +1,1 @@
-{{ctrl_name}} view 
+${ctrl_name} view 

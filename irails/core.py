@@ -136,7 +136,7 @@ def api_router(path:str="", version:str="",**allargs):
             def __init__(self,**kwags) -> None: 
                 
                 super().__init__()
-            def _user_logout(self,msg='your are successed logout!'):
+            def _user_logout(self,msg='your are successed logout!',redirect:str="/"):
                 """see .core.py"""
                 self.flash  = msg
                 if  hasattr(application,'authObj'):
@@ -145,8 +145,8 @@ def api_router(path:str="", version:str="",**allargs):
                 if accept_header == "application/json":
                     return {'status':'success','msg':msg}
                 else:
-                    return self.redirect('/')
-            def _verity_successed(self,user,redirect_url='/', msg="User authentication successed!"):
+                    return self.redirect(redirect)
+            def _verity_successed(self,user, msg="User authentication successed!",redirect_url='/'):
                 '''call by targetController''' 
                  
                 self.flash  = msg
@@ -166,10 +166,11 @@ def api_router(path:str="", version:str="",**allargs):
                 '''call by targetController'''
                  
                 self.flash  = msg 
-                url =  self.request.headers.get("Referer") or '/'
+                
                 accept_header = self.request.headers.get("Accept")
                 if accept_header == "application/json":
                     return JSONResponse(content={'status':StateCodes.HTTP_200_OK,'msg':msg})
+                url =  self.request.headers.get("Referer") or '/'
                 return RedirectResponse(url,status_code=StateCodes.HTTP_303_SEE_OTHER),None
             
             @classmethod

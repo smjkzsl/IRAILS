@@ -7,7 +7,7 @@ app_enabled = app_cfg.get("enabled")
 
 def __list_directories(dir):
     """
-    遍历目录，返回所有子目录的路径
+    return all subdirectory under :dir
     """
     dirs_list = [] 
     for name in os.listdir(dir):
@@ -31,7 +31,8 @@ def load_module(module_name:str,module_path:str):
     return None
 
 def _load_apps(debug=False):
-    sys.path.insert(-1,ROOT_PATH)
+    if ROOT_PATH not in sys.path:
+        sys.path.insert(-1,ROOT_PATH)
     unloaded = 0
     loaded = 0
     for app_dir in app_dirs:
@@ -40,6 +41,9 @@ def _load_apps(debug=False):
             if __check_if_enabled(app): 
                 if debug:
                     _log.info(f'Loading {app_dir}.{app}')
+                _path = os.path.join(ROOT_PATH,app_dir)
+                if _path not in sys.path:
+                    sys.path.insert(-1,_path)
                 __import__(f'{app_dir}.{app}')
                 loaded = loaded + 1
             else:
