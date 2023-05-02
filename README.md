@@ -53,7 +53,7 @@ from irails import api_router,api,Request,Response,BaseController,application,We
 
 from typing import Any, Dict ,List
 from pydantic import conlist
-
+from app.services import UserService
 application._public_auth_url = '/user/login'
 application._user_auth_url = '/user/login'
  
