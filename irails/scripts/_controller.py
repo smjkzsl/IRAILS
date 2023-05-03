@@ -67,7 +67,10 @@ class Generator():
                     if line.strip() == line_to_add.strip():
                         found = True
                         break
-
+        else:
+            with open(filepath,'w') as file:
+                file.write(line_to_add)
+            return True              
         # If the line is not in the file, add it
         if not found:
             lines.append('\n' + line_to_add.strip() + '\n')
@@ -119,8 +122,13 @@ class Generator():
                     dest = os.path.join(_current_dir , item['dest'])
                     micro = item['micro']
                     self.gen_tpl(tpl_file=tpl,dest=dest,context=context,use_micro=micro,dir_only=False) 
+
             __init_file = os.path.join(_current_dir,'controllers','__init__.py')
             self.ensure_line(__init_file,f"from . import {controler_path_name}_controller")
+            __init_file = os.path.join(_current_dir,'models','__init__.py')
+            self.ensure_line(__init_file,f"from . import {controler_path_name}_model")
+            __init_file = os.path.join(_current_dir,'services','__init__.py')
+            self.ensure_line(__init_file,f"from . import {controler_path_name}_service")
              
         
         print("Done!")
@@ -128,16 +136,20 @@ class Generator():
 
 def is_in_app(directory):
     """
-    check exists configs dir, apps dir, main.py and configs/general.yaml 
+    check exists controllers , views dir in :directory
     """
     
     controller_dir = os.path.join(directory, 'controllers')
     views_dir = os.path.join(directory, 'views')  
-    if not os.path.exists(controller_dir) or not os.path.exists(views_dir) :
+    if not os.path.exists(controller_dir):
+        print(f"can't location `controller` dir")
         return False  
-    initfile = os.path.join(controller_dir, '__init__.py') 
-    if not os.path.exists(initfile):
+    if  not os.path.exists(views_dir) :
+        print(f"can't location `views` dir")
         return False
+    # initfile = os.path.join(controller_dir, '__init__.py') 
+    # if not os.path.exists(initfile):
+    #     return False
     
     return True
 def main():

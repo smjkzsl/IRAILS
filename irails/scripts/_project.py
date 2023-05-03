@@ -47,7 +47,7 @@ class Generator():
             exit()
 
 def main():
-    self_file = __file__.lstrip("_").replace(".py",'')
+    self_file = os.path.basename(__file__).lstrip("_").replace(".py",'')
     parser = argparse.ArgumentParser(usage=f"{sys.argv[0]} {self_file} [-h] [-d DIR]", description='new app') 
     parser.add_argument('-d','--dir',help="dir to store project files")
     parser.add_argument('args', nargs=argparse.REMAINDER)

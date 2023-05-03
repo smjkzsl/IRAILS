@@ -1,7 +1,7 @@
 from setuptools import setup,find_packages
 import chardet
-
-version = "1.1.1"
+from irails import __version__
+version = __version__
 def update_readme(source,spec,content=""):
     assert source or content
 

@@ -282,21 +282,13 @@ def _register_controller_to_router(router: APIRouter, controller: Type[Controlle
     
     cbv(router)(controller)
 
-def auth_error():
-    # 构建自定义的响应对象
-    # response_content =  "未经授权的访问" 
-    # response_headers = {"Content-Type": "application/json"}
-    # response_status_code = 403
-    # response = Response(content=response_content, headers=response_headers, status_code=response_status_code)
-    
-    # 抛出 403 错误，使用自定义的响应对象
-    raise HTTPException(status_code=403, detail="未经授权的访问" )
+ 
 
  
 
 def _route_method(path: str, method, *args, **mwargs): 
     if not path.startswith("/"):
-        raise "path must start with '/'"
+        raise RuntimeError("path must start with '/'")
     def wrapper(func ): 
         @wraps(func)
         async def decorator(  *args, **kwargs):
@@ -314,12 +306,13 @@ def _route_method(path: str, method, *args, **mwargs):
                 response  = kwargs["response"]
                 rqst = kwargs['request']  
                 #auth first then call constructor
-                if auth_type and auth_type !="none"  :
+                if auth_type:
                     auth_result,user = await cls._auth__(request=rqst,response=kwargs['response'],auth_type=auth_type)
                     if isinstance(auth_result,Response): 
                         return auth_result
                     if not auth_result:
-                        auth_error()
+                        raise HTTPException(status_code=403, detail="未经授权的访问" )
+                        return Response(None,403)
                 _constructor = getattr(cls,'_constructor_')
                 await _constructor(cls,request = kwargs['request'],response=kwargs['response'])
 

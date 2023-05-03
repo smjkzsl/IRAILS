@@ -186,6 +186,8 @@ def api_router(path:str="", version:str="",**allargs):
                 if user==auth.AUTH_EXPIRED:
                     request.session['flash']  = "your authencation has been expired!"  
                     user = False
+                if auth_type=='none':
+                    return True,user
                 def add_redirect_param(url: str, redirect_url: str) -> str:
                     if "?" in url:
                         return url + "&redirect=" + redirect_url

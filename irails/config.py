@@ -4,11 +4,7 @@ import logging
 from hashlib import md5
 from typing import Dict
 import os.path
-
-# from fastapi.logger import logger
-
 import re
- 
 
 def is_in_irails(directory):
     """
@@ -32,7 +28,7 @@ IS_IN_irails = is_in_irails(ROOT_PATH)
 def is_cli_mode():
     executeble = sys.argv[0]
     executeble = os.path.basename(executeble)
-    print(f"current executeble:" + executeble)
+    # print(f"current executeble:" + executeble)
     return (executeble.lower().startswith('irails'))
 
 def _extract_name(string):
@@ -50,6 +46,10 @@ class YamlConfig:
         self.load()
     def __getitem__(self,key):
         return self.get(key)
+    def __setitem__(self,key,value):
+        self.set(key,value)
+    def reload(self):
+        return self.load()
     def load(self):
         if os.path.isfile(self.filename):
             with open(self.filename, "r") as f:
@@ -67,6 +67,7 @@ class YamlConfig:
             else:
                 raise Exception(f"{self.filename} is not a file or directory")
             return False
+        return True
     def dump(self):
         return yaml.safe_dump(self.config) if self.config else ""
     def save(self):

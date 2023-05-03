@@ -5,7 +5,7 @@ import os.path
  
 import os
 import re
- 
+from irails import __version__
 def collect_features():
     """
     return files in current dir start with '_' no sub dir
@@ -22,9 +22,10 @@ module_dir = os.path.dirname(__file__)
 avalible_features = collect_features()
 
 def main():
-
+    
     parser = argparse.ArgumentParser(description='generator for irails')
-    parser.add_argument('feature',choices=avalible_features, help='feature to run') 
+    parser.add_argument('feature', choices=avalible_features, nargs='?', help='feature to run')
+    parser.add_argument('--version', action='version', version=__version__, help='show the version of the program')
     parser.add_argument('args', nargs=argparse.REMAINDER)
 
     if not avalible_features:
@@ -32,6 +33,7 @@ def main():
         exit()
      
     args = parser.parse_args()
+    
     
     args.feature = '_' +args.feature
     
