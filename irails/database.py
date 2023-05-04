@@ -1,5 +1,6 @@
+from contextlib import contextmanager
 from sqlalchemy import create_engine,Engine,MetaData, Table, Column, ForeignKey,select,join,TableClause
-from sqlalchemy.orm import DeclarativeBase,Session
+from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker
 from sqlalchemy import text,TextClause
 from sqlalchemy.ext.automap import automap_base
 
@@ -22,6 +23,24 @@ class Base(DeclarativeBase):
 class Service():
     __all_generated = {}
     
+    @classmethod
+    @contextmanager 
+    def get_session(cls):
+        """Provide a transactional scope around a series of operations."""
+        if hasattr(cls,'_session_local'):
+            session_local = getattr(cls,'_session_local')
+        else:
+            session_local =  sessionmaker(bind=engine)
+            setattr(cls,"_session_local", session_local)
+        session = session_local()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
     @classmethod
     def execute(cls,cmd:Union[str,TextClause],**kwargs):
         if not isinstance(cmd,TextClause):
@@ -63,13 +82,8 @@ class Service():
             return tbItem
         else:
             raise NameError()
-    # @classmethod 
-    # def query(cls,*args):
-    #     item = Service.mapped('item')
-    #     ba_cls_info = Service.mapped('ba_cls_info')
-    #     with Session(engine) as session:
-    #         p1 = session.query(*args).select_from(item._tableItem).join(
-    #             ba_cls_info._tableItem,item.class_no==ba_cls_info.class_no).first()
+
+
             
 def ismongo_cloud(uri):
     import re 

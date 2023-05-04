@@ -56,9 +56,14 @@ from pydantic import conlist
 from app.services import UserService
 application._public_auth_url = '/user/login'
 application._user_auth_url = '/user/login'
- 
+@application.on_event("startup")
+def startup():
+    application.modify_authorization('bruce','/xml','GET',True)
 @api_router(auth='public')
 class TestController(BaseController): 
+    def __init__(self) -> None:
+        
+        super().__init__()
     @api.get("/user/login" )
     def login(self):
         """:title Login"""  

@@ -22,12 +22,7 @@ from ._utils import iJSONEncoder,is_datetime_format
 AUTH_EXPIRED='[EXPIRED]!'
 
 _session_name:str = ""
-class AuthenticationBackend_(AuthenticationBackend):
-    def create_access_token(self,**kwargs):
-        raise NotImplementedError()
-    def clear_userinfo(self,request:Request):
-        raise NotImplementedError()
-    pass
+
 class CasbinAuth:
     def __init__(self,enforcer:Enforcer,session_name="user") -> None:
         global _session_name
@@ -111,6 +106,15 @@ class CasbinAuth:
                     return username,password,None
         return "","",None
     
+class AuthenticationBackend_(AuthenticationBackend):
+    def create_access_token(self,**kwargs):
+        raise NotImplementedError()
+    def clear_userinfo(self,request:Request):
+        raise NotImplementedError()
+    @property
+    def casbin_auth(self)->CasbinAuth:
+        return _casbin_auth
+    pass
 class BasicAuth(AuthenticationBackend_):
     def __init__(self,**kwargs) -> None:
         super().__init__()

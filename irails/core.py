@@ -21,7 +21,7 @@ __is_debug=config.get('debug',False)
 
 class MvcApp(FastAPI):
     def __init__(self,  **kwargs):
-        self._authObj:auth.AuthenticationBackend_ = None 
+        self.__authObj:auth.AuthenticationBackend_ = None 
         self._data_engine:database.Engine = None
         self.__user_auth_url=""
         self.__public_auth_url=""
@@ -47,14 +47,16 @@ class MvcApp(FastAPI):
         if self.__user_auth_url:
             raise RuntimeError(f"user_auth_url only can be setting once time,current is:{self.__user_auth_url}")
         self.__user_auth_url = url
-
+    @property
+    def modify_authorization(self):
+        return self.__authObj.casbin_auth.modify_authorization
     @property
     def authObj(self)->auth.AuthenticationBackend_:
-        return self._authObj
+        return self.__authObj
     
     @authObj.setter
     def authObj(self,value:auth.AuthenticationBackend_):
-        self._authObj = value
+        self.__authObj = value
      
     @property 
     def data_engine(self)->database.Engine:
@@ -327,10 +329,9 @@ def generate_mvc_app( ):
 
 def run(app,*args,**kwargs): 
     import uvicorn
-    global __is_debug
-    host =  "host" in kwargs  and kwargs["host"]  or '0.0.0.0' 
-    port = "port" in kwargs  and kwargs["port"] or 8000  
+    global __is_debug 
     if  "debug" in kwargs:
-        __is_debug = kwargs["debug"]  
+        __is_debug = kwargs["debug"] 
+        del kwargs['debug'] 
      
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(app, **kwargs)
