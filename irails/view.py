@@ -3,7 +3,7 @@ from typing import Any, Mapping
 from fastapi import BackgroundTasks, Request,Response
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
- 
+import jinja2
  
 from .config import ROOT_PATH,config,_log
 
@@ -52,12 +52,24 @@ class _View(object):
             view_path = f"{view_path}.html"
 
         context["request"] = request
+        view_path_real = os.path.join(self.views_directory,view_path).replace(ROOT_PATH,"").replace("\\","/")
         try:
             res = self._templates.TemplateResponse(view_path, context,**kwargs)
             return res
+        except jinja2.exceptions.TemplateSyntaxError as e:
+            source = e.source.split('\n')[e.lineno-1:e.lineno]
+            info = f"TemplateSyntaxError on {view_path_real}:line:{e.lineno},{source}"
+            _log.error(info)
+            raise HTTPException(500,info)
+        except jinja2.exceptions.TemplateNotFound as e:
+            source = e.args[0]
+            info = f"{view_path_real} raised TemplatesNotFound Error: `{source}`"
+            _log.error(info)
+            raise HTTPException(500,info)
         except Exception as e:
-            _log.error("template not found"+e.args)
-            view_path = os.path.join(self.views_directory,view_path).replace(ROOT_PATH,"").replace("\\","/")
-            raise HTTPException(500,f"template not found ![{e.args}]")
+            info =f"Tempate {view_path_real} raised Exception {e.args}"
+            _log.error(info)
+            
+            raise HTTPException(500,info)
         
          

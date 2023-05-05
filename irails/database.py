@@ -138,11 +138,9 @@ def init_database( uri:str,debug:bool=False,alembic_ini:str="",cfg=None):
     global DataMap,mapped_base ,engine
     dbencode = cfg.get('dbencode')
     dbdecode = cfg.get('dbdecode')
-    # if ismongo_cloud(uri=uri):
-    #     from pymongo import MongoClient
-    #     client = MongoClient(uri)
-    #     database = client.get_database("<DATABASE>")
-    #     collection = database.get_collection("<COLLECTION>")
+    if uri.startswith('sqlite'):
+        db_directory = os.path.dirname(uri.split(':///')[1])
+        os.makedirs(db_directory, exist_ok=True) 
 
     engine = create_engine(uri,  echo=debug)
     dbfirst = cfg.get("dbfirst")

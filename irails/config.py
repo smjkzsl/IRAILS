@@ -90,9 +90,12 @@ class YamlConfig:
                     if name.find(".")>0:
                         paris = name.split(".")
                         _root_value = self._raw_config[paris.pop(0)]
-                        _value = _root_value
+                        _value:Dict = _root_value
                         while paris:
-                            _value = _value[paris.pop(0)]
+                            _k = paris.pop(0) 
+                            _value = _value.get(_k,'')
+                            if not _value:
+                                print(f'Warning config: {name} was empty,it\'s quoted by {key}')
                             while _value.find("{")>-1 and value.find("}")>0:
                                 _name = _extract_name(_value)
                                 if _name:

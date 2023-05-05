@@ -142,15 +142,21 @@ def init(app :FastAPI,debug:bool = False):
     
     @app.exception_handler(StarletteHTTPException)
     async def custom_http_exception_handler(request, e:StarletteHTTPException):
-        
-        ret = error_page(404,request=request,e=e)
+        e_no = 404
+        if e.args and isinstance(e.args,tuple):
+            e_no = e.args[0]
+            if debug:
+                e_info = e.args[1]
+        else:
+            e_info = e.args
+        ret = error_page(e_no,request=request,e=e)
         if ret:
             return ret
         else:
             content = "<h1>404 Not Found(URL Exception)</h1>"
             content += '<h3>please check url</h3>'
             if debug:
-                content += '<p>' + str(e.detail) + '</p>'
+                content += '<p>' + str(e_info) + '</p>'
             return HTMLResponse(content=content, status_code=404)
    
     @app.exception_handler(Exception)

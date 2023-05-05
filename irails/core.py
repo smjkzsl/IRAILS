@@ -74,15 +74,14 @@ api.init(application)
 
 
 
-def __init_database(): 
+def check_init_database(): 
     db_cfg = config.get("database")
     db_uri:str = db_cfg.get("uri")
     alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
-    if db_uri:
-        if db_uri.startswith('sqlite'):
-            db_directory = os.path.dirname(db_uri.split(':///')[1])
-            os.makedirs(db_directory, exist_ok=True) 
+    if db_uri: 
         application.data_engine=database.init_database(db_uri,__is_debug, alembic_ini,cfg=db_cfg)
+    else:
+        _log.warn(f"Warning: database.uri is empty in config")
     return db_cfg
 
 def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
@@ -180,7 +179,7 @@ def api_router(path:str="", version:str="",**allargs):
                 '''called by .controller_util.py->route_method'''
                 auth_type = kwargs['auth_type'] 
                 
-                if not hasattr(application,'authObj'):
+                if not hasattr(application,'authObj') or application.authObj is None:
                     return True,None
                 
                 kwargs['session'] = request.session  
@@ -297,7 +296,7 @@ def generate_mvc_app( ):
 
     if __is_debug:
         _log.info("checking database configure...")
-    db_cfg = __init_database()
+    db_cfg = check_init_database()
     auth_type = config.get("auth",None)
     _casbin_adapter_class=None
     _adapter_uri:str=None
@@ -317,7 +316,8 @@ def generate_mvc_app( ):
              
             alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
             uri = db_cfg.get("uri")
-            database.check_migration(application.data_engine,uri,alembic_ini)
+            if uri:
+                database.check_migration(application.data_engine,uri,alembic_ini)
         except Exception as e:
             _log.disabled = False
             _log.error(e.args)

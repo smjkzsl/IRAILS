@@ -69,7 +69,7 @@ class Generator():
             print(f"now please open configs/general.yaml to modify app.root to add {app_dir}.{app_name}!")
             return
          
-    def do_copy(self,tpl_file,dest_file,over_write=False):
+    def do_copy(self,tpl_file,dest_file,micro=False,over_write=False,context={}):
         dest_file  = os.path.normpath(dest_file)
         if os.path.exists(dest_file) and not over_write:
             print(f'{dest_file} is exists,skip...')
@@ -78,21 +78,23 @@ class Generator():
         with open(tpl_file,'r') as f:
             content = f.read()
             dest_content = content
-            # template = Template(content)
-            # dest_content = template.render(context) 
+            if micro:
+                 
+                template = Template(content)
+                dest_content = template.render(context) 
             with open(dest_file,'w') as f:
                 f.write(dest_content)
         print(f"create {dest_file}")
 
-    def add_home_view(self,app_dir,app_name):
+    def add_home_view(self,app_dir,app_name:str):
         dist_file = os.path.join(app_dir,app_name,"views","home","home.html")
         tpl_file = os.path.dirname(__file__)+"/tpls/app/home.tpl"
         
-        context = {'app_name':app_name}
+        
         self.do_copy(tpl_file,dist_file)
         tpl_file = os.path.dirname(__file__)+"/tpls/app/home.css.tpl"
         dist_file = os.path.join(app_dir,app_name,"views","home","home.css")
-        self.do_copy(tpl_file,dist_file)
+        self.do_copy(tpl_file,dist_file,micro = True,context={'app_name':app_name.title()})
         return True
     
     def add_home_controller(self,app_dir,app_name):
