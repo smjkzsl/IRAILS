@@ -5,6 +5,11 @@ import os.path
  
 import os
 import re
+def _ensure_cli():
+    executable = os.path.basename(sys.argv[0])
+    if not executable.startswith('irails'):
+        sys.argv[0] = 'irails'
+_ensure_cli()
 from irails import __version__
 def collect_features():
     """
@@ -38,8 +43,7 @@ def main():
     args.feature = '_' +args.feature
     
     module_path = os.path.join(module_dir, args.feature + '.py')
-    if sys.argv[0]!='irails':
-        sys.argv[0] = 'irails'
+    
     if os.path.exists(module_path):
         spec = importlib.util.spec_from_file_location(args.feature, module_path)
         module = importlib.util.module_from_spec(spec)

@@ -1,0 +1,1 @@
+${ctrl_name} view 

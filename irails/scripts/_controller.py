@@ -38,7 +38,7 @@ class Generator():
             
             with open(dest,'w') as f:
                 f.write(dest_content)
-        print(f"create {dest}")
+            print(f"create {dest}")
         return True
     def str_to_upper(self,name):
         new_name = name.title().replace("_", "")
@@ -82,7 +82,8 @@ class Generator():
         if not self.args.name:
             print(f'controller name is empty,exit!')
             exit()
-        for name in self.args.name:
+        name = self.args.name.pop(0)
+        if name:
             if not is_valid_filename(name) :
                 print(f'{name} is not avalided!')
                 exit() 
@@ -121,16 +122,33 @@ class Generator():
                     tpl = item['tpl']
                     dest = os.path.join(_current_dir , item['dest'])
                     micro = item['micro']
-                    self.gen_tpl(tpl_file=tpl,dest=dest,context=context,use_micro=micro,dir_only=False) 
-
+                    #controller file will generate last time
+                    self.gen_tpl(tpl_file=tpl,dest=dest,context=context,use_micro=micro,dir_only=dir=='controllers') 
+            controller_file = os.path.join(_current_dir,'controllers',f"{controler_path_name}_controller.py")
             __init_file = os.path.join(_current_dir,'controllers','__init__.py')
             self.ensure_line(__init_file,f"from . import {controler_path_name}_controller")
             __init_file = os.path.join(_current_dir,'models','__init__.py')
             self.ensure_line(__init_file,f"from . import {controler_path_name}_model")
             __init_file = os.path.join(_current_dir,'services','__init__.py')
             self.ensure_line(__init_file,f"from . import {controler_path_name}_service")
-             
-        
+            acts = []
+            for action in self.args.name:
+                acts.append(f"""
+    @api.get('/{action}')
+    def {action}(self):
+        return self.view()                
+""")
+                _view_file = os.path.join(_current_dir,'views',controler_path_name,f"{action}.html")
+                if not os.path.exists(_view_file):
+                    with open(_view_file,'w') as f:
+                        f.write(f"{controller_name}.{action} view file.in:{_view_file}")
+                    print(f'create {_view_file}')
+                else:
+                    print(f'{_view_file} was exists,skip generate')
+            actions = "\n".join(acts)
+            context['actions'] = actions    
+            self.gen_tpl(tpl_file=dirs_items['controllers']['tpl'],dest=controller_file,context=context,use_micro=True,dir_only=False) 
+
         print("Done!")
     pass
 
@@ -161,7 +179,7 @@ def main():
             print(f"Please exec in irails project's app dir ,like `apps/app`")
             exit()
     self_file = __file__.lstrip("_").replace(".py",'')
-    parser = argparse.ArgumentParser(usage=f"{sys.argv[0]} {self_file} [-h] [--name] `controller name` ...", description='create new controller')
+    parser = argparse.ArgumentParser(usage=f"{sys.argv[0]} {self_file} [-h] [--name] `controller [action ...]` ...", description='create new controller')
     parser.add_argument('--name',help="controller name to create")
     parser.add_argument('args', nargs=argparse.REMAINDER)
      

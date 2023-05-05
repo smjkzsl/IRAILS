@@ -29,7 +29,19 @@ def load_module(module_name:str,module_path:str):
         spec.loader.exec_module(module)
         return module
     return None
-
+def _load_app(app_dir):
+    try:
+        _path = os.path.join(ROOT_PATH,app_dir.split(".")[0])
+        if _path not in sys.path:
+            sys.path.insert(-1,_path)
+        _log.info(f'Loading app: {app_dir}')
+        __import__(app_dir)
+        return True
+    except ImportError as e:
+        _log.error(f"load app{app_dir} failed")
+        _log.error(e.args)
+        raise e
+    
 def _load_apps(debug=False):
     if ROOT_PATH not in sys.path:
         sys.path.insert(-1,ROOT_PATH)
@@ -38,14 +50,11 @@ def _load_apps(debug=False):
     for app_dir in app_dirs:
         app_list =  __list_directories(app_dir)
         for app in app_list:
-            if __check_if_enabled(app): 
-                if debug:
-                    _log.info(f'Loading {app_dir}.{app}')
-                _path = os.path.join(ROOT_PATH,app_dir)
-                if _path not in sys.path:
-                    sys.path.insert(-1,_path)
-                __import__(f'{app_dir}.{app}')
-                loaded = loaded + 1
+            if __check_if_enabled(app):  
+                if _load_app(f'{app_dir}.{app}'):
+                    loaded = loaded + 1
+                else:
+                    unloaded = unloaded + 1
             else:
                 unloaded = unloaded + 1
         

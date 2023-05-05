@@ -8,10 +8,9 @@
     <script src="/public/vue@3.2.36/dist/vue.global.js"></script>
     <!-- 引入Element Plus的CSS样式 -->
     <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/dist/index.css">
-    <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css"> 
+    <!-- <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css"> -->
 
-    <link rel="stylesheet" href="${url_for('home.css')}" />
-    {% block head %}
+    <link rel="stylesheet" href="${url_for('home.css')}" /> {% block head %}
     <title>{% block title %}{% endblock %} - My Webpage</title>
     {% endblock %}
     <script src="/public/libs/element-plus@2.3.3/dist/index.full.js"></script>
@@ -23,10 +22,8 @@
 <body>
     <!-- 引入Element Plus的库文件 -->
 
-     
-    {% block content %}{% endblock %}
-    
-    {% block scripts %}{% endblock %}
+
+    {% block content %}{% endblock %} {% block scripts %}{% endblock %}
     <div id="footer">
         {% block footer %} &copy; Copyright 2023 by <a href="http://domain.invalid/">iRails</a>. {% endblock %}
     </div>
