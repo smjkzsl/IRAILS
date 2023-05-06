@@ -1,6 +1,8 @@
 import importlib
 import sys,os
 from .config import config,ROOT_PATH,_log
+from ._i18n import load_app_translations
+from gettext import gettext as _
 app_cfg=config.get('app')
 app_dirs = app_cfg.get("appdir")
 app_enabled = app_cfg.get("enabled")
@@ -34,11 +36,11 @@ def _load_app(app_dir):
         _path = os.path.join(ROOT_PATH,app_dir.split(".")[0])
         if _path not in sys.path:
             sys.path.insert(-1,_path)
-        _log.info(f'Loading app: {app_dir}')
-        __import__(app_dir)
-        return True
+        _log.info(_('Loading app:%s')%app_dir)
+        return importlib.import_module(app_dir)
+          
     except ImportError as e:
-        _log.error(f"load app{app_dir} failed")
+        _log.error(_("load app %s failed")%app_dir)
         _log.error(e.args)
         raise e
     
@@ -51,7 +53,11 @@ def _load_apps(debug=False):
         app_list =  __list_directories(app_dir)
         for app in app_list:
             if __check_if_enabled(app):  
-                if _load_app(f'{app_dir}.{app}'):
+                _dir = os.path.join(app_dir,app)
+                module = _load_app(f'{app_dir}.{app}')
+                if module:
+                    t =  load_app_translations(_dir)
+                    setattr(module,"_translation",t)
                     loaded = loaded + 1
                 else:
                     unloaded = unloaded + 1

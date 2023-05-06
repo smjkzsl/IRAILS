@@ -8,5 +8,6 @@ class Test1Controller(BaseController):
         '''
         :title VUE3 PAGE
         '''
+        a=self._('hello')
         return self.view()
     

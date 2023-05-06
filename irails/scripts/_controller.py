@@ -3,7 +3,7 @@ import sys,os,re
 from typing import Any
 from jinja2 import Template
 from irails._utils import is_valid_filename,get_controller_name,get_snaked_name
-from  irails.config import is_in_irails
+from  irails.config import is_in_irails,is_in_app
 
 class Generator():
     def __init__(self,args,dir) -> None:
@@ -152,24 +152,7 @@ class Generator():
         print("Done!")
     pass
 
-def is_in_app(directory):
-    """
-    check exists controllers , views dir in :directory
-    """
-    
-    controller_dir = os.path.join(directory, 'controllers')
-    views_dir = os.path.join(directory, 'views')  
-    if not os.path.exists(controller_dir):
-        print(f"can't location `controller` dir")
-        return False  
-    if  not os.path.exists(views_dir) :
-        print(f"can't location `views` dir")
-        return False
-    # initfile = os.path.join(controller_dir, '__init__.py') 
-    # if not os.path.exists(initfile):
-    #     return False
-    
-    return True
+
 def main():
      
     cur_dir = os.path.abspath(os.curdir)

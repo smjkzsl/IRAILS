@@ -5,7 +5,24 @@ from hashlib import md5
 from typing import Dict
 import os.path
 import re
-
+def is_in_app(directory):
+    """
+    check exists controllers , views dir in :directory
+    """
+    
+    controller_dir = os.path.join(directory, 'controllers')
+    views_dir = os.path.join(directory, 'views')  
+    if not os.path.exists(controller_dir):
+        print(f"can't location `controller` dir")
+        return False  
+    if  not os.path.exists(views_dir) :
+        print(f"can't location `views` dir")
+        return False
+    # initfile = os.path.join(controller_dir, '__init__.py') 
+    # if not os.path.exists(initfile):
+    #     return False
+    
+    return True
 def is_in_irails(directory):
     """
     check exists configs dir,   main.py and configs/general.yaml 

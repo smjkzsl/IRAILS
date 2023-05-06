@@ -157,6 +157,7 @@ class HomeController(BaseController):
                 'models',
                 'services',
                 'views',
+                'locales',
                 'tests'
             ]
             context = {'app':app_name}

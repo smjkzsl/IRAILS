@@ -15,9 +15,16 @@ from . import midware
 from . import auth
 from . import database
 from ._utils import get_controller_name,get_snaked_name
-
+from ._i18n import load_app_translations
+_=None
 __is_debug=config.get('debug',False)
 
+def __load_core_i18n():
+    _dir = os.path.dirname(__file__)
+    t = load_app_translations(_dir,True)
+    global _
+    _ = t.gettext
+__load_core_i18n()
 
 class MvcApp(FastAPI):
     def __init__(self,  **kwargs):
@@ -35,7 +42,7 @@ class MvcApp(FastAPI):
     @public_auth_url.setter
     def public_auth_url(self,url):
         if self.__public_auth_url:
-            raise RuntimeError(f"public_auth_url only can be setting once time,current is:{self.__public_auth_url}")
+            raise RuntimeError(_("public_auth_url only can be setting once time,current is:%s") % self.__public_auth_url)
         self.__public_auth_url = url
         
     @property
@@ -45,7 +52,7 @@ class MvcApp(FastAPI):
     @user_auth_url.setter
     def user_auth_url(self,url):
         if self.__user_auth_url:
-            raise RuntimeError(f"user_auth_url only can be setting once time,current is:{self.__user_auth_url}")
+            raise RuntimeError(_("user_auth_url only can be setting once time,current is:%s") % self.__user_auth_url)
         self.__user_auth_url = url
     @property
     def modify_authorization(self):
@@ -81,7 +88,7 @@ def check_init_database():
     if db_uri: 
         application.data_engine=database.init_database(db_uri,__is_debug, alembic_ini,cfg=db_cfg)
     else:
-        _log.warn(f"Warning: database.uri is empty in config")
+        _log.warn(_("Warning: database.uri is empty in config"))
     return db_cfg
 
 def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
@@ -89,7 +96,7 @@ def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
     
     auth_class = auth.get_auth_backend(auth_type)
     if not auth_class:
-        raise f"{auth_type} auth type not support"
+        raise RuntimeError(_("%s auth type not support") % auth_type)
     
     
     secret_key = config.get("auth").get(f"{auth_type}_key","")
@@ -100,7 +107,9 @@ def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
 def api_router(path:str="", version:str="",**allargs):  
     '''
     :param path :special path format ,ex. '/{controller}/{version}'
+           if given any value,it's will be ensure {controller} flag in here auto
     :param version :str like 'v1.0' ,'2.0'..
+           if given any value,the :path will have {controller} flag auto
     '''
     if not 'auth' in allargs:
         allargs['auth'] = 'none'
@@ -116,7 +125,7 @@ def api_router(path:str="", version:str="",**allargs):
 
     def format_path(p,v):
         if p and not p.startswith("/"):
-            raise RuntimeError(f"route path must start with '/',{p} is not alowed!")
+            raise RuntimeError(_("route path must start with '/',%s is not alowed!") % p)
         if p and  '{controller}' not in p :
             p += '/{controller}' 
             p += '/{version}' if v else ''
@@ -137,7 +146,7 @@ def api_router(path:str="", version:str="",**allargs):
             def __init__(self,**kwags) -> None: 
                 
                 super().__init__()
-            def _user_logout(self,msg='your are successed logout!',redirect:str="/"):
+            def _user_logout(self,msg=_('your are successed logout!'),redirect:str="/"):
                 """see .core.py"""
                 self.flash  = msg
                 if  hasattr(application,'authObj'):
@@ -147,7 +156,7 @@ def api_router(path:str="", version:str="",**allargs):
                     return {'status':'success','msg':msg}
                 else:
                     return self.redirect(redirect)
-            def _verity_successed(self,user, msg="User authentication successed!",redirect_url='/'):
+            def _verity_successed(self,user, msg=_("User authentication successed!"),redirect_url='/'):
                 '''call by targetController''' 
                  
                 self.flash  = msg
@@ -163,7 +172,7 @@ def api_router(path:str="", version:str="",**allargs):
                         return {'status':'success','msg':msg }
                  
                 return RedirectResponse(redirect_url,status_code=StateCodes.HTTP_303_SEE_OTHER)
-            def _verity_error(self,msg="User authentication failed!"):
+            def _verity_error(self,msg=_("User authentication failed!")):
                 '''call by targetController'''
                  
                 self.flash  = msg 
@@ -185,7 +194,7 @@ def api_router(path:str="", version:str="",**allargs):
                 kwargs['session'] = request.session  
                 ret,user = await application.authObj.authenticate(request,**kwargs)
                 if user==auth.AUTH_EXPIRED:
-                    request.session['flash']  = "your authencation has been expired!"  
+                    request.session['flash']  = _("your authencation has been expired!"  )
                     user = False
                 if auth_type=='none':
                     return True,user
@@ -200,7 +209,7 @@ def api_router(path:str="", version:str="",**allargs):
                         application.authObj.create_access_token(user=user, expires_delta=None,request=request)
                 #
                 if not ret and not user: 
-                    _log.debug(f'Failed Auth[type:{auth_type}] url:'+str(request.url))
+                    _log.debug(_('Failed Auth on type:%s at url:%s') % (auth_type,str(request.url)))
                     if accept_header == "application/json":
                         return  ORJSONResponse(content={"message": "401 UNAUTHORIZED!"},
                                                    status_code=StateCodes.HTTP_401_UNAUTHORIZED),None
@@ -210,13 +219,13 @@ def api_router(path:str="", version:str="",**allargs):
                         if 'flash' not in request.session:
                             request.session['flash']=''
                         if request.session['flash']=="":
-                            request.session['flash']  = "you are not authenticated,please login!"  
+                            request.session['flash']  = _("you are not authenticated,please login!")
                         _auth_url = add_redirect_param(_auth_url,str(request.url))
                         return RedirectResponse(_auth_url,status_code=StateCodes.HTTP_303_SEE_OTHER),None
                     else:  
                         return RedirectResponse('/',status_code=StateCodes.HTTP_303_SEE_OTHER),None
                 else:
-                    _log.debug(f'Successed Auth[type:{auth_type}] Url:'+str(request.url)+',User:'+str(user))
+                    _log.debug(_('Successed Auth on %s at url:%s [User:%s]') % (auth_type,str(request.url),str(user)) )
                     return ret,user
 
         setattr(puppetController,AUTH_KEY,allargs['auth'])         
@@ -283,19 +292,19 @@ def generate_mvc_app( ):
     _log.disabled = False
     from ._loader import _load_apps
     
-    _log.info("\n\init mvc app...")
+    _log.info(_("\n\init mvc app..."))
     loaded,unloaded=_load_apps(debug=__is_debug) 
-    _log.info(f'Load Apps Completed,{loaded} loaded,{unloaded} unloaded')  
+    _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %(loaded,unloaded))  
     if not len(__all_controller__)>0:
-        raise RuntimeError("must use @api_route to define a controller class")
+        raise RuntimeError(_("not found any controller class"))
     
     _register_controllers()
 
-    _log.info("static files mouting...")
+    _log.info(_("static files mouting..."))
     midware.init(app=application,debug=__is_debug)
 
     if __is_debug:
-        _log.info("checking database configure...")
+        _log.info(_("checking database configure..."))
     db_cfg = check_init_database()
     auth_type = config.get("auth",None)
     _casbin_adapter_class=None
@@ -307,11 +316,11 @@ def generate_mvc_app( ):
             _casbin_adapter_class =  auth.get_adapter_module(__type_casbin_adapter)
             _adapter_uri = config.get("auth").get("adapter_uri") 
             if not _casbin_adapter_class:
-                raise f"Not support {__type_casbin_adapter} ,Adapter config error in auth.casbin_adapter"
+                raise RuntimeError(_( "Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
             
     
     if __is_debug and db_cfg:
-        _log.info("checking database migrations....")
+        _log.info(_("checking database migrations...."))
         try:
              
             alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
@@ -322,9 +331,9 @@ def generate_mvc_app( ):
             _log.disabled = False
             _log.error(e.args)
     if _casbin_adapter_class and _adapter_uri:
-        _log.info("init casbin auth system...")
+        _log.info(_("init casbin auth system..."))
         application.authObj = __init_auth(application,auth_type,_casbin_adapter_class,_adapter_uri)
-    _log.info("init mvc app end.")
+    _log.info(_("init mvc app end."))
     return application
 
 def run(app,*args,**kwargs): 

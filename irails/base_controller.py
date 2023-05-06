@@ -10,7 +10,7 @@ from typing import Dict
 from logging import Logger
 import inspect
 import datetime
-
+from irails._i18n import load_app_translations
  
 __session_config = config.get('session') 
 _session_key = "session_id"
@@ -30,7 +30,13 @@ if __upload_cfg:
     alow_extensions = __upload_cfg['extensions'] or []
 
 class BaseController:
-     
+    @property
+    def _(self):
+        m = getattr(self,'__appdir__').split(os.sep)
+        if len(m)>2:
+            m = os.sep.join(m[-2:])
+        t = load_app_translations(module_dir=m)
+        return t.gettext
     @property
     def log(self)->Logger:
         return _log
@@ -165,6 +171,7 @@ class BaseController:
         template_path = os.path.join(self.__appdir__,"views")
         viewobj = _View(self._request,self._response, tmpl_path=template_path) 
         viewobj._templates.env.globals["url_for"] = url_for 
+        viewobj._templates.env.globals["_"] = self._ 
         return viewobj(view_path,context,**kwargs)
     
     async def _save_upload_file(self,file:File):  

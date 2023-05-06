@@ -5,10 +5,11 @@ from .core import (
     Response,
     Request, 
     application,
-    generate_mvc_app
+    generate_mvc_app,
+    
     )
 from .base_controller import BaseController
 from .config import config
 from fastapi import Form,UploadFile,File
 
-__version__="1.1.6"
+__version__="1.1.8"

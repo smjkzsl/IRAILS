@@ -1,0 +1,103 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2023-05-06 18:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp936\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: core.py:45
+msgid "public_auth_url only can be setting once time,current is:%s"
+msgstr ""
+
+#: core.py:55
+msgid "user_auth_url only can be setting once time,current is:%s"
+msgstr ""
+
+#: core.py:91
+msgid "Warning: database.uri is empty in config"
+msgstr ""
+
+#: core.py:99
+msgid "%s auth type not support"
+msgstr ""
+
+#: core.py:126
+msgid "route path must start with '/',%s is not alowed!"
+msgstr ""
+
+#: core.py:147
+msgid "your are successed logout!"
+msgstr ""
+
+#: core.py:157
+msgid "User authentication successed!"
+msgstr ""
+
+#: core.py:173
+msgid "User authentication failed!"
+msgstr ""
+
+#: core.py:195
+msgid "your authencation has been expired!"
+msgstr ""
+
+#: core.py:210
+msgid "Failed Auth on type:%s at url:%s"
+msgstr ""
+
+#: core.py:220
+msgid "you are not authenticated,please login!"
+msgstr ""
+
+#: core.py:226
+msgid "Successed Auth on %s at url:%s [User:%s]"
+msgstr ""
+
+#: core.py:293
+msgid "\n"
+"\\init mvc app..."
+msgstr ""
+
+#: core.py:295
+msgid "Load Apps Completed,%s loaded,%s unloaded"
+msgstr ""
+
+#: core.py:297
+msgid "not found any controller class"
+msgstr ""
+
+#: core.py:301
+msgid "static files mouting..."
+msgstr ""
+
+#: core.py:305
+msgid "checking database configure..."
+msgstr ""
+
+#: core.py:317
+msgid "Not support %s ,Adapter config error in auth.casbin_adapter"
+msgstr ""
+
+#: core.py:321
+msgid "checking database migrations...."
+msgstr ""
+
+#: core.py:332
+msgid "init casbin auth system..."
+msgstr ""
+
+#: core.py:334
+msgid "init mvc app end."
+msgstr ""
+
