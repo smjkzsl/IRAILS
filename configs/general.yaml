@@ -65,3 +65,6 @@ view:
   static_format:
   - vue
   - html
+i18n:
+  lang: ['zh']
+  url_lang_key: 'lang'

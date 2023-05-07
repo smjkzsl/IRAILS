@@ -1,14 +1,14 @@
 
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR ORGANIZATION
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Copyright (C) 2023 ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
 #
 msgid ""
 msgstr ""
 
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2023-05-07 14:29\n"
-"PO-Revision-Date: 2023-05-07 14:29\n"
+"POT-Creation-Date: 2023-05-07 16:07\n"
+"PO-Revision-Date: 2023-05-07 16:07\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -23,7 +23,15 @@ msgstr ""
 
 #: controllers\test1_controller.py:11
 msgid "hello"
-msgstr "你好啊"
+msgstr "你好"
+
+#: controllers\test1_controller.py:12
+msgid "how are you"
+msgstr ""
+
+#: E:\codedemo\IRAILS\apps\app1\views\test1\v1.0\home.html:#
+msgid ""
+msgstr ""
 
 msgid "WORLD"
-msgstr "PYTHON 世界"
+msgstr "世界"

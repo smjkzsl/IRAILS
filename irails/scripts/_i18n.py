@@ -6,6 +6,40 @@ root_path = os.path.abspath(os.path.join(cur_dir,"../.."))
 config = YamlConfig(os.path.join(root_path,"configs"))
 locales_path = os.path.abspath('locales') 
 
+import glob
+
+def get_html_vue_files(_root_path):
+    html_vue_files = []
+    for root, dirs, files in os.walk(_root_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file_path.endswith('.html') or file_path.endswith('.vue'):
+                html_vue_files.append(file_path)
+    return html_vue_files
+
+def extract_html_messages(html_file_path):
+    # 创建一个 PO 文件
+    import polib,re
+    po = polib.POFile()
+
+    # 读取 HTML 文件
+    with open(html_file_path, 'r', encoding='utf8') as f:
+        html_data = f.read()
+
+    # 查找 HTML 中包含的 gettext 翻译字符串
+    gettext_re = re.compile(r"_\(['\"](.*?)['\"]\)")
+    matches = gettext_re.findall(html_data)
+
+    # 将匹配到的翻译字符串添加到 PO 文件中
+    for message in matches:
+        # 添加到 PO 文件中
+        entry = polib.POEntry(msgid=message)
+        po.append(entry)
+    if len(matches)<=0:
+        return ""
+    # 将数据写入 PO 文件
+    return str(po)
+    # po.save(po_file_path)
 def load_module(module_name:str,module_path:str):
     if os.path.exists(module_path):
         spec = importlib.util.spec_from_file_location(module_name, module_path)
@@ -100,6 +134,14 @@ def convert_pot2po():
     _pot_file = os.path.join(locales_path,"messages.pot")
     if os.path.exists(_pot_file):
         print(f"generated {_pot_file}")
+        static_files = get_html_vue_files(os.path.join(cur_dir,'views'))
+        with open(_pot_file,'a') as f:
+            for file in static_files:
+                print(f"checking {file}")
+                po_entries = extract_html_messages(file)
+                if po_entries:
+                    f.write(f"#: {file}:")
+                    f.write(po_entries)
         with open(_pot_file,'r') as f:
             _pot_content = f.read()
         _pot_content = split_pot(_pot_content)
@@ -120,7 +162,9 @@ def convert_pot2po():
         path = os.path.join(locales_path,f"{lang}.po")
         with open(path,'w') as f:
             f.write(header+"\n"+_pot_content)
+            
             print(f"generated {path}")
+        #gen html files
 
 def do_command(i18n_tool_file:str):
     if i18n_tool_file.lower()=='gettext':
@@ -143,7 +187,8 @@ def do_command(i18n_tool_file:str):
     if module:
         try:
             module.main()
-            convert_pot2po()
+            if i18n_tool_file=='pygettext':
+                convert_pot2po()
             print(f"Done!")
         except Exception as e:
             print(e)

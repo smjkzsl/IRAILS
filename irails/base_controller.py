@@ -28,14 +28,27 @@ if __upload_cfg:
     MAX_FILES = int(eval(__max_files)) if __max_files else -1
 
     alow_extensions = __upload_cfg['extensions'] or []
-
+i18n_cfg = config.get('i18n')
+if i18n_cfg:
+    url_lang_key = i18n_cfg.get('url_lang_key','lang')
+else:
+    url_lang_key = 'lang'
 class BaseController:
     @property
     def _(self):
         m = getattr(self,'__appdir__').split(os.sep)
         if len(m)>2:
             m = os.sep.join(m[-2:])
-        t = load_app_translations(module_dir=m)
+        else:
+            raise RuntimeError(f"load_app_translations:{m} is invalid app module") 
+        if 'lang' in self._session:
+            languages = self._session['lang']
+        else:
+            language_header = self._request.headers.get('accept-language')
+            languages = language_header.split(',')
+            if languages:
+                languages = [languages[0]]
+        t = load_app_translations(module_dir=m,lan=languages)
         return t.gettext
     @property
     def log(self)->Logger:
@@ -247,6 +260,10 @@ class BaseController:
                 request.session['flash'] ='' 
             
         __init_flash(request=request) 
+
+        if url_lang_key in query_params:
+            lang = query_params[url_lang_key]
+            request.session['lang'] = [lang]
         
     async def _deconstructor_(base_controller_class,new_response:Response):  
         '''do not call this anywhere'''

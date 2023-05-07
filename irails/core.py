@@ -240,10 +240,7 @@ def api_router(path:str="", version:str="",**allargs):
         setattr(puppetController,"__controler_url__",controller_name)  
         #for generate url_for function
         url_path = path
-        # if "" == url_path:
-        #     url_path = "/{controller}"
-        #     if version:
-        #         url_path += "/{version}"
+       
         _view_url_path:str = url_path.replace("{controller}",controller_name).replace("{version}",version) # "/" + os.path.basename(app_dir) + '_views'  
         
         controller_current_view_path = abs_path + '/views/' + controller_name # app_dir.replace(ROOT_PATH,'').replace("\\",'/') + '/views/' + controller_name 

@@ -1,23 +1,13 @@
 app:
   appdir:
   - apps
-  enabled:
-view: 
-  jinja2:
-    variable_start_string: '${'
-    variable_end_string: '}'
-    block_start_string: '{%'
-    block_end_string: '%}'
-    comment_start_string: '{#'
-    comment_end_string: '#}'
-  static_format:
-  - 'vue'
-  - 'html'
+  enabled: null
+  root: 
 auth:
-  casbin_adapter: sqlalchemy
-  adapter_uri: "{database.uri}"  #./configs/casbin-adapter.csv
+  adapter_uri: './configs/casbin-adapter.csv'
   auth_model: ./configs/casbin-model.conf
-  basic_key: '123456' 
+  basic_key: '123456'
+  casbin_adapter: file
   jwt_key: '123456'
   session_name: user
   type: jwt
@@ -64,3 +54,17 @@ upload:
   - wmv
   - mov
   max: 1024*1024*10
+view:
+  jinja2:
+    block_end_string: '%}'
+    block_start_string: '{%'
+    comment_end_string: '#}'
+    comment_start_string: '{#'
+    variable_end_string: '}'
+    variable_start_string: ${
+  static_format:
+  - vue
+  - html
+i18n:
+  lang: ['zh']
+  url_lang_key: 'lang'

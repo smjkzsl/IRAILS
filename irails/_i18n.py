@@ -77,9 +77,8 @@ module_spec = importlib.util.find_spec(__name__)
 __all_trans = {}           
 def load_app_translations(module_dir,is_core:bool=False,lan=None) -> gettext.GNUTranslations: 
     global __all_trans
-    if module_dir in __all_trans:
-        return __all_trans[module_dir]
-    if not is_core:
+    
+    if not is_core and not lan:
         from .config import config
         cfg = config.get('i18n')
         if not cfg:
@@ -91,6 +90,10 @@ def load_app_translations(module_dir,is_core:bool=False,lan=None) -> gettext.GNU
     else:
         if not lan:
             lan = ['en','zh']
+
+    key = f"{module_dir}@{lan}"
+    if key in __all_trans:
+        return __all_trans[key]
     # 加载翻译文件
     locales_dir = os.path.join(module_dir, "locales")
     ret = None
@@ -98,11 +101,11 @@ def load_app_translations(module_dir,is_core:bool=False,lan=None) -> gettext.GNU
         
         ret = gettext.translation("messages", locales_dir, languages=lan) 
         ret.install()
-    except FileNotFoundError as e:
+    except Exception as e:
         ret = gettext
     
-    
-    __all_trans[module_dir] = ret
+    #cache item
+    __all_trans[key] = ret
     return ret
  
  
