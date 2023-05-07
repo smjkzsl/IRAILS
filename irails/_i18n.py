@@ -7,46 +7,7 @@ import gettext
 from typing import Union
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
 _old_find = gettext.find
-def _expand_lang(loc):
-    import locale
-    loc = locale.normalize(loc)
-    COMPONENT_CODESET   = 1 << 0
-    COMPONENT_TERRITORY = 1 << 1
-    COMPONENT_MODIFIER  = 1 << 2
-    # split up the locale into its base components
-    mask = 0
-    pos = loc.find('@')
-    if pos >= 0:
-        modifier = loc[pos:]
-        loc = loc[:pos]
-        mask |= COMPONENT_MODIFIER
-    else:
-        modifier = ''
-    pos = loc.find('.')
-    if pos >= 0:
-        codeset = loc[pos:]
-        loc = loc[:pos]
-        mask |= COMPONENT_CODESET
-    else:
-        codeset = ''
-    pos = loc.find('_')
-    if pos >= 0:
-        territory = loc[pos:]
-        loc = loc[:pos]
-        mask |= COMPONENT_TERRITORY
-    else:
-        territory = ''
-    language = loc
-    ret = []
-    for i in range(mask+1):
-        if not (i & ~mask):  # if all components for this combo exist ...
-            val = language
-            if i & COMPONENT_TERRITORY: val += territory
-            if i & COMPONENT_CODESET:   val += codeset
-            if i & COMPONENT_MODIFIER:  val += modifier
-            ret.append(val)
-    ret.reverse()
-    return ret
+
 # Locate a .mo file using the gettext strategy
 def __new_find(domain, localedir=None, languages=None, all=False):
     # Get some reasonable defaults for arguments that were not supplied
@@ -73,6 +34,7 @@ def __new_find(domain, localedir=None, languages=None, all=False):
     else:
         result = None
     for lang in nelangs:
+        
         if lang == 'C':
             break
         # mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
@@ -123,7 +85,7 @@ def load_app_translations(module_dir,is_core:bool=False,lan=None) -> gettext.GNU
         if not cfg:
             lan = ['en','zh']
         else:
-            lan = cfg.get('lang')
+            lan = cfg.get('lang',['en','zh'])
         if not isinstance(lan,list):
             lan=[lan]
     else:
@@ -133,12 +95,13 @@ def load_app_translations(module_dir,is_core:bool=False,lan=None) -> gettext.GNU
     locales_dir = os.path.join(module_dir, "locales")
     ret = None
     try:
+        
         ret = gettext.translation("messages", locales_dir, languages=lan) 
-         
+        ret.install()
     except FileNotFoundError as e:
-        pass
+        ret = gettext
     
-    ret = gettext
+    
     __all_trans[module_dir] = ret
     return ret
  
