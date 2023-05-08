@@ -1,12 +1,19 @@
+from enum import Enum
 import time,os,inspect,datetime
-from typing import Any,Dict
-
-from fastapi import (FastAPI, 
+from typing import Any, Callable,Dict, List, Optional, Sequence, Type, Union
+from fastapi.routing import APIRoute 
+from fastapi import (APIRouter, FastAPI, 
                      Request,
-                     Response,
+                     Response, routing,
                      status as StateCodes)
- 
-from .controller import create_controller,MvcRouter as api,   register_controllers_to_app 
+from fastapi.datastructures import Default
+from fastapi.encoders import DictIntStrAny, SetIntStr
+from fastapi.params import Depends
+from fastapi.utils import generate_unique_id
+from starlette.responses import JSONResponse, Response
+from starlette.routing import BaseRoute
+from fastapi.types import DecoratedCallable
+from .mvc_router import create_controller,MvcRouter as api,   register_controllers_to_app 
 from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY, VER_KEY,get_docs  
 from .config import config,ROOT_PATH,_log
 from fastapi.staticfiles import StaticFiles
@@ -35,6 +42,45 @@ class MvcApp(FastAPI):
         self._app_views_dirs = {} 
         self.routers_map = {}
         super().__init__(**kwargs)
+    
+    def route(self, path: str, methods: List[str] | None = None, name: str | None = None, include_in_schema: bool = True) -> Callable[..., Any]:
+        '''disabled'''
+        raise RuntimeError(_("Please use api.http,MVC app not allow to use this direct!"))
+        #return super().route(path, methods, name, include_in_schema)
+    def post(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRouter], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        '''disabled'''
+        raise RuntimeError(_("Please use api.post,MVC app not allow to use this direct!"))
+        #return super().post(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    
+    def get(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        #return super().get(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+        raise RuntimeError(_("Please use api.get,MVC app not allow to use this direct!"))
+    def head(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        """disabled"""
+        raise RuntimeError(_("Please use api.head,MVC app not allow to use this direct!"))
+        #return super().head(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    def put(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        """disabled"""
+        raise RuntimeError(_("Please use api.put,MVC app not allow to use this direct!"))
+        #return super().put(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    def delete(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        '''disabled'''
+        raise RuntimeError(_("Please use api.delete,MVC app not allow to use this direct!"))
+        #return super().delete(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    def options(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        '''disabled'''
+        raise RuntimeError(_("Please use api.options,MVC app not allow to use this direct!"))
+        #return super().options(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    def patch(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        '''disabled'''
+        raise RuntimeError(_("Please use api.patch,MVC app not allow to use this direct!"))
+        #return super().patch(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    def trace(self, path: str, *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, operation_id: str | None = None, response_model_include: SetIntStr | DictIntStrAny | None = None, response_model_exclude: SetIntStr | DictIntStrAny | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Type[Response] = ..., name: str | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] = ...) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        '''disabled'''
+        raise RuntimeError(_("Please use api.trace,MVC app not allow to use this direct!"))
+        #return super().trace(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+    
+    
     @property
     def public_auth_url(self):
         """public user auth url"""
@@ -79,14 +125,12 @@ __all_controller__ = []
 application = __app
 api.init(application)
 
-
-
+ 
 def check_init_database(): 
     db_cfg = config.get("database")
     db_uri:str = db_cfg.get("uri")
-    alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
     if db_uri: 
-        application.data_engine=database.init_database(db_uri,__is_debug, alembic_ini,cfg=db_cfg)
+        application.data_engine=database.init_database(db_uri,__is_debug,cfg=db_cfg)
     else:
         _log.warn(_("Warning: database.uri is empty in config"))
     return db_cfg

@@ -96,17 +96,24 @@ class YamlConfig:
     def get(self, key:str, default=None): 
         
         
+   
         value = self.config.get(key, default)
         if isinstance(value,str) and value.find("{")>-1:
             while value.find("{")>-1 and value.find("}")>0:
                 name = _extract_name(value)
+                 
+                
                 if name:
                     if name==key:
                         raise RuntimeError(f"configure file error circular reference `{name}`")
                     
                     if name.find(".")>0:
                         paris = name.split(".")
-                        _root_value = self._raw_config[paris.pop(0)]
+                        _k_root=paris.pop(0)
+                         
+                      
+                        _root_value = self._raw_config[_k_root]
+                        
                         _value:Dict = _root_value
                         while paris:
                             _k = paris.pop(0) 

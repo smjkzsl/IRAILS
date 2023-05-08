@@ -129,12 +129,18 @@ def check_migration(engine:Engine,uri,alembic_ini):
 def get_engine():
     global engine
     return engine
-def init_database( uri:str,debug:bool=False,alembic_ini:str="",cfg=None):
+def init_database( uri:str,debug:bool=False,cfg=None):
     '''
-    params :uri sqlalchemy connection string
+    :uri sqlalchemy connection string
     :params debug mode of debug 
-    :params alembic_ini alembic config file path,when debug=True will auto migrate the changes 
+    :cfg the database configure object
     '''
+    if not cfg:
+        return None
+    if not uri:
+        uri = cfg.get("uri","")
+    if not uri:
+        return None
     global DataMap,mapped_base ,engine
     dbencode = cfg.get('dbencode')
     dbdecode = cfg.get('dbdecode')
@@ -167,10 +173,6 @@ def init_database( uri:str,debug:bool=False,alembic_ini:str="",cfg=None):
             name_for_collection_relationship=pluralize_collection )
          
         engine.convert_varchar = convert_varchar
-
-        # session = Session(engine)
-        
-        # sysfile = Service.mapped('SysFile')
  
         pass
     #test connect

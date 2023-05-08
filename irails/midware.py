@@ -18,13 +18,20 @@ from .midware_session import (SessionMiddleware,FileStorage,MemoryStorage,RedisS
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import   Scope 
 from .view import _View,env_configs,static_format
-from .config import config
+from .config import config,ROOT_PATH
 
 from fastapi.middleware import Middleware
 from starlette.middleware import Middleware as StarletteMiddleware
 from starlette.types import Receive, Scope, Send
 import jinja2
 import chardet
+
+error_pages = config.get("error_page")
+error_404 = config.get('error_404_page')
+error_500 = config.get("error_500_page")
+disabled_path_of_files=[os.path.abspath(error_404),
+                        os.path.abspath(error_500),
+                        ]
 class MvcStaticFiles(StaticFiles):
     
     def file_response(
@@ -34,6 +41,9 @@ class MvcStaticFiles(StaticFiles):
         scope: Scope,
         status_code: int = 200,
     ) -> Response:
+        
+        if full_path in disabled_path_of_files:
+            return Response(None,404)
         ext = full_path.split(".")[-1] if full_path.find(".")>-1 else ""
         if ext and ext in static_format: 
              
@@ -47,6 +57,7 @@ class MvcStaticFiles(StaticFiles):
             txt =  tmp.render(context)
             return Response(txt)
         else:
+            
             return super().file_response(
                 full_path,
                 stat_result,
@@ -122,7 +133,9 @@ def init(app :FastAPI,debug:bool = False):
     app.add_middleware(SessionMiddleware,**_session_options)
 
     def error_page(code:int,request,e):
-        page = config.get(f"error_{code}_page")
+        page = config.get(f"error_page")
+        if page :
+            page = page.get(f"page_{code}")
         if page and os.path.exists(page):
             viewObj = _View(request=request,response=None,tmpl_path=os.path.abspath(os.path.dirname(page)))
             file = os.path.basename(page)
@@ -184,19 +197,19 @@ def init(app :FastAPI,debug:bool = False):
         return await request_validation_exception_handler(request, exc)
 
     #denied to access error page for directly
-    @app.route('/public/error_404.html',['GET','POST','HEAD','OPTION','PUT','DELETE'])
-    def _error1(request):
-        raise HTTPException(404,"Not Found.") 
-    @app.route('/public/error_500.html',['GET','POST','HEAD','OPTION','PUT','DELETE'])
-    def _error2(request):
-        raise HTTPException(404,"Not Found.")
+    # @app.route('/public/error_404.html',['GET','POST','HEAD','OPTION','PUT','DELETE'])
+    # def _error1(request):
+    #     raise HTTPException(404,"Not Found.") 
+    # @app.route('/public/error_500.html',['GET','POST','HEAD','OPTION','PUT','DELETE'])
+    # def _error2(request):
+    #     raise HTTPException(404,"Not Found.")
      
-    @app.get("/favicon.ico")
-    def _get_favicon():
-        if os.path.exists("./public/favicon.ico"): 
-            return FileResponse("./public/favicon.ico")
-        else:
-            return Response(content = None,status_code= 404)
+    # @app.get("/favicon.ico")
+    # def _get_favicon():
+    #     if os.path.exists("./public/favicon.ico"): 
+    #         return FileResponse("./public/favicon.ico")
+    #     else:
+    #         return Response(content = None,status_code= 404)
         
     if debug:    
         @app.middleware("http")

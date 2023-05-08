@@ -1,4 +1,4 @@
-from irails import controller,api_router,api,BaseController
+from irails import api_router,api,BaseController, mvc_router
 
 @api_router(version="v1.0",path="/app1")
 class Test1Controller(BaseController):
