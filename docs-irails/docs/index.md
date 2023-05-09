@@ -1,9 +1,4 @@
-# irails
-A mvc framework used FastApi
-Simple and elegant use of FastApi in MVC mode
-
-[Demo](https://irails.2rails.cn/) 
-# Welcome to IRAILS(python on rails)
+# Welcome to IRAILS 
 
  
 
@@ -19,7 +14,7 @@ Simple and elegant use of FastApi in MVC mode
  
 
 ## Project layout
-```
+
  
     |   main.py
     +---apps                                ## Apps container (A project can have multiple containers)
@@ -57,63 +52,62 @@ Simple and elegant use of FastApi in MVC mode
     |   |   error_500.html
     |
     +---uploads                             ## Others dir(if your need or not)
-```
+ 
 ## Extras commands
 * `irails i18n gettext` --generate i18n in irails app dir
+## Take a look
+* #### configure file `general.yaml`
 
-## Take a look configure file `general.yaml`
- 
-``` 
-    app:
-        appdir:
-        - apps
-        enabled: null
-    root: apps.root
 
-    cors:
-        allow_credentials: true
-        allow_headers:
-            - '*'
-        allow_methods:
-            - '*'
-        allow_origins:
-            - '*'
-    debug: true
-    errors:
-        error_404_page: '{ROOT.public_dir}/error_404.html'
-        error_500_page: '{ROOT.public_dir}/error_500.html'
-    log:
-        file: ''
-        level: DEBUG
-        name: iRails
-    public_dir: ./public
+        app:
+            appdir:
+            - apps
+            enabled: null
+        root: apps.root
 
-    view:
-        jinja2:
-            block_end_string: '%}'
-            block_start_string: '{%'
-            comment_end_string: '#}'
-            comment_start_string: '{#'
-            variable_end_string: '}'
-            variable_start_string: ${
-        static_format:
-        - vue
-        - html
-    i18n:
-        lang: ['zh']
-        url_lang_key: 'lang'
-```
-## Take a look controller file 
- 
-```python
-    from irails import api_router,api,Request,Response,BaseController,application
- 
-    @api_router(path='/{controller}',auth='none')
-    class AdminController(BaseController): 
-        @api.get("/index")
-        def index(self):
-            """
-            :title Admin
-            """
-            return self.view()
-```
+        cors:
+            allow_credentials: true
+            allow_headers:
+                - '*'
+            allow_methods:
+                - '*'
+            allow_origins:
+                - '*'
+        debug: true
+        errors:
+            error_404_page: '{ROOT.public_dir}/error_404.html'
+            error_500_page: '{ROOT.public_dir}/error_500.html'
+        log:
+            file: ''
+            level: DEBUG
+            name: iRails
+        public_dir: ./public
+
+        view:
+            jinja2:
+                block_end_string: '%}'
+                block_start_string: '{%'
+                comment_end_string: '#}'
+                comment_start_string: '{#'
+                variable_end_string: '}'
+                variable_start_string: ${
+            static_format:
+            - vue
+            - html
+        i18n:
+            lang: ['zh']
+            url_lang_key: 'lang'
+
+* #### controller file 
+
+        from irails import api_router,api,Request,Response,BaseController,application
+
+        @api_router(path='/{controller}',auth='none')
+        class AdminController(BaseController): 
+            @api.get("/index")
+            def index(self):
+                """
+                :title Admin
+                """
+                return self.view()
+    

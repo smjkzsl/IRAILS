@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*- 
-from irails import api_router,api,Request,Response,BaseController,application,WebSocket,WebSocketDisconnect,UploadFile,File
+from irails import route,api,Request,Response,BaseController,application,WebSocket,WebSocketDisconnect,UploadFile,File
 
 from typing import Any, Dict ,List
 from pydantic import conlist 
 
-@api_router(path='/{controller}',auth='none')
+@route(path='/{controller}',auth='none')
 class AdminController(BaseController): 
     @api.get("/index")
     def index(self):
         """
         :title Admin
         """
+        
         return self.view()
     
 

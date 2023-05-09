@@ -28,17 +28,9 @@ def update_readme(source,spec,content=""):
     with open('readme.md', 'w') as file:
         file.writelines(lines)
 
-update_readme('apps/app/controllers/test_controller.py','```python')
-update_readme('apps/app/views/test/home.html','```html')
-# import subprocess
-# result = subprocess.run(['cmd','/c','tree','./app'], capture_output=True)
-# gbk_to_utf8 = result.stdout.decode("gbk").encode("utf-8")
-# gbk_to_utf8=gbk_to_utf8.replace(b'\r',b'\n')
-# if gbk_to_utf8: 
-#     gbk_to_utf8 = gbk_to_utf8.decode("utf-8")
-#     gbk_to_utf8 = gbk_to_utf8.split("\n")[3:]
-#     gbk_to_utf8 = '\n'.join(gbk_to_utf8)
-# update_readme('','```dir',gbk_to_utf8)
+# update_readme('apps/app/controllers/test_controller.py','```python')
+# update_readme('apps/app/views/test/home.html','```html')
+ 
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()

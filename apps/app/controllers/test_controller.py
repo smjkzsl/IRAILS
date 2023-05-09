@@ -1,5 +1,5 @@
 
-from irails import api_router,api,Request,Response,BaseController,application,WebSocket,WebSocketDisconnect,UploadFile,File
+from irails import route,api,Request,Response,BaseController,application,WebSocket,WebSocketDisconnect,UploadFile,File
 
 from typing import Any, Dict ,List
 from pydantic import conlist
@@ -9,7 +9,7 @@ application._user_auth_url = '/user/login'
 @application.on_event("startup")
 def startup():
     application.modify_authorization('bruce','/xml','GET',True)
-@api_router(auth='public')
+@route(auth='public')
 class TestController(BaseController): 
     def __init__(self) -> None:
         
@@ -99,7 +99,7 @@ pusher_client = pusher.Pusher(
   ssl=True
 )
 
-@api_router(path="/{controller}")
+@route(path="/{controller}")
 class WSController(BaseController):  
     def __init__(self) -> None:
         super().__init__()

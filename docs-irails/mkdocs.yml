@@ -1,0 +1,10 @@
+site_name: iRails Docs
+nav:
+    - Getting Start: index.md
+    - controller: controller.md
+    - model: model.md
+    - service: service.md
+    - view: view.md
+theme: 
+  name: readthedocs
+  # locale: zh

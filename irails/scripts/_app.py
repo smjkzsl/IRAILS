@@ -106,8 +106,8 @@ class Generator():
         with open(dest_file,'w') as f:
             f.write("""
 # -*- coding: utf-8 -*- 
-from irails import api_router,api,Request,Response,BaseController,application
-@api_router(auth='none')
+from irails import route,api,Request,Response,BaseController,application
+@route(auth='none')
 class HomeController(BaseController): 
     @api.get("/")
     def home(self): 
