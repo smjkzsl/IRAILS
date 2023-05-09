@@ -26,12 +26,16 @@ from starlette.types import Receive, Scope, Send
 import jinja2
 import chardet
 
-error_pages = config.get("error_page")
-error_404 = config.get('error_404_page')
-error_500 = config.get("error_500_page")
-disabled_path_of_files=[os.path.abspath(error_404),
+errors = config.get("errors")
+if errors:
+    error_404 = errors.get('error_404_page')
+    error_500 = errors.get("error_500_page")
+    disabled_path_of_files=[os.path.abspath(error_404),
                         os.path.abspath(error_500),
                         ]
+else:
+    disabled_path_of_files=[]
+    
 class MvcStaticFiles(StaticFiles):
     
     def file_response(

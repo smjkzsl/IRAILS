@@ -132,7 +132,9 @@ class Generator():
             __init_file = os.path.join(_current_dir,'services','__init__.py')
             self.ensure_line(__init_file,f"from . import {controler_path_name}_service")
             acts = []
-            for action in self.args.name:
+            actions = self.args.name
+            if len(actions)==0:actions.append('index')
+            for action in actions:
                 acts.append(f"""
     @api.get('/{action}')
     def {action}(self):

@@ -1,0 +1,27 @@
+upload:
+  dir: ./uploads
+  extensions:
+  - ppt
+  - txt
+  - xls
+  - xlsx
+  - docx
+  - doc
+  - pdf
+  - png
+  - jpg
+  - jpeg
+  - gif
+  - bmp
+  - svg
+  - mp3
+  - wav
+  - ogg
+  - flac
+  - aac
+  - mp4
+  - avi
+  - mkv
+  - wmv
+  - mov
+  max: 1024*1024*10

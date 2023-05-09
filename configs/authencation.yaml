@@ -1,0 +1,8 @@
+auth:
+  adapter_uri: './configs/casbin-adapter.csv'
+  auth_model: ./configs/casbin-model.conf
+  basic_key: '123456'
+  casbin_adapter: file
+  jwt_key: '123456'
+  session_name: user
+  type: jwt

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2023-05-07 16:07+0800\n"
+"POT-Creation-Date: 2023-05-09 14:46+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,7 +23,7 @@ msgstr ""
 msgid "how are you"
 msgstr ""
 
-# E:\codedemo\IRAILS\apps\app1\views\test1\v1.0\home.html:#
+#: E:\codedemo\IRAILS\apps\app1\views\test1\v1.0\home.html:#
 msgid ""
 msgstr ""
 

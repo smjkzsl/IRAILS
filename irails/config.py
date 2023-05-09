@@ -55,24 +55,24 @@ def _extract_name(string):
     else:
         return None
 
+ 
 class YamlConfig:
-    _raw_config = {}
-    def __init__(self, filename:str="",config:Dict={}):
+    _raw_config: Dict = {}
+    def __init__(self, filename: str = "", config: Dict = {}):
         self.filename = filename
         self.config = config
         self.load()
-    def __getitem__(self,key):
+    def __getitem__(self, key: str):
         return self.get(key)
-    def __setitem__(self,key,value):
-        self.set(key,value)
-    def reload(self):
+    def __setitem__(self, key: str, value):
+       self.set(key, value)
+    def reload(self) -> bool:
         return self.load()
-    def load(self):
+    def load(self) -> bool:
         if os.path.isfile(self.filename):
             with open(self.filename, "r") as f:
                 self.config = yaml.safe_load(f)
                 YamlConfig._raw_config = self.config
-
         elif os.path.isdir(self.filename):
             self.config = self._merge_yaml_files(self.filename)
             YamlConfig._raw_config = self.config
@@ -85,73 +85,33 @@ class YamlConfig:
                 raise Exception(f"{self.filename} is not a file or directory")
             return False
         return True
-    def dump(self):
+    def dump(self) -> str:
         return yaml.safe_dump(self.config) if self.config else ""
-    def save(self):
+    def save(self) -> bool:
         if not self.filename:
             return False
         with open(self.filename, "w") as f:
             yaml.safe_dump(self.config, f)
         return True
-    def get(self, key:str, default=None): 
-        
-        
-   
+    def get(self, key: str, default=None):
         value = self.config.get(key, default)
-        if isinstance(value,str) and value.find("{")>-1:
-            while value.find("{")>-1 and value.find("}")>0:
-                name = _extract_name(value)
-                 
-                
-                if name:
-                    if name==key:
-                        raise RuntimeError(f"configure file error circular reference `{name}`")
-                    
-                    if name.find(".")>0:
-                        paris = name.split(".")
-                        _k_root=paris.pop(0)
-                         
-                      
-                        _root_value = self._raw_config[_k_root]
-                        
-                        _value:Dict = _root_value
-                        while paris:
-                            _k = paris.pop(0) 
-                            _value = _value.get(_k,'')
-                            if not _value:
-                                print(f'Warning config: {name} was empty,it\'s quoted by {key}')
-                            while _value.find("{")>-1 and value.find("}")>0:
-                                _name = _extract_name(_value)
-                                if _name:
-                                    _expr = _root_value.get(_name,"")
-                                    _x = f"{_name}"
-                                    _value = _value.replace('{'+_x+'}',_expr)
-                        return _value
-                        pass
-                    
-                    expr = self.config.get(name,"")
-                x = f"{name}"
-                value = value.replace('{'+x+'}',expr)
-        elif isinstance(value,dict):
-            return YamlConfig(filename="",config=value)
+        if isinstance(value, str):
+            value = self._resolve_value(value, key)
+        elif isinstance(value, dict):
+            value = YamlConfig(filename="", config=value)
         return value
-    
-    def set(self, key, value):
+    def set(self, key: str, value):
         self.config[key] = value
-
-    def delete(self, key):
+    def delete(self, key: str):
         del self.config[key]
-
-    def _merge_dicts(self, dict1, dict2):
+    def _merge_dicts(self, dict1: Dict, dict2: Dict) -> Dict:
         for key in dict2:
             if key in dict1 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
                 dict1[key] = self._merge_dicts(dict1[key], dict2[key])
             else:
                 dict1[key] = dict2[key]
         return dict1
-
-    def _merge_yaml_files(self, dir_path):
-        global _log
+    def _merge_yaml_files(self, dir_path: str) -> Dict:
         merged_config = {}
         for file_name in os.listdir(dir_path):
             file_path = os.path.join(dir_path, file_name)
@@ -159,16 +119,37 @@ class YamlConfig:
                 file_config = self._load_yaml_file(file_path)
                 if isinstance(file_config, dict):
                     merged_config = self._merge_dicts(merged_config, file_config)
-                # else:
-                #     _log.warn(f"YAML file {file_path} must contain a dictionary")
             elif os.path.isdir(file_path):
                 dir_config = self._merge_yaml_files(file_path)
                 merged_config = self._merge_dicts(merged_config, dir_config)
         return merged_config
-
-    def _load_yaml_file(self, filename):
-        with open(filename, "r") as f:
+    def _load_yaml_file(self, file_path: str) -> Dict:
+        with open(file_path, "r") as f:
             return yaml.safe_load(f)
+    def _resolve_value(self, value: str, key: str) -> str:
+        while "{" in value and "}" in value:
+            name = _extract_name(value)
+            if not name:
+                break
+            if name == key:
+                raise RuntimeError(f"Configure file error: circular reference `{name}`")
+            if "." in name:
+                segment_name, sub_key = name.split(".", 1)
+                if segment_name == "ROOT":
+                    # value = value.replace("{" + name + "}", self.config.get(sub_key, ""))
+                    value = value.replace("{" + name + "}", YamlConfig(config=self._raw_config).get(sub_key, ""))
+                else:
+                    segment_config = self.config.get(segment_name, {})
+                    if isinstance(segment_config, dict):
+                        sub_keys = sub_key.split(".")
+                        sub_value = segment_config
+                        for sub_key in sub_keys:
+                            sub_value = sub_value.get(sub_key, {})
+                        value = value.replace("{" + name + "}", str(sub_value))
+            else:
+                value = value.replace("{" + name + "}", self.config.get(name, ""))
+        return value
+ 
 def __init_log(__logCfg):
     if not __logCfg:
         return None
@@ -203,6 +184,14 @@ def __init_log(__logCfg):
     # return logging.getLogger(__logCfg['name'] or 'FastapiMvcFramework')
 
 config = YamlConfig(os.path.join(ROOT_PATH,"configs") )
+
+#test:
+# dbcfg = config.get('database')
+# uri = dbcfg.get("uri")
+# assert uri
+# errors = config.get("errors")
+# p404 = errors.get("error_404_page")
+# assert p404
 
 _log = __init_log(config.get("log"))
 if _log:

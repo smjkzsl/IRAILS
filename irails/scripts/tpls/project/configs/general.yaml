@@ -2,15 +2,8 @@ app:
   appdir:
   - apps
   enabled: null
-  root: 
-auth:
-  adapter_uri: './configs/casbin-adapter.csv'
-  auth_model: ./configs/casbin-model.conf
-  basic_key: '123456'
-  casbin_adapter: file
-  jwt_key: '123456'
-  session_name: user
-  type: jwt
+  root: apps.root
+
 cors:
   allow_credentials: true
   allow_headers:
@@ -20,40 +13,15 @@ cors:
   allow_origins:
   - '*'
 debug: true
-error_404_page: '{public_dir}/error_404.html'
-error_500_page: '{public_dir}/error_500.html'
+errors:
+  error_404_page: '{ROOT.public_dir}/error_404.html'
+  error_500_page: '{ROOT.public_dir}/error_500.html'
 log:
   file: ''
   level: DEBUG
   name: iRails
 public_dir: ./public
-upload:
-  dir: ./uploads
-  extensions:
-  - ppt
-  - txt
-  - xls
-  - xlsx
-  - docx
-  - doc
-  - pdf
-  - png
-  - jpg
-  - jpeg
-  - gif
-  - bmp
-  - svg
-  - mp3
-  - wav
-  - ogg
-  - flac
-  - aac
-  - mp4
-  - avi
-  - mkv
-  - wmv
-  - mov
-  max: 1024*1024*10
+
 view:
   jinja2:
     block_end_string: '%}'
