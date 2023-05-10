@@ -17,7 +17,7 @@ errors:
   error_404_page: '{ROOT.public_dir}/error_404.html'
   error_500_page: '{ROOT.public_dir}/error_500.html'
 log:
-  file: ''
+  file: 'log.log'
   level: DEBUG
   name: iRails
 public_dir: ./public

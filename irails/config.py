@@ -149,14 +149,14 @@ class YamlConfig:
             else:
                 value = value.replace("{" + name + "}", self.config.get(name, ""))
         return value
+config = YamlConfig(os.path.join(ROOT_PATH,"configs") )
+
 debug = False
-def __init_log(__logCfg):
-    if not __logCfg:
-        return None
-    from fastapi.logger import logger
+def set_logger(logger:logging.Logger):
+    __logCfg = config.get("log")
     __log_level = __logCfg['level'] or 'DEBUG'
     __log_file = __logCfg['file'] or None 
-    debug = config.get("debug") or False
+    debug = config.get("debug",False)   
     logger.name = __logCfg.get("name",'iRails')
     if __log_file:
         __log_file = os.path.abspath(__log_file)
@@ -180,10 +180,16 @@ def __init_log(__logCfg):
     logger.addHandler(handler)
     
     logger.setLevel(logging._nameToLevel[__log_level]) 
-    return logger
-    # return logging.getLogger(__logCfg['name'] or 'FastapiMvcFramework')
 
-config = YamlConfig(os.path.join(ROOT_PATH,"configs") )
+def __init_log( ):
+    __logCfg = config.get("log")
+    logger = logging.getLogger(__logCfg.get('name','IRAILS'))
+    # from fastapi.logger import logger
+    set_logger(logger)
+    return logger
+     
+
+
 
 #test:
 # dbcfg = config.get('database')
@@ -193,7 +199,7 @@ config = YamlConfig(os.path.join(ROOT_PATH,"configs") )
 # p404 = errors.get("error_404_page")
 # assert p404
 
-_log = __init_log(config.get("log"))
+_log = __init_log()
 if _log:
     _log.setLevel(logging.DEBUG)
 

@@ -33,7 +33,9 @@ def main():
     # module = importlib.util.module_from_spec(spec)
     # spec.loader.exec_module(module)
     
-    
+    from uvicorn.main import logger
+    from irails.config import set_logger
+    set_logger(logger=logger)
 
     uvicorn.run(app="irails.core:generate_mvc_app",**kwargs)      
        
