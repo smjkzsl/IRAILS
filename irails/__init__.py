@@ -12,4 +12,4 @@ from .base_controller import BaseController
 from .config import config
 from fastapi import Form,UploadFile,File
 
-__version__="1.2.4"
+__version__="1.2.5"

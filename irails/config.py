@@ -29,9 +29,9 @@ def is_in_irails(directory):
     """
     
     configs_dir = os.path.join(directory, 'configs')
-    main_file = os.path.join(directory, 'main.py')
+    # main_file = os.path.join(directory, 'main.py')
 
-    if not os.path.exists(configs_dir) or not os.path.exists(main_file):
+    if not os.path.exists(configs_dir) :#or not os.path.exists(main_file):
         return False  
     general_file = os.path.join(configs_dir, 'general.yaml')
 

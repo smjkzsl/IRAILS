@@ -2,7 +2,7 @@ app:
   appdir:
   - apps
   enabled: null
-  root: apps.root
+  root: 
 
 cors:
   allow_credentials: true
