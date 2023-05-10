@@ -7,8 +7,9 @@ class Test1Controller(BaseController):
     def home(self):
         '''
         :title VUE3 PAGE
-        '''
+        ''' 
         hello=self._('hello')
         txt=self._('how are you')
+          
         return self.view()
     

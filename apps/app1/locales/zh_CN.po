@@ -23,15 +23,15 @@ msgstr ""
 
 #: controllers\test1_controller.py:11
 msgid "hello"
-msgstr ""
+msgstr "你好"
 
 #: controllers\test1_controller.py:12
 msgid "how are you"
-msgstr ""
+msgstr "你好吗"
 
 #: E:\codedemo\IRAILS\apps\app1\views\test1\v1.0\home.html:#
 msgid ""
 msgstr ""
 
 msgid "WORLD"
-msgstr ""
+msgstr "世界5"

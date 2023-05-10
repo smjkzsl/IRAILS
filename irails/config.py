@@ -149,21 +149,21 @@ class YamlConfig:
             else:
                 value = value.replace("{" + name + "}", self.config.get(name, ""))
         return value
- 
+debug = False
 def __init_log(__logCfg):
     if not __logCfg:
         return None
     from fastapi.logger import logger
     __log_level = __logCfg['level'] or 'DEBUG'
     __log_file = __logCfg['file'] or None 
-    __isdebug = config.get("debug") or False
+    debug = config.get("debug") or False
     logger.name = __logCfg.get("name",'iRails')
     if __log_file:
         __log_file = os.path.abspath(__log_file)
     log_format="%(asctime)s %(name)s:%(levelname)s:%(message)s"
     datefmt="%Y-%M-%d %H:%M:%S" 
     if __log_file:
-        if __isdebug:
+        if debug:
             try:
                 os.remove(__log_file)
             except:

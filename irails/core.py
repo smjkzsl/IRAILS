@@ -41,6 +41,7 @@ class MvcApp(FastAPI):
         self.__public_auth_url=""
         self._app_views_dirs = {} 
         self.routers_map = {}
+        self.__apps_dirs = []
         super().__init__(**kwargs)
     
     def route(self, path: str, methods: List[str] | None = None, name: str | None = None, include_in_schema: bool = True) -> Callable[..., Any]:
@@ -80,6 +81,9 @@ class MvcApp(FastAPI):
         raise RuntimeError(_("Please use api.trace,MVC app not allow to use this direct!"))
         #return super().trace(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
     
+    @property
+    def apps_dirs(self)->List:
+        return self.__apps_dirs
     
     @property
     def public_auth_url(self):
@@ -120,7 +124,7 @@ class MvcApp(FastAPI):
 
 __app = MvcApp( ) 
 
-__all_controller__ = []
+__all_controller__ = {}
 
 application = __app
 api.init(application)
@@ -164,8 +168,8 @@ def api_router(path:str="", version:str="",**allargs):
     if relative_path.count(os.sep)>2:
         app_dir = os.sep.join(relative_path.split(os.sep)[:-2]) # os.path.dirname(os.path.dirname(relative_path)).replace(os.sep,"")
     else:
-        app_dir = "app"
-    app_dir = os.path.join(ROOT_PATH,app_dir.lstrip(os.sep))
+        raise RuntimeError(_("app dir must in apps dir"))
+     
 
     def format_path(p,v):
         if p and not p.startswith("/"):
@@ -178,13 +182,22 @@ def api_router(path:str="", version:str="",**allargs):
         return p
     path = format_path(path,version) 
      
-    abs_path = app_dir
+    abs_path = os.path.join(ROOT_PATH,app_dir.lstrip(os.sep))
+
+    if os.path.dirname(abs_path) not in application.apps_dirs:
+        application.apps_dirs.append(os.path.dirname(abs_path))
+    
     _controllerBase = create_controller(path,version)  
-        
-    __all_controller__.append(_controllerBase)
+    
+    
+    
     
     def _wapper(targetController):  
-        
+        _name = app_dir.replace(os.sep,".").lstrip(".") + "." + targetController.__name__ + "@" + version 
+        _controller_hash = f"{_name}" 
+        if not _controller_hash in __all_controller__:
+            __all_controller__[_controller_hash] = {'label':'new','obj': _controllerBase}
+
         class puppetController( targetController ,_controllerBase ): 
             '''puppet class inherited by the User defined controller class '''
             def __init__(self,**kwags) -> None: 
@@ -279,22 +292,22 @@ def api_router(path:str="", version:str="",**allargs):
         
         setattr(puppetController,"__version__",version)  
         setattr(puppetController,"__location__",relative_path)  
-        setattr(puppetController,"__appdir__",app_dir)  
+        setattr(puppetController,"__appdir__",abs_path)  
 
         setattr(puppetController,"__controler_url__",controller_name)  
         #for generate url_for function
         url_path = path
        
-        _view_url_path:str = url_path.replace("{controller}",controller_name).replace("{version}",version) # "/" + os.path.basename(app_dir) + '_views'  
+        _view_url_path:str = url_path.replace("{controller}",controller_name).replace("{version}",version)  
         
-        controller_current_view_path = abs_path + '/views/' + controller_name # app_dir.replace(ROOT_PATH,'').replace("\\",'/') + '/views/' + controller_name 
+        controller_current_view_path = abs_path + '/views/' + controller_name  
         if version:
             controller_current_view_path += '/' + version
         setattr(puppetController,"__view_url__",_view_url_path) 
 
         #add app dir sub views to StaticFiles
         if not controller_current_view_path in application._app_views_dirs: #ensure  load it once
-            application._app_views_dirs[controller_current_view_path] = _view_url_path#os.path.join(app_dir,"views")
+            application._app_views_dirs[controller_current_view_path] = _view_url_path 
             #path match static files
             
             
@@ -312,8 +325,14 @@ def _register_controllers():
     global __is_debug
     all_routers = []
     all_routers_map = {}
-    for ctrl in __all_controller__:
-        all_routers.append(register_controllers_to_app(application, ctrl))
+    for hash,dict_obj in __all_controller__.items():
+
+        if dict_obj['label'] == 'new':
+            if __is_debug:  
+                _log.info(hash+" mountting...")
+            all_routers.append(register_controllers_to_app(application, dict_obj['obj']))
+            dict_obj['label'] = 'mounted'
+
     for router in all_routers:
         for r in router.routes:
             funcname = str(r.endpoint).split('<function ')[1].split(" at ")[0] 
@@ -326,8 +345,24 @@ def _register_controllers():
                 methods = r.name
             if __is_debug:  
                 _log.info((str(methods),r.path,funcname) )
-            all_routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type}
-    application.routers_map = all_routers_map  
+            application.routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type}
+      
+    _log.info(_("static files mouting..."))
+    midware.init(app=application,debug=__is_debug)
+
+def check_db_migrate():
+    db_cfg = config.get("database")
+    if __is_debug and db_cfg:
+        _log.info(_("checking database migrations...."))
+    try:
+            
+        alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
+        uri = db_cfg.get("uri")
+        if uri:
+            database.check_migration(application.data_engine,uri,alembic_ini)
+    except Exception as e:
+        _log.disabled = False
+        _log.error(e.args)
 def generate_mvc_app( ):
     global __is_debug
     _log.disabled = False
@@ -341,12 +376,11 @@ def generate_mvc_app( ):
     
     _register_controllers()
 
-    _log.info(_("static files mouting..."))
-    midware.init(app=application,debug=__is_debug)
-
+    
     if __is_debug:
         _log.info(_("checking database configure..."))
-    db_cfg = check_init_database()
+    check_init_database()
+
     auth_type = config.get("auth",None)
     _casbin_adapter_class=None
     _adapter_uri:str=None
@@ -360,28 +394,43 @@ def generate_mvc_app( ):
                 raise RuntimeError(_( "Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
             
     
-    if __is_debug and db_cfg:
-        _log.info(_("checking database migrations...."))
-        try:
-             
-            alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
-            uri = db_cfg.get("uri")
-            if uri:
-                database.check_migration(application.data_engine,uri,alembic_ini)
-        except Exception as e:
-            _log.disabled = False
-            _log.error(e.args)
+    check_db_migrate()
+
     if _casbin_adapter_class and _adapter_uri:
         _log.info(_("init casbin auth system..."))
         application.authObj = __init_auth(application,auth_type,_casbin_adapter_class,_adapter_uri)
     _log.info(_("init mvc app end."))
     return application
+# import subprocess
+# import time
+# # 定义启动和停止进程的方法
+# def start_uvicon():
+#     cmd = 'uvicorn main:app --host 0.0.0.0 --port 8000'
+#     uvicorn_process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+#     return uvicorn_process
 
-def run(app,*args,**kwargs): 
-    import uvicorn
-    global __is_debug 
-    if  "debug" in kwargs:
-        __is_debug = kwargs["debug"] 
-        del kwargs['debug'] 
-     
-    uvicorn.run(app, **kwargs)
+# def restart_uvicon(uvicorn_process):
+#     uvicorn_process.terminate()
+#     # 等待 10 秒后重启进程
+#     time.sleep(10)
+#     # 启动进程
+#     uvicorn_process = start_uvicon()
+
+    
+ 
+
+
+# def run(app,*args,**kwargs): 
+#     import uvicorn
+#     global __is_debug 
+#     if  "debug" in kwargs:
+#         __is_debug = kwargs["debug"] 
+#         del kwargs['debug'] 
+#     if __is_debug:
+#         kwargs['reload'] = __is_debug
+#         kwargs['log_level'] = _log.level
+#         kwargs['reload_dirs'] = application.apps_dirs 
+#         uvicorn.run('irails.core:application', **kwargs)
+   
+         
+        

@@ -1,6 +1,6 @@
 from fastapi import WebSocketDisconnect,WebSocket
 from .core import (
-    api_router as route,run,
+    api_router as route, 
     api,
     Response,
     Request, 
@@ -12,4 +12,4 @@ from .base_controller import BaseController
 from .config import config
 from fastapi import Form,UploadFile,File
 
-__version__="1.2.1"
+__version__="1.2.4"
