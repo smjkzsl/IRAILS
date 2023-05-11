@@ -1,5 +1,5 @@
 import sys,os,importlib
-
+from irails import __version__
 from irails.config import is_in_app, is_in_irails,YamlConfig
 cur_dir = os.path.abspath(os.curdir)
 root_path = os.path.abspath(os.path.join(cur_dir,"../.."))
@@ -106,7 +106,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 "Plural-Forms: nplurals=1; plural=0;\\n"
 "Generated-By: pygettext.py 1.5\\n"
-"X-Generator: Poedit 3.2.2\\n"
+"X-Generator: irails i18n {version}\\n"
 """
 def split_pot(content:str):
     lines = content.split("\n")
@@ -156,9 +156,9 @@ def convert_pot2po():
      
     d2 = d1
     for lang in nelangs:
-        if len(lang)!=5:
+        if len(lang)!=5: #ensure like zh-CN ,en-US
             continue
-        header = po_header.replace("{d1}",d1).replace("{d2}",d2).replace("{lang}",lang).replace("{YEAR}",year)
+        header = po_header.replace("{d1}",d1).replace("{d2}",d2).replace("{lang}",lang).replace("{YEAR}",year).replace("{version}",__version__)
         path = os.path.join(locales_path,f"{lang}.po")
         with open(path,'w') as f:
             f.write(header+"\n"+_pot_content)

@@ -15,7 +15,7 @@ from starlette.routing import BaseRoute
 from fastapi.types import DecoratedCallable
 from .mvc_router import create_controller,MvcRouter as api,   register_controllers_to_app 
 from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY, VER_KEY,get_docs  
-from .config import config,ROOT_PATH,_log
+from .config import config,ROOT_PATH,_log,set_logger
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse,JSONResponse,ORJSONResponse
 from . import midware
@@ -345,7 +345,7 @@ def _register_controllers():
                 methods = r.name
             if __is_debug:  
                 _log.info((str(methods),r.path,funcname) )
-            application.routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type}
+            application.routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type,"endpoint":r.endpoint}
       
     _log.info(_("static files mouting..."))
     midware.init(app=application,debug=__is_debug)
@@ -365,7 +365,7 @@ def check_db_migrate():
         _log.error(e.args)
 def generate_mvc_app( ):
     global __is_debug
-    _log.disabled = False
+    set_logger(_log)
     from ._loader import _load_apps
     
     _log.info(_("\n\init mvc app..."))

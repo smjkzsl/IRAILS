@@ -20,6 +20,8 @@ log:
   file: ''
   level: DEBUG
   name: iRails
+  msgfmt: '%(asctime)s %(name)s:%(levelname)s:%(message)s'
+  datefmt: '%Y-%M-%d %H:%M:%S'
 public_dir: ./public
 
 view:

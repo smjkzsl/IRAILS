@@ -12,16 +12,20 @@ def main():
         print(f"`run` command must run in the directory of irails project")
         exit()
     self_file = os.path.basename(__file__).lstrip("_").replace(".py",'')
-    parser = argparse.ArgumentParser(usage=f"{sys.argv[0]} {self_file} [-h] [-p port]", description='run app') 
+    parser = argparse.ArgumentParser(usage=f"{sys.argv[0]} {self_file} [-h] [--host] [-p port]", description='run app') 
     parser.add_argument('-p','--port',type=int, help="http port")    
+    parser.add_argument('--host',type=str, help="host name[default:127.0.0.1]")    
     parser.add_argument('-d','--debug',action='store_true',  help="enable debug mode")    
     args = parser.parse_args()
     
     kwargs = { }
-
+    if args.host:
+        kwargs['host'] = args.host
     if args.port:
         kwargs['port'] = args.port
-    kwargs['reload'] = True
+     
+     
+    args.debug = config.get("debug",False)
     if args.debug: 
         kwargs['reload'] = args.debug 
         app_cfg = config.get('app')
@@ -31,11 +35,8 @@ def main():
     # module_path = 'main.py'
     # spec = importlib.util.spec_from_file_location(module_path, module_path)
     # module = importlib.util.module_from_spec(spec)
-    # spec.loader.exec_module(module)
-    
-    from uvicorn.main import logger
-    from irails.config import set_logger
-    set_logger(logger=logger)
-
+    # spec.loader.exec_module(module) 
+    from irails.config import _log
+    kwargs['log_level'] = _log.level
     uvicorn.run(app="irails.core:generate_mvc_app",**kwargs)      
        

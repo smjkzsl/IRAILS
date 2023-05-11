@@ -320,8 +320,8 @@ def _route_method(path: str, method, *args, **mwargs):
                 del kwargs['request']  
             if 'response' in kwargs and not has_response:  
                 del kwargs['response']  
-            del kwargs["__has_request__"]
-            del kwargs["__has_response__"]
+            if '__has_request__' in kwargs:del kwargs["__has_request__"]  
+            if '__has_response__' in kwargs:del kwargs["__has_response__"]
             if inspect.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
             else:

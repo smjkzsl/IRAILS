@@ -1,52 +1,62 @@
-import os,sys
+import os
+import sys
 import yaml
 import logging
 from hashlib import md5
 from typing import Dict
 import os.path
 import re
+
+
 def is_in_app(directory):
     """
     check exists controllers , views dir in :directory
     """
-    
+
     controller_dir = os.path.join(directory, 'controllers')
-    views_dir = os.path.join(directory, 'views')  
+    views_dir = os.path.join(directory, 'views')
     if not os.path.exists(controller_dir):
         print(f"can't location `controller` dir")
-        return False  
-    if  not os.path.exists(views_dir) :
+        return False
+    if not os.path.exists(views_dir):
         print(f"can't location `views` dir")
         return False
-    # initfile = os.path.join(controller_dir, '__init__.py') 
+    # initfile = os.path.join(controller_dir, '__init__.py')
     # if not os.path.exists(initfile):
     #     return False
-    
+
     return True
+
+
 def is_in_irails(directory):
     """
     check exists configs dir,   main.py and configs/general.yaml 
     """
-    
+
     configs_dir = os.path.join(directory, 'configs')
     # main_file = os.path.join(directory, 'main.py')
 
-    if not os.path.exists(configs_dir) :#or not os.path.exists(main_file):
-        return False  
+    if not os.path.exists(configs_dir):  # or not os.path.exists(main_file):
+        return False
     general_file = os.path.join(configs_dir, 'general.yaml')
 
     if not os.path.exists(general_file):
         return False
-    
+
     return True
+
+
 ROOT_PATH = os.path.realpath(os.curdir)
- 
+
 IS_IN_irails = is_in_irails(ROOT_PATH)
+
+
 def is_cli_mode():
     executeble = sys.argv[0]
     executeble = os.path.basename(executeble)
     # print(f"current executeble:" + executeble)
     return (executeble.lower().startswith('irails'))
+
 
 def _extract_name(string):
     match = re.search(r'{([^}]*)}', string)
@@ -55,19 +65,24 @@ def _extract_name(string):
     else:
         return None
 
- 
+
 class YamlConfig:
     _raw_config: Dict = {}
+
     def __init__(self, filename: str = "", config: Dict = {}):
         self.filename = filename
         self.config = config
         self.load()
+
     def __getitem__(self, key: str):
         return self.get(key)
+
     def __setitem__(self, key: str, value):
-       self.set(key, value)
+        self.set(key, value)
+
     def reload(self) -> bool:
         return self.load()
+
     def load(self) -> bool:
         if os.path.isfile(self.filename):
             with open(self.filename, "r") as f:
@@ -85,14 +100,17 @@ class YamlConfig:
                 raise Exception(f"{self.filename} is not a file or directory")
             return False
         return True
+
     def dump(self) -> str:
         return yaml.safe_dump(self.config) if self.config else ""
+
     def save(self) -> bool:
         if not self.filename:
             return False
         with open(self.filename, "w") as f:
             yaml.safe_dump(self.config, f)
         return True
+
     def get(self, key: str, default=None):
         value = self.config.get(key, default)
         if isinstance(value, str):
@@ -100,10 +118,13 @@ class YamlConfig:
         elif isinstance(value, dict):
             value = YamlConfig(filename="", config=value)
         return value
+
     def set(self, key: str, value):
         self.config[key] = value
+
     def delete(self, key: str):
         del self.config[key]
+
     def _merge_dicts(self, dict1: Dict, dict2: Dict) -> Dict:
         for key in dict2:
             if key in dict1 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
@@ -111,6 +132,7 @@ class YamlConfig:
             else:
                 dict1[key] = dict2[key]
         return dict1
+
     def _merge_yaml_files(self, dir_path: str) -> Dict:
         merged_config = {}
         for file_name in os.listdir(dir_path):
@@ -118,26 +140,31 @@ class YamlConfig:
             if os.path.isfile(file_path) and file_name.endswith(".yaml"):
                 file_config = self._load_yaml_file(file_path)
                 if isinstance(file_config, dict):
-                    merged_config = self._merge_dicts(merged_config, file_config)
+                    merged_config = self._merge_dicts(
+                        merged_config, file_config)
             elif os.path.isdir(file_path):
                 dir_config = self._merge_yaml_files(file_path)
                 merged_config = self._merge_dicts(merged_config, dir_config)
         return merged_config
+
     def _load_yaml_file(self, file_path: str) -> Dict:
         with open(file_path, "r") as f:
             return yaml.safe_load(f)
+
     def _resolve_value(self, value: str, key: str) -> str:
         while "{" in value and "}" in value:
             name = _extract_name(value)
             if not name:
                 break
             if name == key:
-                raise RuntimeError(f"Configure file error: circular reference `{name}`")
+                raise RuntimeError(
+                    f"Configure file error: circular reference `{name}`")
             if "." in name:
                 segment_name, sub_key = name.split(".", 1)
                 if segment_name == "ROOT":
                     # value = value.replace("{" + name + "}", self.config.get(sub_key, ""))
-                    value = value.replace("{" + name + "}", YamlConfig(config=self._raw_config).get(sub_key, ""))
+                    value = value.replace(
+                        "{" + name + "}", YamlConfig(config=self._raw_config).get(sub_key, ""))
                 else:
                     segment_config = self.config.get(segment_name, {})
                     if isinstance(segment_config, dict):
@@ -147,59 +174,56 @@ class YamlConfig:
                             sub_value = sub_value.get(sub_key, {})
                         value = value.replace("{" + name + "}", str(sub_value))
             else:
-                value = value.replace("{" + name + "}", self.config.get(name, ""))
+                value = value.replace(
+                    "{" + name + "}", self.config.get(name, ""))
         return value
-config = YamlConfig(os.path.join(ROOT_PATH,"configs") )
+
+
+config = YamlConfig(os.path.join(ROOT_PATH, "configs"))
 
 debug = False
-def set_logger(logger:logging.Logger):
-    __logCfg = config.get("log")
-    __log_level = __logCfg['level'] or 'DEBUG'
-    __log_file = __logCfg['file'] or None 
-    debug = config.get("debug",False)   
-    logger.name = __logCfg.get("name",'iRails')
+
+
+def set_logger(logger: logging.Logger):
+    log_config = config.get("log")
+    __log_level = log_config.get('level', 'DEBUG')
+    __log_file = log_config.get('file',None)
+
+    debug = config.get("debug", False)
+    logger.name = logger.name or log_config.get("name", 'iRails')
     if __log_file:
         __log_file = os.path.abspath(__log_file)
-    log_format="%(asctime)s %(name)s:%(levelname)s:%(message)s"
-    datefmt="%Y-%M-%d %H:%M:%S" 
+
+    log_format = log_config.get(
+        "msgfmt", "%(asctime)s %(name)s:%(levelname)s:%(message)s")
+    datefmt = log_config.get("datefmt", "%Y-%M-%d %H:%M:%S")
+    file_handler = None
     if __log_file:
         if debug:
             try:
                 os.remove(__log_file)
             except:
                 pass
-            import io
-            
-        handler = logging.FileHandler(__log_file,mode='a')
-        
-    else:
-        import sys
-        handler = logging.StreamHandler(sys.stdout)  
-    handler.setLevel(logging._nameToLevel[__log_level]) 
-    handler.setFormatter(logging.Formatter(fmt= log_format,datefmt=datefmt)) 
-    logger.addHandler(handler)
-    
-    logger.setLevel(logging._nameToLevel[__log_level]) 
 
-def __init_log( ):
+        file_handler = logging.FileHandler(__log_file, mode='a')
+        logger.addHandler(file_handler)
+     
+    
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging._nameToLevel[__log_level])
+    handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=datefmt))
+    logger.addHandler(handler)
+     
+ 
+
+
+def __init_log():
     __logCfg = config.get("log")
-    logger = logging.getLogger(__logCfg.get('name','IRAILS'))
-    # from fastapi.logger import logger
+    logger = logging.getLogger(__logCfg.get('name', 'IRAILS'))
     set_logger(logger)
     return logger
-     
 
 
-
-#test:
-# dbcfg = config.get('database')
-# uri = dbcfg.get("uri")
-# assert uri
-# errors = config.get("errors")
-# p404 = errors.get("error_404_page")
-# assert p404
 
 _log = __init_log()
-if _log:
-    _log.setLevel(logging.DEBUG)
-
+ 
