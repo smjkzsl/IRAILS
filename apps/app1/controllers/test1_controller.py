@@ -11,5 +11,7 @@ class Test1Controller(BaseController):
         hello=self._('hello')
         txt=self._('how are you')
           
-        return self.view()
-    
+        return self.view(context={'hello':hello}, view_path='test1/v1.0/home.html')
+    def view(self, content: str = "", view_path: str = "", format: str = "html", context: dict = ..., local2context: bool = True, **kwargs):
+        
+        return super().view(content, view_path, format, context, local2context, **kwargs)

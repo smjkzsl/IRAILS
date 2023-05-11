@@ -163,7 +163,7 @@ class BaseController:
             caller_locals = caller_frame.f_locals
             caller_class = caller_locals.get("self", None).__class__
             caller_classname:str = caller_class.__name__
-            caller_classname = caller_classname.replace("Controller","").lower()
+            caller_classname = caller_classname.lower().rstrip('controller')
             #caller_file = os.path.basename(caller.filename) 
             if local2context and not context:
                 del caller_locals['self']
@@ -175,10 +175,22 @@ class BaseController:
                     version_path = ""
                 view_path = f"{caller_classname}/{version_path}{caller_function_name}.html" 
             return view_path,context
-            
-        caller_frame = inspect.currentframe().f_back
-        view_path,context = get_path(caller_frame)
+
+        if not view_path:    
+            caller_frame = inspect.currentframe()
+            caller_frame = caller_frame.f_back
+            #find frame the target controller's action method
+            frame_info = inspect.getframeinfo(caller_frame)
+            action_frame = caller_frame
+            while(frame_info[2]!='decorator' and not frame_info[0].endswith('controller_utils.py')):
+                caller_frame = caller_frame.f_back
+                frame_info = inspect.getframeinfo(caller_frame)
+                if not frame_info[2]=='decorator' and not frame_info[0].endswith('controller_utils.py'):
+                    action_frame = caller_frame
+            view_path,context = get_path(action_frame)
         
+        if not isinstance(context,dict):
+            context = {}
         if not 'flash' in context:
             context['flash'] = self._request.session['flash']
         template_path = os.path.join(self.__appdir__,"views")

@@ -186,6 +186,8 @@ debug = False
 
 def set_logger(logger: logging.Logger):
     log_config = config.get("log")
+    if not log_config:
+        return logger
     __log_level = log_config.get('level', 'DEBUG')
     __log_file = log_config.get('file',None)
 
@@ -219,7 +221,7 @@ def set_logger(logger: logging.Logger):
 
 def __init_log():
     __logCfg = config.get("log")
-    logger = logging.getLogger(__logCfg.get('name', 'IRAILS'))
+    logger = logging.getLogger((__logCfg and __logCfg.get('name', 'IRAILS')) or 'iRails')
     set_logger(logger)
     return logger
 
