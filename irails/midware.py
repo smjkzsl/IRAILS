@@ -13,7 +13,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import traceback
 
 from starlette.staticfiles import PathLike
-from .config import _log,config
+from .config import config
+from .log import _log
 from .midware_session import (SessionMiddleware,FileStorage,MemoryStorage,RedisStorage,SessionStorage,_SESSION_STORAGES)
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import   Scope 

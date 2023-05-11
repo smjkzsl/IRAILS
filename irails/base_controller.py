@@ -1,9 +1,11 @@
  
+import re
 from fastapi import FastAPI,UploadFile,File,Header, Depends,HTTPException,Request,Response, status as StateCodes
 from fastapi.responses import RedirectResponse,HTMLResponse,PlainTextResponse
 from .view import _View
  
-from .config import config,ROOT_PATH,_log
+from .config import config,ROOT_PATH
+from .log import _log
 import os,uuid
 from hashlib import md5
 from typing import Dict
@@ -41,13 +43,15 @@ class BaseController:
             m = os.sep.join(m[-2:])
         else:
             raise RuntimeError(f"load_app_translations:{m} is invalid app module") 
+        languages = ['zh']
         if 'lang' in self._session:
             languages = self._session['lang']
         else:
             language_header = self._request.headers.get('accept-language')
-            languages = language_header.split(',')
-            if languages:
-                languages = [languages[0]]
+            if language_header:
+                languages = language_header.split(',')
+                if languages:
+                    languages = [languages[0]]
         t = load_app_translations(module_dir=m,lan=languages)
         return t.gettext
     @property
@@ -163,7 +167,9 @@ class BaseController:
             caller_locals = caller_frame.f_locals
             caller_class = caller_locals.get("self", None).__class__
             caller_classname:str = caller_class.__name__
-            caller_classname = caller_classname.lower().rstrip('controller')
+            string = "TestController"
+            caller_classname = re.sub(r"Controller$", "", caller_classname).lower()
+             
             #caller_file = os.path.basename(caller.filename) 
             if local2context and not context:
                 del caller_locals['self']

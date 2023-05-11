@@ -15,12 +15,14 @@ from starlette.routing import BaseRoute
 from fastapi.types import DecoratedCallable
 from .mvc_router import create_controller,MvcRouter as api,   register_controllers_to_app 
 from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY, VER_KEY,get_docs  
-from .config import config,ROOT_PATH,_log,set_logger
+from .config import config,ROOT_PATH,_project_name
+from .log import _log,set_logger
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse,JSONResponse,ORJSONResponse
 from . import midware
 from . import auth
 from . import database
+from ._loader import _load_apps
 from ._utils import get_controller_name,get_snaked_name
 from ._i18n import load_app_translations
 _=None
@@ -92,7 +94,7 @@ class MvcApp(FastAPI):
     @public_auth_url.setter
     def public_auth_url(self,url):
         if self.__public_auth_url:
-            raise RuntimeError(_("public_auth_url only can be setting once time,current is:%s") % self.__public_auth_url)
+            _log.warning(_("public_auth_url only can be setting once time,current is:%s") % self.__public_auth_url)
         self.__public_auth_url = url
         
     @property
@@ -102,7 +104,7 @@ class MvcApp(FastAPI):
     @user_auth_url.setter
     def user_auth_url(self,url):
         if self.__user_auth_url:
-            raise RuntimeError(_("user_auth_url only can be setting once time,current is:%s") % self.__user_auth_url)
+            _log.warning(_("user_auth_url only can be setting once time,current is:%s") % self.__user_auth_url)
         self.__user_auth_url = url
     @property
     def modify_authorization(self):
@@ -121,7 +123,8 @@ class MvcApp(FastAPI):
     @data_engine.setter
     def data_engine(self,value):
         self._data_engine = value
-
+    def __repr__(self):
+        return f'<IRails:{self.title}>'
 __app = MvcApp( ) 
 
 __all_controller__ = {}
@@ -363,10 +366,13 @@ def check_db_migrate():
     except Exception as e:
         _log.disabled = False
         _log.error(e.args)
-def generate_mvc_app( ):
+def generate_mvc_app():
     global __is_debug
-    set_logger(_log)
-    from ._loader import _load_apps
+     
+    application.title = _project_name
+    
+    
+    
     
     _log.info(_("\n\init mvc app..."))
     loaded,unloaded=_load_apps(debug=__is_debug) 

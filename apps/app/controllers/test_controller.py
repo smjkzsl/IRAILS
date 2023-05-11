@@ -4,10 +4,11 @@ from irails import route,api,Request,Response,BaseController,application,WebSock
 from typing import Any, Dict ,List
 from pydantic import conlist
 from app.services import UserService
-application._public_auth_url = '/user/login'
-application._user_auth_url = '/user/login'
+
 @application.on_event("startup")
 def startup():
+    application.public_auth_url = '/user/login'
+    application.user_auth_url = '/user/login'
     application.modify_authorization('bruce','/xml','GET',True)
 @route(auth='public')
 class TestController(BaseController): 
@@ -86,43 +87,4 @@ class TestController(BaseController):
         return self.view()
 
 
- 
- 
-websockets:Dict[str,WebSocket] = {}
-import pusher
-
-pusher_client = pusher.Pusher(
-  app_id='1588311',
-  key='3eb7cc894586d11b97de',
-  secret='b1052d401c7d6542fc4f',
-  cluster='ap3',
-  ssl=True
-)
-
-@route(path="/{controller}")
-class WSController(BaseController):  
-    def __init__(self) -> None:
-        super().__init__()
-        
-    @api.get("/" )
-    def ws_home(self):
-        """:title WebSocketDemo"""
-        return self.view()
-
-    @api.websocket("/chat/{client_id}")
-    async def websocket_endpoint(self, websocket: WebSocket,client_id: int):
-        await websocket.accept()
-        websockets[client_id]=(websocket)
-        try:
-            while True:
-                data = await websocket.receive_text()
-                await websocket.send_text(f"You wrote: {data}" )
-                for clientid in websockets:
-                    if client_id!=clientid:
-                        await websockets[clientid].send_text(f"Client #{client_id} says: {data}")
-                 
-        except WebSocketDisconnect:
-            websockets.remove(websocket)
-            for connection in websockets:
-                await connection.send_text(f"Client #{client_id} left the chat")
-             
+  

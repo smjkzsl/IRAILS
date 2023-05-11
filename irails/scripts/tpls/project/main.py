@@ -6,4 +6,4 @@ if __name__=='__main__':
     from irails.config import config,set_logger 
     app = generate_mvc_app()
     uvicorn.run(app,host="0.0.0.0",port=8000)
-    # runserver(app,debug=True)
+ 

@@ -5,8 +5,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
 import jinja2
  
-from .config import ROOT_PATH,config,_log
-
+from .config import ROOT_PATH,config 
+from .log import _log
 env_configs = {} 
 static_format = []
 def __get_view_configure():

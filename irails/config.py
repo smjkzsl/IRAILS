@@ -180,52 +180,9 @@ class YamlConfig:
 
 
 config = YamlConfig(os.path.join(ROOT_PATH, "configs"))
-
+_project_name = os.path.basename(ROOT_PATH)
 debug = False
 
 
-def set_logger(logger: logging.Logger):
-    log_config = config.get("log")
-    if not log_config:
-        return logger
-    __log_level = log_config.get('level', 'DEBUG')
-    __log_file = log_config.get('file',None)
-
-    debug = config.get("debug", False)
-    logger.name = logger.name or log_config.get("name", 'iRails')
-    if __log_file:
-        __log_file = os.path.abspath(__log_file)
-
-    log_format = log_config.get(
-        "msgfmt", "%(asctime)s %(name)s:%(levelname)s:%(message)s")
-    datefmt = log_config.get("datefmt", "%Y-%M-%d %H:%M:%S")
-    file_handler = None
-    if __log_file:
-        if debug:
-            try:
-                os.remove(__log_file)
-            except:
-                pass
-
-        file_handler = logging.FileHandler(__log_file, mode='a')
-        logger.addHandler(file_handler)
-     
-    
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging._nameToLevel[__log_level])
-    handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=datefmt))
-    logger.addHandler(handler)
-     
- 
 
 
-def __init_log():
-    __logCfg = config.get("log")
-    logger = logging.getLogger((__logCfg and __logCfg.get('name', 'IRAILS')) or 'iRails')
-    set_logger(logger)
-    return logger
-
-
-
-_log = __init_log()
- 

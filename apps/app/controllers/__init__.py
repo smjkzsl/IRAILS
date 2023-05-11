@@ -1,1 +1,1 @@
-from . import test_controller
+from .test_controller import *

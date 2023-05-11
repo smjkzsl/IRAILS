@@ -10,6 +10,8 @@ def _ensure_cli():
     if not executable.startswith('irails'):
         sys.argv[0] = 'irails'
 _ensure_cli()
+
+sys.path.insert(-1,os.path.abspath(os.curdir))
 from irails import __version__
 def collect_features():
     """

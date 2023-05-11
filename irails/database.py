@@ -11,7 +11,7 @@ from alembic.config import Config
 import configparser
 import re,os
 from typing import Union
-from .config import _log
+from .log import _log
 DataMap = None
 mapped_base = None
 engine:Engine=None 
@@ -22,16 +22,20 @@ class Base(DeclarativeBase):
 
 class Service():
     __all_generated = {}
+    engine:Engine = engine
     
     @classmethod
     @contextmanager 
     def get_session(cls):
         """Provide a transactional scope around a series of operations."""
+        if not cls.engine:
+            yield None
+            return
         if hasattr(cls,'_session_local'):
             session_local = getattr(cls,'_session_local')
         else:
             session_local =  sessionmaker(bind=engine)
-            setattr(cls,"_session_local", session_local)
+            setattr(cls,"_session_local", session_local) #cache sessionmaker object
         session = session_local()
         try:
             yield session

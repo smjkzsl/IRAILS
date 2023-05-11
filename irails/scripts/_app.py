@@ -165,11 +165,11 @@ class HomeController(BaseController):
                 _current_dir = os.path.join(store_dir,dir)
                 os.makedirs(_current_dir,exist_ok=True)
                  
-            _init_file = os.path.normpath(os.path.join(store_dir,'__init__.py'))
-            with open(_init_file,'w') as f: #root path of app's dir
-                f.write(f"from .controllers import *")
+            # _init_file = os.path.normpath(os.path.join(store_dir,'__init__.py'))
+            # with open(_init_file,'w') as f: #root path of app's dir
+            #     f.write(f"from .controllers import *")
             
-            print(f"create {_init_file}")
+            # print(f"create {_init_file}")
 
             self.add_enabled_to_app(app_name)
             if self.set_root_controller_to_config(self.args.dir,app_name):

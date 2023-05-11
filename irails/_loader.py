@@ -1,6 +1,6 @@
 import importlib
 import sys,os
-from .config import config,ROOT_PATH,_log
+from .config import config,ROOT_PATH 
 from ._i18n import load_app_translations
 from gettext import gettext as _
 app_cfg=config.get('app')
@@ -31,22 +31,27 @@ def load_module(module_name:str,module_path:str):
         spec.loader.exec_module(module)
         return module
     return None
-def _load_app(app_dir):
-    try:
-        _path = os.path.join(ROOT_PATH,app_dir.split(".")[0])
-        if _path not in sys.path:
-            sys.path.insert(-1,_path)
-        _log.info(_('Loading app:%s')%app_dir)
-        return importlib.import_module(app_dir)
-          
-    except ImportError as e:
-        _log.error(_("load app %s failed")%app_dir)
-        _log.error(e.args)
-        raise e
-    
+def _load_app(app_dir): 
+    from .log import _log
+    _modules = ['controllers','services','models']
+    cnt =  0
+    for m in _modules:
+        module_name = f"{app_dir}.{m}"
+        _log.info(_('Loading module:%s')%module_name)
+        try:
+            importlib.import_module(module_name) 
+            if m=='controllers':
+                cnt += 1
+        except ImportError as e:
+            if m=='controllers':
+                _log.error(_("load app %s failed")%app_dir)
+                _log.error(e.args)
+                cnt -= 1
+            else:
+                pass
+    return cnt
 def _load_apps(debug=False):
-    if ROOT_PATH not in sys.path:
-        sys.path.insert(-1,ROOT_PATH)
+    
     unloaded = 0
     loaded = 0
     for app_dir in app_dirs:
@@ -54,10 +59,12 @@ def _load_apps(debug=False):
         for app in app_list:
             if __check_if_enabled(app):  
                 _dir = os.path.join(app_dir,app)
-                module = _load_app(f'{app_dir}.{app}')
-                if module:
-                    t =  load_app_translations(_dir)
-                    setattr(module,"_translation",t)
+                _abs_app_path = os.path.dirname(os.path.abspath(_dir))
+                if _abs_app_path not in sys.path:
+                    sys.path.insert(-1,_abs_app_path)
+                debug and print('load app:'+app)
+                n = _load_app(app)
+                if n:
                     loaded = loaded + 1
                 else:
                     unloaded = unloaded + 1

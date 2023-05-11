@@ -10,7 +10,7 @@ from itsdangerous.exc import BadSignature
 from starlette.datastructures import MutableHeaders, Secret
 from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
-from .config import _log
+from .log import _log
 from .base_controller import _session_key
 if sys.version_info >= (3, 8):  # pragma: no cover
     from typing import Literal
