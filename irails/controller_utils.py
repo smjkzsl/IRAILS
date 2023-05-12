@@ -2,6 +2,7 @@ import inspect
 import re
 import types
 from collections import defaultdict
+from .base_controller import BaseController
 from functools import wraps, update_wrapper
 from typing import Callable, Dict, Set, Type
 import copy
@@ -291,30 +292,34 @@ def _route_method(path: str, method, *args, **mwargs):
         raise RuntimeError("path must start with '/'")
     def wrapper(func ): 
         @wraps(func)
-        async def decorator(  *args, **kwargs):
+        async def actions_decorator(  *args, **kwargs):
             auth_type:str = getattr(func,AUTH_KEY) 
             has_request = kwargs.get("__has_request__")
             has_response = kwargs.get("__has_response__")
-            module = inspect.getmodule(func)
-            cls = getattr(module, func.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0]) 
-            #it's not instanced yet
-            #instance = cls.__dict__.get('__wrapped__', None).__self__ #or cls.__dict__.get('__objclass__', None)(obj)
+            cls:BaseController = None
+            if 'self' in kwargs:
+                cls = kwargs['self']
+            else:
+                module = inspect.getmodule(func)
+                cls = getattr(module, func.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0]) 
+             
             response:Response = None
             result:Response = None
             
             if 'request' in kwargs and 'response' in kwargs:
                 response  = kwargs["response"]
-                rqst = kwargs['request']  
+                rqst:Request = kwargs['request']  
                 #auth first then call constructor
+                rqst.state.action  = func.__qualname__
                 if auth_type:
-                    auth_result,user = await cls._auth__(request=rqst,response=kwargs['response'],auth_type=auth_type)
+                    auth_result,user = await cls._auth__(request=rqst,response=response,auth_type=auth_type)
                     if isinstance(auth_result,Response): 
                         return auth_result
                     if not auth_result:
-                        raise HTTPException(status_code=403, detail="未经授权的访问" )
-                        return Response(None,403)
-                _constructor = getattr(cls,'_constructor_')
-                await _constructor(cls,request = kwargs['request'],response=kwargs['response'])
+                        # raise HTTPException(status_code=403, detail="未经授权的访问" )
+                        return Response('Unauthorized Access',403)
+                #_constructor = getattr(cls,'_constructor_')
+                await cls.__constructor__(request = rqst,response=response)
 
             if 'request' in kwargs and not has_request:  
                 del kwargs['request']  
@@ -330,16 +335,16 @@ def _route_method(path: str, method, *args, **mwargs):
             if response and isinstance(result,Response): 
                 result.raw_headers.extend(response.raw_headers)
             if isinstance(result,Response):
-                _deconstructor = getattr(cls,'_deconstructor_')
-                ret = await _deconstructor(cls,result)
+                # _deconstructor = getattr(cls,'__destructor__')
+                ret = await cls.__destructor__(result)
                 if isinstance(ret,Response):
                     result = ret
  
             return result #end of decorator
             
-        setattr(decorator, PATH_KEY, path)
-        setattr(decorator, METHOD_KEY, method)
-        setattr(decorator, ARGS_KEY, args)
+        setattr(actions_decorator, PATH_KEY, path)
+        setattr(actions_decorator, METHOD_KEY, method)
+        setattr(actions_decorator, ARGS_KEY, args)
         if '__auth_url__' in mwargs: 
             setattr(func,'__auth_url__',mwargs['__auth_url__'])
             del mwargs['__auth_url__']
@@ -348,10 +353,10 @@ def _route_method(path: str, method, *args, **mwargs):
             mwargs["auth"] = 'none'
         setattr(func,AUTH_KEY,mwargs['auth'])
         del mwargs['auth']
-        setattr(decorator, KWARGS_KEY, mwargs)
+        setattr(actions_decorator, KWARGS_KEY, mwargs)
         # setattr(decorator,'__doc__',getattr(func,'__doc__'))
-        setattr(decorator, "__signature__", inspect.signature(func))
-        return decorator
+        setattr(actions_decorator, "__signature__", inspect.signature(func))
+        return actions_decorator
     return wrapper
 
 def get_docs(doc:str):

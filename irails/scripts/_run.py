@@ -32,11 +32,12 @@ def main():
         apps_dirs = app_cfg.get("appdir") 
         kwargs['reload_dirs'] = apps_dirs
         kwargs['reload_includes'] = ['*.po']
+        kwargs['reload_excludes'] = ['*.pyc']
     # module_path = 'main.py'
     # spec = importlib.util.spec_from_file_location(module_path, module_path)
     # module = importlib.util.module_from_spec(spec)
     # spec.loader.exec_module(module) 
-    from irails.config import _log
+    from irails.log import _log
     kwargs['log_level'] = _log.level
     uvicorn.run(app="irails.core:generate_mvc_app",**kwargs)      
        

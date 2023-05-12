@@ -66,6 +66,11 @@ class _View(object):
             info = f"{view_path_real} raised TemplatesNotFound Error: `{source}`"
             _log.error(info)
             raise HTTPException(500,info)
+        except jinja2.exceptions.UndefinedError as e:
+            info =f"Tempate {view_path_real} raised Exception {e.args}"
+            _log.error(info)
+            
+            raise HTTPException(500,info)
         except Exception as e:
             info =f"Tempate {view_path_real} raised Exception {e.args}"
             _log.error(info)

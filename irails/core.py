@@ -269,7 +269,7 @@ def api_router(path:str="", version:str="",**allargs):
                         application.authObj.create_access_token(user=user, expires_delta=None,request=request)
                 #
                 if not ret and not user: 
-                    _log.debug(_('Failed Auth on type:%s at url:%s') % (auth_type,str(request.url)))
+                    # _log.debug(_('Failed Auth on type:%s at url:%s') % (auth_type,str(request.url)))
                     if accept_header == "application/json":
                         return  ORJSONResponse(content={"message": "401 UNAUTHORIZED!"},
                                                    status_code=StateCodes.HTTP_401_UNAUTHORIZED),None
@@ -284,26 +284,26 @@ def api_router(path:str="", version:str="",**allargs):
                         return RedirectResponse(_auth_url,status_code=StateCodes.HTTP_303_SEE_OTHER),None
                     else:  
                         return RedirectResponse('/',status_code=StateCodes.HTTP_303_SEE_OTHER),None
-                else:
-                    _log.debug(_('Successed Auth on %s at url:%s [User:%s]') % (auth_type,str(request.url),str(user)) )
+                elif user:
+                    _log.debug(_('Failed Auth on type:%s at url:%s  [User:%s]') % (auth_type,str(request.url),str(user)))
                     return ret,user
-
+                return  False,None
         setattr(puppetController,AUTH_KEY,allargs['auth'])         
         setattr(puppetController,"__name__",targetController.__name__)  
         controller_name = get_controller_name(targetController.__name__)
-        setattr(puppetController,"__controller_name__",controller_name)  
+        # setattr(puppetController,"__controller_name__",controller_name)  
         
         setattr(puppetController,"__version__",version)  
-        setattr(puppetController,"__location__",relative_path)  
+        # setattr(puppetController,"__location__",relative_path)  
         setattr(puppetController,"__appdir__",abs_path)  
 
-        setattr(puppetController,"__controler_url__",controller_name)  
+        # setattr(puppetController,"__controler_url__",controller_name)  
         #for generate url_for function
         url_path = path
        
         _view_url_path:str = url_path.replace("{controller}",controller_name).replace("{version}",version)  
         
-        controller_current_view_path = abs_path + '/views/' + controller_name  
+        controller_current_view_path = abs_path + '/views/' + controller_name.lower()  
         if version:
             controller_current_view_path += '/' + version
         setattr(puppetController,"__view_url__",_view_url_path) 

@@ -4,8 +4,9 @@ from .config import config,ROOT_PATH
 from ._i18n import load_app_translations
 from gettext import gettext as _
 app_cfg=config.get('app')
-app_dirs = app_cfg.get("appdir")
-app_enabled = app_cfg.get("enabled")
+if app_cfg:
+    app_dirs = app_cfg.get("appdir")
+    app_enabled = app_cfg.get("enabled")
 
 def __list_directories(dir):
     """

@@ -35,6 +35,29 @@ if i18n_cfg:
     url_lang_key = i18n_cfg.get('url_lang_key','lang')
 else:
     url_lang_key = 'lang'
+
+ 
+
+def url_for(url:str="",**kws): 
+    url = url.strip()
+    if url and url.startswith("/"):
+        return url
+    url_path = ""
+    if kws:
+        
+        pairs = []
+        if 'app' in kws and kws['app'].strip():
+            pairs.append(kws['app'].strip())
+        if 'controller' in kws  and kws['controller'].strip():
+            pairs.append(kws['controller'].strip())
+        if 'version' in kws  and kws['version'].strip():
+            pairs.append(kws['version'].strip())
+        if 'action' in kws  and kws['action'].strip():
+            pairs.append(kws['action'].strip())
+            
+        url_path = "/"+"/".join(pairs)  + "/"
+    return url_path.lower() + url.strip()
+
 class BaseController:
     @property
     def _(self):
@@ -129,29 +152,12 @@ class BaseController:
         return a Response by template file
         if :view_path is empty ,it's will look for current method in the view directory(offen is app dir views\controller's name)
         """
-        def url_for(url:str="",**kws): 
-            url = url.strip()
-            if url and url.startswith("/"):
-                return url
-            if kws:
-                url_path = ""
-                pairs = []
-                if 'app' in kws and kws['app'].strip():
-                    pairs.append(kws['app'].strip())
-                if 'controller' in kws  and kws['controller'].strip():
-                    pairs.append(kws['controller'].strip())
-                if 'version' in kws  and kws['version'].strip():
-                    pairs.append(kws['version'].strip())
-                if 'action' in kws  and kws['action'].strip():
-                    pairs.append(kws['action'].strip())
-                 
-                url_path = "/"+"/".join(pairs)
-                 
-            else: 
-                url_path = self.__template_path__.replace('{controller}',self.__controller_name__).replace("{version}",self.__version__)
-                 
-        
-            return url_path.lower() + "/" + url.strip()
+        if not isinstance(context,dict):
+            if hasattr(context,'__dict__'):
+                context = getattr(context,'__dict__')
+            else:
+                context = {}
+                
             
         if content:
             if format=='html':
@@ -160,18 +166,35 @@ class BaseController:
                 return PlainTextResponse(content,**kwargs)
             else:
                 return Response(content=content,**kwargs)
-        def get_path(caller_frame,view_path:str="",context:dict={},local2context:bool=True ):
-            # caller_file = caller_frame.f_code.co_filename
-            # caller_lineno = caller_frame.f_lineno
-            caller_function_name = caller_frame.f_code.co_name
-            caller_locals = caller_frame.f_locals
-            caller_class = caller_locals.get("self", None).__class__
-            caller_classname:str = caller_class.__name__
-            string = "TestController"
-            caller_classname = re.sub(r"Controller$", "", caller_classname).lower()
+        if not view_path and hasattr(self.request.state,'action'):
+            func = self.request.state.action.replace(self.__class__.__name__+'.','')
+            vpath = re.sub(r"Controller$", "", self.__class__.__name__).lower()
              
+            if self.__version__:
+                vpath += f'/{self.__version__}'
+
+            view_path = f"{vpath}/{func}.{format}" 
+        
+        if not view_path or local2context:    
+            caller_frame = inspect.currentframe()
+            caller_frame = caller_frame.f_back
+            #find frame the target controller's action method
+            frame_info = inspect.getframeinfo(caller_frame)
+            action_frame = caller_frame
+            while(frame_info[2]!='actions_decorator' and not frame_info[0].endswith('controller_utils.py')):
+                caller_frame = caller_frame.f_back
+                frame_info = inspect.getframeinfo(caller_frame)
+                if not frame_info[2]=='actions_decorator' and not frame_info[0].endswith('controller_utils.py'):
+                    action_frame = caller_frame
+            caller_function_name = action_frame.f_code.co_name
+            caller_locals = action_frame.f_locals
+            # caller_class = caller_locals.get("self", None).__class__
+            caller_classname:str = self.__class__.__name__
+            
+            caller_classname = re.sub(r"Controller$", "", caller_classname).lower()
+                
             #caller_file = os.path.basename(caller.filename) 
-            if local2context and not context:
+            if local2context:
                 del caller_locals['self']
                 context.update(caller_locals)
             if not view_path:
@@ -179,24 +202,10 @@ class BaseController:
                     version_path = f"{self.__version__}/"
                 else:
                     version_path = ""
-                view_path = f"{caller_classname}/{version_path}{caller_function_name}.html" 
-            return view_path,context
-
-        if not view_path:    
-            caller_frame = inspect.currentframe()
-            caller_frame = caller_frame.f_back
-            #find frame the target controller's action method
-            frame_info = inspect.getframeinfo(caller_frame)
-            action_frame = caller_frame
-            while(frame_info[2]!='decorator' and not frame_info[0].endswith('controller_utils.py')):
-                caller_frame = caller_frame.f_back
-                frame_info = inspect.getframeinfo(caller_frame)
-                if not frame_info[2]=='decorator' and not frame_info[0].endswith('controller_utils.py'):
-                    action_frame = caller_frame
-            view_path,context = get_path(action_frame)
+                view_path = f"{caller_classname}/{version_path}{caller_function_name}.{format}" 
+         
         
-        if not isinstance(context,dict):
-            context = {}
+        
         if not 'flash' in context:
             context['flash'] = self._request.session['flash']
         template_path = os.path.join(self.__appdir__,"views")
@@ -239,7 +248,7 @@ class BaseController:
         
         url = self.request.url.scheme + "://" + self.request.url.netloc + save_file
         return save_file,url
-    async def _constructor_(base_controller_class,request:Request,response:Response):  
+    async def __constructor__(base_controller_class,request:Request,response:Response):  
         '''don't call this'''
         
         if not _session_key in request.cookies or not request.cookies[_session_key]:
@@ -283,7 +292,7 @@ class BaseController:
             lang = query_params[url_lang_key]
             request.session['lang'] = [lang]
         
-    async def _deconstructor_(base_controller_class,new_response:Response):  
+    async def __destructor__(base_controller_class,new_response:Response):  
         '''do not call this anywhere'''
         def process_cookies(response:Response, cookies,old_cookies):
             
