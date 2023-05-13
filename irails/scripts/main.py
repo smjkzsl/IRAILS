@@ -11,6 +11,19 @@ def _ensure_cli():
         sys.argv[0] = 'irails'
 _ensure_cli()
 
+def is_dev_mode(path):
+    dev_mode = True
+    irails_srcs = ['__init__.py','_i18n.py','_loader.py','_utils.py','auth.py','base_controller.py','cbv.py']
+    for src in irails_srcs:
+        p = os.path.join(path,src)
+        if not os.path.exists(p):
+            dev_mode = False
+    return dev_mode
+curdir = os.path.abspath(os.curdir)
+project_root = os.path.abspath(os.path.join(curdir,"../.."))
+if is_dev_mode(os.path.join(project_root,'irails')): 
+    sys.path.insert(-1, project_root)
+    
 sys.path.insert(-1,os.path.abspath(os.curdir))
 from irails import __version__
 def collect_features():

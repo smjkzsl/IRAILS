@@ -1,0 +1,7 @@
+from irails.unit_test import *
+
+class test_{{ctrl_path}}(ControllerTest):
+    {% for act in actions %}
+    def test_{{act}}(self):
+        self.assertEqual(self.client.get("/{{ctrl_path}}/{{act}}").status_code,200)
+    {% endfor %}

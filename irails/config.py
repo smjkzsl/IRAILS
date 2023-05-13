@@ -7,6 +7,11 @@ from typing import Dict
 import os.path
 import re
 
+def is_cli_mode():
+    executeble = sys.argv[0]
+    executeble = os.path.basename(executeble)
+    # print(f"current executeble:" + executeble)
+    return (executeble.lower().startswith('irails'))
 
 def is_in_app(directory):
     """
@@ -21,25 +26,19 @@ def is_in_app(directory):
     if not os.path.exists(views_dir):
         print(f"can't location `views` dir")
         return False
-    # initfile = os.path.join(controller_dir, '__init__.py')
-    # if not os.path.exists(initfile):
-    #     return False
-
+ 
     return True
 
 
 def is_in_irails(directory):
     """
     check exists configs dir,   main.py and configs/general.yaml 
-    """
-
-    configs_dir = os.path.join(directory, 'configs')
-    # main_file = os.path.join(directory, 'main.py')
+    """ 
+    configs_dir = os.path.join(directory, 'configs') 
 
     if not os.path.exists(configs_dir):  # or not os.path.exists(main_file):
         return False
-    general_file = os.path.join(configs_dir, 'general.yaml')
-
+    general_file = os.path.join(configs_dir, 'general.yaml') 
     if not os.path.exists(general_file):
         return False
 
@@ -51,11 +50,6 @@ ROOT_PATH = os.path.realpath(os.curdir)
 IS_IN_irails = is_in_irails(ROOT_PATH)
 
 
-def is_cli_mode():
-    executeble = sys.argv[0]
-    executeble = os.path.basename(executeble)
-    # print(f"current executeble:" + executeble)
-    return (executeble.lower().startswith('irails'))
 
 
 def _extract_name(string):
@@ -178,8 +172,13 @@ class YamlConfig:
                     "{" + name + "}", self.config.get(name, ""))
         return value
 
-
-config = YamlConfig(os.path.join(ROOT_PATH, "configs"))
+if is_in_app(ROOT_PATH):
+    ROOT_PATH = os.path.join(ROOT_PATH,"../..")
+    config = YamlConfig( os.path.join(ROOT_PATH,"configs"))
+elif IS_IN_irails:
+    config = YamlConfig(os.path.join(ROOT_PATH, "configs"))
+else:
+    print(f"configs dir not found anywhere!")
 _project_name = os.path.basename(ROOT_PATH)
 debug = False
 

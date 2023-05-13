@@ -97,7 +97,10 @@ class Generator():
             if not self.is_valid_class_name(controller_name):
                 print(f"{controller_name} is a not valided class name,exit...")
                 exit() 
-            
+            acts = []
+            actions = self.args.name
+            if len(actions)==0:actions.append('index')
+
             dirs_items =  {
                 'controllers':{'tpl':'controller.tpl','dest':f'controllers/{controler_path_name}_controller.py','micro':True} , 
                 'models': {'tpl':'model.tpl','dest' : f'models/{controler_path_name}_model.py','micro':True},
@@ -107,9 +110,9 @@ class Generator():
                     {'tpl' : 'css.tpl','dest': f'views/{controler_path_name}/index.css','micro':False}
                     ] ,
                 
-                'tests': {'tpl':'test.tpl','dest': f'tests/test_{controler_path_name}.py','micro':True}
+                'tests': {'tpl':'test_controller.jinja','dest': f'tests/test_{controler_path_name}.py','micro':True}
             }
-            context = {'ctrl_name':controller_name.title(),'ctrl_path':controler_path_name}
+            context = {'ctrl_name':controller_name.title(),'ctrl_path':controler_path_name,'actions':actions}
             for dir in dirs_items:
                 _current_dir = store_dir#os.path.join(store_dir,dir)
                 os.makedirs(_current_dir,exist_ok=True)
@@ -131,9 +134,7 @@ class Generator():
             self.ensure_line(__init_file,f"from . import {controler_path_name}_model")
             __init_file = os.path.join(_current_dir,'services','__init__.py')
             self.ensure_line(__init_file,f"from . import {controler_path_name}_service")
-            acts = []
-            actions = self.args.name
-            if len(actions)==0:actions.append('index')
+            
             for action in actions:
                 acts.append(f"""
     @api.get('/{action}')

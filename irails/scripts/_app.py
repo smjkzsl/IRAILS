@@ -163,6 +163,7 @@ class HomeController(BaseController):
             context = {'app':app_name}
             for dir in dirs_items:
                 _current_dir = os.path.join(store_dir,dir)
+                print(f"creating {_current_dir}")
                 os.makedirs(_current_dir,exist_ok=True)
                  
             # _init_file = os.path.normpath(os.path.join(store_dir,'__init__.py'))

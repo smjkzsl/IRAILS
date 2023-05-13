@@ -14,7 +14,7 @@ from casbin.persist.adapters import FileAdapter
 from casbin.persist.adapter import Adapter
 # from .midware_casbin import CasbinMiddleware
  
-from .config import config
+from .config import config,ROOT_PATH
 from .log import _log
 import jwt
 from datetime import datetime, timedelta
@@ -251,7 +251,8 @@ def init(app:FastAPI,backend:AuthenticationBackend,adapter_class:Type=None,**kwa
     cfg = config.get("auth")
     adapter_uri = kwagrs.get('adapter_uri',None)
     del kwagrs['adapter_uri']
-    model_file = cfg.get("auth_model",'./configs/casbin-model.conf')    
+    model_file = cfg.get("auth_model",'./configs/casbin-model.conf') 
+    model_file = os.path.abspath(os.path.join(ROOT_PATH,model_file))   
     adapter = adapter_class(adapter_uri)
     enforcer = casbin.Enforcer(model_file, adapter)
    

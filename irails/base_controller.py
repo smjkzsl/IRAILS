@@ -3,7 +3,7 @@ import re
 from fastapi import FastAPI,UploadFile,File,Header, Depends,HTTPException,Request,Response, status as StateCodes
 from fastapi.responses import RedirectResponse,HTMLResponse,PlainTextResponse
 from .view import _View
- 
+from ._utils import get_controller_name,get_snaked_name
 from .config import config,ROOT_PATH
 from .log import _log
 import os,uuid
@@ -37,7 +37,10 @@ else:
     url_lang_key = 'lang'
 
  
-
+def get_controller_path_from_class_name(class_name):
+    class_name = re.sub(r"Controller$", "", class_name) 
+    class_name = get_snaked_name(class_name)
+    return class_name
 def url_for(url:str="",**kws): 
     url = url.strip()
     if url and url.startswith("/"):
@@ -170,7 +173,7 @@ class BaseController:
                 return Response(content=content,**kwargs)
         if not view_path and hasattr(self.request.state,'action'):
             func = self.request.state.action.replace(self.__class__.__name__+'.','')
-            vpath = re.sub(r"Controller$", "", self.__class__.__name__).lower()
+            vpath = re.sub(r"Controller$", "", get_controller_path_from_class_name(self.__class__.__name__)).lower()
              
             if self.__version__:
                 vpath += f'/{self.__version__}'
@@ -192,9 +195,8 @@ class BaseController:
             caller_locals = action_frame.f_locals
             # caller_class = caller_locals.get("self", None).__class__
             caller_classname:str = self.__class__.__name__
+            caller_classname = get_controller_path_from_class_name(caller_classname)
             
-            caller_classname = re.sub(r"Controller$", "", caller_classname).lower()
-                
             #caller_file = os.path.basename(caller.filename) 
             if local2context:
                 del caller_locals['self']

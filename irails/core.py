@@ -303,14 +303,14 @@ def api_router(path:str="", version:str="",**allargs):
        
         _view_url_path:str = url_path.replace("{controller}",controller_name).replace("{version}",version)  
         
-        controller_current_view_path = abs_path + '/views/' + controller_name.lower()  
+        controller_current_view_path = abs_path + '/views/' + get_snaked_name(controller_name)
         if version:
             controller_current_view_path += '/' + version
         setattr(puppetController,"__view_url__",_view_url_path) 
 
         #add app dir sub views to StaticFiles
         if not controller_current_view_path in application._app_views_dirs: #ensure  load it once
-            application._app_views_dirs[controller_current_view_path] = _view_url_path 
+            application._app_views_dirs[controller_current_view_path.lower()] = _view_url_path.lower() 
             #path match static files
             
             
@@ -374,7 +374,7 @@ def generate_mvc_app():
     
     
     
-    _log.info(_("\n\init mvc app..."))
+    _log.info(_("loading irails apps..."))
     loaded,unloaded=_load_apps(debug=__is_debug) 
     _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %(loaded,unloaded))  
     if not len(__all_controller__)>0:
@@ -403,9 +403,10 @@ def generate_mvc_app():
     check_db_migrate()
 
     if _casbin_adapter_class and _adapter_uri:
+        _adapter_uri = os.path.abspath(os.path.join(ROOT_PATH,_adapter_uri))
         _log.info(_("init casbin auth system..."))
         application.authObj = __init_auth(application,auth_type,_casbin_adapter_class,_adapter_uri)
-    _log.info(_("init mvc app end."))
+    _log.info(_("load irails apps finished."))
     return application
 # import subprocess
 # import time
