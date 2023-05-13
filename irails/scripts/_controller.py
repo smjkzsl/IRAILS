@@ -112,7 +112,7 @@ class Generator():
                 
                 'tests': {'tpl':'test_controller.jinja','dest': f'tests/test_{controler_path_name}.py','micro':True}
             }
-            context = {'ctrl_name':controller_name.title(),'ctrl_path':controler_path_name,'actions':actions}
+            context = {'ctrl_name':controller_name,'ctrl_path':controler_path_name,'actions':actions}
             for dir in dirs_items:
                 _current_dir = store_dir#os.path.join(store_dir,dir)
                 os.makedirs(_current_dir,exist_ok=True)

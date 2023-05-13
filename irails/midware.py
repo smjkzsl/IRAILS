@@ -76,7 +76,7 @@ class MvcStaticFiles(StaticFiles):
 def mount_statics(app,static_paths={},debug=False):
     __roots = {}
     if not static_paths:
-        static_paths = app._app_views_dirs
+        static_paths = app.app_views_dirs
     for _dir  in  static_paths: 
         
         _url:str = static_paths[_dir] 
