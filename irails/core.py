@@ -150,7 +150,7 @@ def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
         raise RuntimeError(_("%s auth type not support") % auth_type)
     
     
-    secret_key = config.get("auth").get(f"{auth_type}_key","")
+    secret_key = config.get("auth").get(f"secret_key","")
     kwargs = {'secret_key':secret_key,'adapter_uri':__adapter_uri} 
     return auth.init(app=app, backend = auth_class,adapter_class=casbin_adapter_class, **kwargs)
 
