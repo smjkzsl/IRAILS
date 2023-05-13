@@ -1,11 +1,11 @@
-import sys,os,importlib
+import sys,os,importlib,datetime
 from irails import __version__
 from irails.config import is_in_app, is_in_irails,YamlConfig
 cur_dir = os.path.abspath(os.curdir)
 root_path = os.path.abspath(os.path.join(cur_dir,"../.."))
 config = YamlConfig(os.path.join(root_path,"configs"))
 locales_path = os.path.abspath('locales') 
-
+dev_mode = True
 import glob
 
 def get_html_vue_files(_root_path):
@@ -149,7 +149,7 @@ def convert_pot2po():
     else:
         print("messages.pot des'nt exists!")
         return
-    import datetime
+    
     d1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M%z')
     year = datetime.datetime.now().strftime('%Y')
      
@@ -160,6 +160,15 @@ def convert_pot2po():
             continue
         header = po_header.replace("{d1}",d1).replace("{d2}",d2).replace("{lang}",lang).replace("{YEAR}",year).replace("{version}",__version__)
         path = os.path.join(locales_path,f"{lang}.po")
+        #backup 
+        if os.path.exists(path):
+            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S") 
+            backup_filename = os.path.join(locales_path,f"{lang}_{timestamp}_bak.po")
+            #  
+            with open(path, "rb") as src_file:
+                with open(backup_filename, "wb") as backup_file:
+                    backup_file.write(src_file.read())
+
         with open(path,'w') as f:
             f.write(header+"\n"+_pot_content)
             
@@ -167,6 +176,7 @@ def convert_pot2po():
         #gen html files
 
 def do_command(i18n_tool_file:str):
+    global dev_mode
     if i18n_tool_file.lower()=='gettext':
         i18n_tool_file='pygettext'
     if i18n_tool_file=='pygettext':
@@ -174,8 +184,11 @@ def do_command(i18n_tool_file:str):
         if not os.path.exists(locales_path):
             os.makedirs(locales_path,exist_ok=True)
         if len(sys.argv)<2:
-            for d in ['controllers','services','models']:
-                sys.argv.append(d)
+            if dev_mode:
+                sys.argv.append(cur_dir)
+            else:
+                for d in ['controllers','services','models']:
+                    sys.argv.append(d)
 
         if not '-o' in sys.argv:
             sys.argv.insert(1,'-o') 
@@ -196,11 +209,17 @@ def do_command(i18n_tool_file:str):
         print(f"not found tools file:{i18n_tool_file}")
 def main(): 
     #irails pygettext  -a -o messages.pot /path/to/your/dir/*.py
-    
+    global dev_mode
+    irails_srcs = ['__init__.py','_i18n.py','_loader.py','_utils.py','auth.py','base_controller.py','cbv.py']
+    for src in irails_srcs:
+        p = os.path.join(cur_dir,src)
+        if not os.path.exists(p):
+            dev_mode = False
     if os.path.exists(root_path) and  os.path.isdir(root_path): 
         if not is_in_irails(root_path) or not is_in_app(cur_dir):
             print(f"Please exec in irails project's app dir ,like `apps/app`")
-            exit()
+            if not dev_mode:
+                exit()
     if len(sys.argv)>=2:
          
         cmd = sys.argv.pop(1)

@@ -61,7 +61,7 @@ def check_compile_po(localedir,lang):
         if module:
             module.make(po_file,mo_file)
         else:
-            print(f"not found tools file : mfgmft")
+            print(f"not found tools file : {_tools_file}")
     # 判断po文件是否存在
     if os.path.exists(po_file): 
         if os.path.exists(mo_file):

@@ -9,9 +9,14 @@ from sqlalchemy.orm import sessionmaker
 #copied from:https://github.com/pycasbin/sqlalchemy-adapter/blob/master/casbin_sqlalchemy_adapter/adapter.py
 #Base = declarative_base()
 from irails import database
-
+from irails.config import config
+rule_table = 'casbin_rule'
+cfg = config.get("auth")
+if cfg and 'adapter_table' in cfg:
+    rule_table = cfg.get('adapter_table','casbin_rule')
+    
 class CasbinRule(database.Base):
-    __tablename__ = "casbin_rule"
+    __tablename__ = rule_table
 
     id = Column(Integer, primary_key=True)
     ptype = Column(String(255))

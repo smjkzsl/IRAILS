@@ -147,11 +147,13 @@ class BaseController:
         pass
      
     # @property
-    def view(self,content:str="",view_path:str="", format:str="html", context: dict={},local2context:bool=True,**kwargs): 
+    def view(self,content:str="",view_path:str="", format:str="html", context: dict=None,local2context:bool=True,**kwargs): 
         """
         return a Response by template file
         if :view_path is empty ,it's will look for current method in the view directory(offen is app dir views\controller's name)
         """
+        if not context:
+            context={}
         if not isinstance(context,dict):
             if hasattr(context,'__dict__'):
                 context = getattr(context,'__dict__')
@@ -212,7 +214,8 @@ class BaseController:
         viewobj = _View(self._request,self._response, tmpl_path=template_path) 
         viewobj._templates.env.globals["url_for"] = url_for 
         viewobj._templates.env.globals["_"] = self._ 
-        return viewobj(view_path,context,**kwargs)
+        response_result = viewobj(view_path,context,**kwargs)
+        return response_result
     
     async def _save_upload_file(self,file:File):  
         """return the file to saved path and http URL"""
