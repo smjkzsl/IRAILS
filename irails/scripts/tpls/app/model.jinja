@@ -1,0 +1,27 @@
+from irails import database
+from sqlalchemy import Table,Column,ForeignKey,String,Integer
+from sqlalchemy.orm import Mapped,mapped_column,relationship
+ 
+class {{model_name}}(database.Base):
+    __tablename__ = "{{model_plural_name}}" 
+    {% if not 'id' in columns -%}
+    id: Mapped[int] = mapped_column(primary_key=True) 
+    {%- endif -%} 
+    {%- for col in columns -%}
+        {% if ':' in col %}
+            {% set col_type = col.split(":")[1]+'()' %}
+            {% if col_type == 'int()' %}
+            {% set col_type = "Integer()" %}
+            {% endif %}
+            {% set col_name = col.split(":")[0]  %}
+        {% else %}
+            {% set col_type = "String(50)" %}
+            {% set col_name = col  %}
+        {% endif %}
+    {{col_name}}: Mapped[str] = mapped_column({{col_type}})
+    {%- endfor -%}
+
+    {%- if 'name' in columns %}
+    def __repr__(self) -> str:
+        return f"{{model_name}}(id={self.id!r}, name={self.name!r})" 
+    {%- endif -%}

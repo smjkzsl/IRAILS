@@ -17,6 +17,7 @@ Simple and elegant use of FastApi in MVC mode
 * `irails app [app-name(choose or input apps dir)]` - Example: `irails app admissions` Create a new irails app.
 * `irails run [--host host] [--port port]`          - Run project visit on [http://127.0.0.1:8000>](http://127.0.0.1:8000). 
 * `irails controller [actions...]`                  - generate a controller with given actions(if no given,defalut is **index**). 
+* `irails model [columns...]`                       - generate a model(and model's service and tests) with given columns(if no given,defalut is **id**). 
  
 
 ## Project layout

@@ -1,0 +1,30 @@
+from irails.database import Service
+from sqlalchemy import select
+from typing import List
+from {{app_name}}.models import {{model_name}}
+
+class {{service_name}}(Service):
+    def get(self,id:int)->{{model_name}}:
+        session = self.session()
+        return session.get({{model_name}},id)
+    def list(self):
+        session = self.session()
+        statement = select({{model_name}}) 
+
+        # list of ``{{model_name}}`` objects
+        # objects = session.scalars(statement).all()
+ 
+        # list of Row objects
+        rows = session.execute(statement).all()
+        return rows
+    def add(self,{{model_path_name}}:{{model_name}}):
+        session = self.session()
+        session.add({{model_path_name}})
+        session.commit()
+        session.merge({{model_path_name}})
+        return {{model_path_name}}
+        
+    def delete(self,{{model_path_name}}:{{model_name}}):
+        with self.get_session() as session:
+            session.delete({{model_path_name}})
+        

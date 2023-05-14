@@ -1,0 +1,25 @@
+from irails.unit_test import *
+from {{app_name}}.services import {{service_name}}
+from {{app_name}}.models.{{model_path_name}} import {{model_name}}
+
+class Test{{service_name}}(ServiceTest):
+    
+    def test_{{service_path_name}}(self):
+        service:{{service_name}} = {{service_name}}()
+        obj = {{model_name}}()
+        {%- for col in columns -%}
+            {% if ':' in col %}
+                {% set col_type = col.split(":")[1] %}
+                {% set col_name = col.split(":")[0] %}
+            {% else %}
+                {% set col_type = "String(50)" %}
+                {% set col_name = col  %}
+            {% endif %}
+        {%- if col!='id' %}
+        obj.{{col_name}} = "new_value"
+        {% endif -%}
+        {% endfor -%}
+        service.add(obj)
+        id = obj.id
+        query_obj = service.get(id)
+        self.assertEqual(obj,query_obj)

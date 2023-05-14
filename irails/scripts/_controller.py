@@ -2,7 +2,7 @@ import argparse
 import sys,os,re
 from typing import Any
 from jinja2 import Template
-from irails._utils import is_valid_filename,get_controller_name,get_snaked_name
+from irails._utils import is_valid_filename,get_controller_name,get_snaked_name,to_camel_case,ensure_line
 from  irails.config import is_in_irails,is_in_app
 
 class Generator():
@@ -54,28 +54,7 @@ class Generator():
         if keyword.iskeyword(name):
             return False 
         return True
-    def ensure_line(self,filepath, line_to_add):
-        found = False
-        lines = []
-        if os.path.exists(filepath):
-            # Read in the file
-            with open(filepath, 'r') as file:
-                lines = file.readlines()
-
-                # Check if the line is already in the file
-                for line in lines:
-                    if line.strip() == line_to_add.strip():
-                        found = True
-                        break
-        else:
-            with open(filepath,'w') as file:
-                file.write(line_to_add)
-            return True              
-        # If the line is not in the file, add it
-        if not found:
-            lines.append('\n' + line_to_add.strip() + '\n')
-            with open(filepath, 'w') as file:
-                file.writelines(lines)
+    
 
     def __call__(self) -> Any:
          
@@ -89,8 +68,8 @@ class Generator():
                 exit() 
 
             store_dir = self.dir
-            controller_name:str = name
-            controler_path_name = get_snaked_name(controller_name)
+            controller_name:str = to_camel_case(name)
+            controler_path_name = get_snaked_name(name)
             # store_dir = os.path.join(store_dir,controler_path_name )
             
             # controller_name = self.str_to_upper(name)
@@ -103,8 +82,8 @@ class Generator():
 
             dirs_items =  {
                 'controllers':{'tpl':'controller.tpl','dest':f'controllers/{controler_path_name}_controller.py','micro':True} , 
-                'models': {'tpl':'model.tpl','dest' : f'models/{controler_path_name}_model.py','micro':True},
-                'services':{'tpl':'service.tpl','dest': f'services/{controler_path_name}_service.py','micro':True },
+                'models': {'tpl':'model.jinja','dest' : f'models/{controler_path_name}_model.py','micro':True},
+                'services':{'tpl':'service.jinja','dest': f'services/{controler_path_name}_service.py','micro':True },
                 'views': [
                     {'tpl' : 'view.tpl','dest': f'views/{controler_path_name}/index.html','micro':False},
                     {'tpl' : 'css.tpl','dest': f'views/{controler_path_name}/index.css','micro':False}
@@ -129,11 +108,11 @@ class Generator():
                     self.gen_tpl(tpl_file=tpl,dest=dest,context=context,use_micro=micro,dir_only=dir=='controllers') 
             controller_file = os.path.join(_current_dir,'controllers',f"{controler_path_name}_controller.py")
             __init_file = os.path.join(_current_dir,'controllers','__init__.py')
-            self.ensure_line(__init_file,f"from . import {controler_path_name}_controller")
+            ensure_line(__init_file,f"from . import {controler_path_name}_controller")
             __init_file = os.path.join(_current_dir,'models','__init__.py')
-            self.ensure_line(__init_file,f"from . import {controler_path_name}_model")
+            ensure_line(__init_file,f"from . import {controler_path_name}_model")
             __init_file = os.path.join(_current_dir,'services','__init__.py')
-            self.ensure_line(__init_file,f"from . import {controler_path_name}_service")
+            ensure_line(__init_file,f"from . import {controler_path_name}_service")
             
             for action in actions:
                 acts.append(f"""

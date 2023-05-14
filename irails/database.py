@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from sqlalchemy import create_engine,Engine,MetaData, Table, Column, ForeignKey,select,join,TableClause
+from sqlalchemy import create_engine,Engine,MetaData, Table, Column, ForeignKey,select,join,TableClause,update
 from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker
 from sqlalchemy import text,TextClause
 from sqlalchemy.ext.automap import automap_base
@@ -23,6 +23,18 @@ class Base(DeclarativeBase):
 class Service():
     __all_generated = {}
     engine:Engine = engine
+    @classmethod
+    def session(self):
+        if hasattr(self,"_session"):
+            return self._session
+        if hasattr(self,'_session_local'):
+            session_local = getattr(self,'_session_local')
+        else:
+            session_local =  sessionmaker(bind=engine)
+            setattr(self,"_session_local", session_local) #cache sessionmaker object
+        session = session_local()
+        setattr(self,"_session",session)
+        return session
     
     @classmethod
     @contextmanager 
@@ -37,6 +49,7 @@ class Service():
             session_local =  sessionmaker(bind=engine)
             setattr(cls,"_session_local", session_local) #cache sessionmaker object
         session = session_local()
+         
         try:
             yield session
             session.commit()

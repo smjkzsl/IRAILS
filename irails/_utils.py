@@ -6,9 +6,20 @@ import os
 snake_case_re = re.compile("(?<!^)(?=[A-Z][a-z])")
 controller_re = re.compile("([\\w]+)Controller")
 
-
+_pluralizer = None
 def get_controller_name(controller_name):
     return controller_re.match(controller_name).group(1)
+ 
+def to_camel_case(x):
+    """转大驼峰法命名"""
+    s = re.sub('_([a-zA-Z])', lambda m: (m.group(1).upper()), x )
+    return s[0].upper() + s[1:]
+def get_plural_name(name:str):
+    import inflect
+    global _pluralizer
+    if not _pluralizer:
+        _pluralizer = inflect.engine()
+    return _pluralizer.plural(name)
 
 def get_snaked_name(_name:str):
     return snake_case_re.sub("_", _name).lower()
@@ -23,6 +34,29 @@ def is_valid_filename(filename):
     if ' ' in filename:
         return False
     return True
+
+def ensure_line(filepath, line_to_add):
+    found = False
+    lines = []
+    if os.path.exists(filepath):
+        # Read in the file
+        with open(filepath, 'r') as file:
+            lines = file.readlines()
+
+            # Check if the line is already in the file
+            for line in lines:
+                if line.strip() == line_to_add.strip():
+                    found = True
+                    break
+    else:
+        with open(filepath,'w') as file:
+            file.write(line_to_add)
+        return True              
+    # If the line is not in the file, add it
+    if not found:
+        lines.append('\n' + line_to_add.strip() + '\n')
+        with open(filepath, 'w') as file:
+            file.writelines(lines)
 def is_datetime_format(s):
     if not isinstance(s,str) or not str:
         return False 
@@ -49,7 +83,7 @@ class iJSONEncoder(JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
  
-import inflect
+
 
 def camelize_classname(base, tablename, table):
     "Produce a 'camelized' class name, e.g. "
@@ -58,11 +92,14 @@ def camelize_classname(base, tablename, table):
     return str(tablename[0].upper() + \
             re.sub(r'_([a-z])', lambda m: m.group(1).upper(), tablename[1:]))
 
-_pluralizer = inflect.engine()
+
 def pluralize_collection(base, local_cls, referred_cls, constraint):
     "Produce an 'uncamelized', 'pluralized' class name, e.g. "
     "'SomeTerm' -> 'some_terms'"
-
+    import inflect
+    global _pluralizer
+    if not _pluralizer:
+        _pluralizer = inflect.engine()
     referred_name = referred_cls.__name__
     uncamelized = re.sub(r'[A-Z]',
                          lambda m: "_%s" % m.group(0).lower(),

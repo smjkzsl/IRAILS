@@ -27,10 +27,10 @@ def do_test_app():
         module = load_module(name,test_files[name])
         if module:
             sys.argv = [test_files[name]]
-            unittest.main(module=module )
+            unittest.main(module=module,exit=False )
 
 def do_test_project():
-    unittest.main()
+    unittest.main(exit=False)
 
 def main():
     
