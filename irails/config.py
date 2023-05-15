@@ -21,10 +21,10 @@ def is_in_app(directory):
     controller_dir = os.path.join(directory, 'controllers')
     views_dir = os.path.join(directory, 'views')
     if not os.path.exists(controller_dir):
-        print(f"can't location `controller` dir")
+        #print(f"can't location `controller` dir")
         return False
     if not os.path.exists(views_dir):
-        print(f"can't location `views` dir")
+        #print(f"can't location `views` dir")
         return False
  
     return True

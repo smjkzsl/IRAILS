@@ -52,7 +52,7 @@ def _load_app(app_dir):
             else:
                 pass
     return cnt
-def _load_apps(debug=False):
+def _load_apps(debug=False,do_load:bool=True):
     global app_dirs,app_enabled
     app_cfg=config.get('app')
     if app_cfg:
@@ -60,23 +60,31 @@ def _load_apps(debug=False):
         app_enabled = app_cfg.get("enabled")
     unloaded = 0
     loaded = 0
+    apps = []
     for app_dir in app_dirs:
         abs_app_dir=os.path.abspath(os.path.join(ROOT_PATH,app_dir))
         app_list =  __list_directories(abs_app_dir)
         for app in app_list:
             if __check_if_enabled(app):  
-                #_dir = os.path.join(app_dir,app)
-                _abs_app_path =  abs_app_dir
-                if _abs_app_path not in sys.path:
-                    sys.path.insert(-1,_abs_app_path)
-                debug and print('load app:'+app)
-                n = _load_app(app)
-                if n:
-                    loaded = loaded + 1
+                if do_load:
+                    #_dir = os.path.join(app_dir,app)
+                    _abs_app_path =  abs_app_dir
+                    if _abs_app_path not in sys.path:
+                        sys.path.insert(-1,_abs_app_path)
+                    debug and print('load app:'+app)
+                    n = _load_app(app)
+                    if n:
+                        loaded = loaded + 1
+                    else:
+                        unloaded = unloaded + 1
                 else:
-                    unloaded = unloaded + 1
+                    #just return the app list
+                    apps.append( f"{app_dir}.{app}" )
             else:
-                unloaded = unloaded + 1
+                if do_load:
+                    unloaded = unloaded + 1
         
-    
-    return loaded,unloaded
+    if do_load:
+        return loaded,unloaded
+    else:
+        return apps
