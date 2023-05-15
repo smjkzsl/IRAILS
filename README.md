@@ -63,6 +63,7 @@ Simple and elegant use of FastApi in MVC mode
 ## Extras commands
 * `irails i18n gettext`  --generate i18n in irails app dir
 * `irails shell`         --run python interpreter with buildin support contexts 
+* `irails test`          --run project tests 
 
 ## Take a look configure file `general.yaml`
  

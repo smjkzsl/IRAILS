@@ -54,7 +54,9 @@ def main():
      
     args = parser.parse_args()
     
-    
+    if not args.feature:
+        parser.print_help()
+        exit()
     args.feature = '_' +args.feature
     
     module_path = os.path.join(module_dir, args.feature + '.py')

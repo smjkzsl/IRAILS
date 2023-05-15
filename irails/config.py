@@ -178,7 +178,8 @@ if is_in_app(ROOT_PATH):
 elif IS_IN_irails:
     config = YamlConfig(os.path.join(ROOT_PATH, "configs"))
 else:
-    print(f"configs dir not found anywhere!")
+    # print(f"configs dir not found anywhere!")
+    config = {}
 _project_name = os.path.basename(ROOT_PATH)
 debug = False
 
