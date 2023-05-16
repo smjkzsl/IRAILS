@@ -20,7 +20,7 @@ import jwt
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, Type, Union,Dict
 from ._utils import iJSONEncoder,is_datetime_format
-
+from ._i18n import _
 AUTH_EXPIRED='[EXPIRED]!'
 
 _session_name:str = ""
@@ -60,9 +60,9 @@ class CasbinAuth:
         try:
             scheme, token = authorization.split()
         except ValueError as e:
-            raise AuthenticationError('Could not separate Authorization scheme and token') from e 
+            raise AuthenticationError(_('Could not separate Authorization scheme and token')) from e 
         if scheme.lower() != prefix.lower():
-            raise AuthenticationError(f'Authorization scheme {scheme} is not supported')
+            raise AuthenticationError( _('Authorization scheme %s is not supported') % {scheme})
         return token
     def get_user_from_request(self,request:Request,prefix:str="Bearer",is_jwt:bool=False,**kwargs) : 
         userobj = request.session.get(self.__session_name)
@@ -80,7 +80,8 @@ class CasbinAuth:
                 try:
                     payload = jwt.decode(token,**kwargs)
                 except jwt.InvalidTokenError as e:
-                    _log.debug('token:'+token + f' has been expired.{e.args}')
+                    msg = _('token %s has been expired(%s)'%(token,e.args))
+                    _log.debug(msg)
                     request.session[self.__session_name] = None
                     return "","",None
                 if is_datetime_format(payload['exp']):
@@ -228,16 +229,16 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
                 minutes=expires_delta
             )
         if isinstance(user,str):
-            userObj = {"exp": expire, "username": user }
+            auth_user_obj = {"exp": expire, "username": user }
         elif isinstance(user,JWTUser):
-            userObj = {"exp": expire, "username": user.username}
+            auth_user_obj = {"exp": expire, "username": user.username}
         elif isinstance(user,BaseUser):
-            userObj = {"exp": expire, "username": user.display_name}
+            auth_user_obj = {"exp": expire, "username": user.display_name}
         request:Request = kwargs['request']
         
-        access_token = jwt.encode(userObj, self.secret_key ,self.algorithm )
-        userObj.update({"token":access_token})
-        request.session[_session_name] = userObj
+        access_token = jwt.encode(auth_user_obj, self.secret_key ,self.algorithm )
+        auth_user_obj.update({"token":access_token})
+        request.session[_session_name] = auth_user_obj
         return access_token
     
 _casbin_auth:CasbinAuth = None
@@ -284,5 +285,5 @@ def get_adapter_module(name:str)->Adapter:
     if module and hasattr(module,'Adapter'):
         return getattr(module,'Adapter')   
     else:
-        raise RuntimeError("Can't load module:{module_path}")
+        raise RuntimeError(_("Can't load module:%s") % module_path)
  

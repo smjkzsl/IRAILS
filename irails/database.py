@@ -12,6 +12,7 @@ import configparser
 import re,os
 from typing import Union
 from .log import _log
+from ._i18n import _
 DataMap = None
 mapped_base = None
 engine:Engine=None 
@@ -102,12 +103,12 @@ class Service():
 
 
             
-def ismongo_cloud(uri):
-    import re 
-    # uri = 'mongodb+srv://dbbruce:smjk123@atlascluster.siz4vrp.mongodb.net/?retryWrites=true&w=majority' 
-    # 匹配 MongoDB Cloud 连接字符串的正则表达式
-    regex = re.compile("mongodb\+srv:\/\/.*@.*\.mongodb\.net\/.*\?.*") 
-    return regex.match(uri)
+# def ismongo_cloud(uri):
+#     import re 
+#     # uri = 'mongodb+srv://dbbruce:smjk123@atlascluster.siz4vrp.mongodb.net/?retryWrites=true&w=majority' 
+#     # 匹配 MongoDB Cloud 连接字符串的正则表达式
+#     regex = re.compile("mongodb\+srv:\/\/.*@.*\.mongodb\.net\/.*\?.*") 
+#     return regex.match(uri)
       
 
 def sanitize_path(path):
@@ -165,7 +166,7 @@ def init_database( uri:str,debug:bool=False,cfg=None):
         db_directory = os.path.dirname(uri.split(':///')[1])
         os.makedirs(db_directory, exist_ok=True) 
 
-    engine = create_engine(uri,  echo=debug)
+    engine = create_engine(uri,  echo=False)
     dbfirst = cfg.get("dbfirst")
     maptables = cfg.get("maptables")
     

@@ -1,0 +1,151 @@
+
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+msgid ""
+msgstr ""
+
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2023-05-13 13:57\n"
+"PO-Revision-Date: 2023-05-13 13:57\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: irails i18n 1.3.5\n"
+
+
+
+#: E:\codedemo\IRAILS\irails\_loader.py:41
+msgid "Loading module:%s"
+msgstr "模块加载中:%s"
+
+#: E:\codedemo\IRAILS\irails\_loader.py:48
+msgid "load app %s failed"
+msgstr "APP %s 加载失败"
+
+#: E:\codedemo\IRAILS\irails\core.py:51
+msgid "Please use api.http,MVC app not allow to use this direct!"
+msgstr "请使用`api.http`,MVC 程序禁止这样直接调用!"
+
+#: E:\codedemo\IRAILS\irails\core.py:55
+msgid "Please use api.post,MVC app not allow to use this direct!"
+msgstr "请使用`api.post`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:60
+msgid "Please use api.get,MVC app not allow to use this direct!"
+msgstr "请使用`api.get`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:63
+msgid "Please use api.head,MVC app not allow to use this direct!"
+msgstr "请使用`api.head`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:67
+msgid "Please use api.put,MVC app not allow to use this direct!"
+msgstr "请使用`api.put`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:71
+msgid "Please use api.delete,MVC app not allow to use this direct!"
+msgstr "请使用`api.delete`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:75
+msgid "Please use api.options,MVC app not allow to use this direct!"
+msgstr "请使用`api.options`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:79
+msgid "Please use api.patch,MVC app not allow to use this direct!"
+msgstr "请使用`api.patch`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:83
+msgid "Please use api.trace,MVC app not allow to use this direct!"
+msgstr "请使用`api.trace`,MVC 程序禁止这样直接调用"
+
+#: E:\codedemo\IRAILS\irails\core.py:97
+msgid "public_auth_url only can be setting once time,current is:%s"
+msgstr "public_auth_url 仅可设置一次，当前已设置为: `%s`"
+
+#: E:\codedemo\IRAILS\irails\core.py:107
+msgid "user_auth_url only can be setting once time,current is:%s"
+msgstr "user_auth_url 仅可设置一次，当前已设置为: `%s`"
+
+#: E:\codedemo\IRAILS\irails\core.py:142
+msgid "Warning: database.uri is empty in config"
+msgstr "警告: database.uri 未配置或为配置为空"
+
+#: E:\codedemo\IRAILS\irails\core.py:150
+msgid "%s auth type not support"
+msgstr "不支持鉴权类型 %s"
+
+#: E:\codedemo\IRAILS\irails\core.py:174
+msgid "app dir must in apps dir"
+msgstr "应用目录必须在apps目录下"
+
+#: E:\codedemo\IRAILS\irails\core.py:179
+msgid "route path must start with '/',%s is not alowed!"
+msgstr "路由路径必须以 `/`开始, 不允许 %s"
+
+#: E:\codedemo\IRAILS\irails\core.py:209
+msgid "you are successed logout!"
+msgstr "您已成功登出！"
+
+#: E:\codedemo\IRAILS\irails\core.py:219
+msgid "User authentication successed!"
+msgstr "用户验证成功！"
+
+#: E:\codedemo\IRAILS\irails\core.py:235
+msgid "User authentication failed!"
+msgstr "用户验证失败！"
+
+#: E:\codedemo\IRAILS\irails\core.py:257
+msgid "your authencation has been expired!"
+msgstr "您的身份验证已过期！"
+
+#: E:\codedemo\IRAILS\irails\core.py:282
+msgid "you are not authenticated,please login!"
+msgstr "您还未被验证，请登陆！"
+
+#: E:\codedemo\IRAILS\irails\core.py:288
+msgid "Failed Auth on type:%s at url:%s  [User:%s]"
+msgstr "鉴权失败，类型%s 在URL: %s [用户:%s]"
+
+#: E:\codedemo\IRAILS\irails\core.py:353
+msgid "static files mouting..."
+msgstr "静态资源加载中..."
+
+#: E:\codedemo\IRAILS\irails\core.py:359
+msgid "checking database migrations...."
+msgstr "正在检查数据库版本迁移..."
+
+#: E:\codedemo\IRAILS\irails\core.py:377
+msgid "loading irails apps"
+msgstr "IRAILS 项目应用加载中"
+
+#: E:\codedemo\IRAILS\irails\core.py:379
+msgid "Load Apps Completed,%s loaded,%s unloaded"
+msgstr "应用加载完成，已加载%s个，未加载%s个"
+
+#: E:\codedemo\IRAILS\irails\core.py:381
+msgid "not found any controller class"
+msgstr "未找到控制器类"
+
+#: E:\codedemo\IRAILS\irails\core.py:387
+msgid "checking database configure..."
+msgstr "检查数据库配置..."
+
+#: E:\codedemo\IRAILS\irails\core.py:400
+msgid "Not support %s ,Adapter config error in auth.casbin_adapter"
+msgstr "不支持 %s,auth.casbin_adapter 适配器配置错误"
+
+#: E:\codedemo\IRAILS\irails\core.py:406
+msgid "init casbin auth system..."
+msgstr "初始化CASBIN验证系统"
+
+#: E:\codedemo\IRAILS\irails\core.py:408
+msgid "load irails apps finished."
+msgstr "IRAILS项目加载完成."
+

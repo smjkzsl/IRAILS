@@ -57,16 +57,17 @@ def ensure_line(filepath, line_to_add):
         lines.append('\n' + line_to_add.strip() + '\n')
         with open(filepath, 'w') as file:
             file.writelines(lines)
+_datetime_regex = re.compile(
+r'^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$'
+)
+
+_date_regex = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+_time_regex = re.compile(r'^\d{2}:\d{2}:\d{2}$')
 def is_datetime_format(s):
     if not isinstance(s,str) or not str:
         return False 
-    _datetime_regex = re.compile(
-        r'^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$'
-    )
-
-    _date_regex = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-
-    _time_regex = re.compile(r'^\d{2}:\d{2}:\d{2}$')
+    
     def is_valid_datetime_string(datetime_str):
         return bool(_datetime_regex.match(datetime_str))
 

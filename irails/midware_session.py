@@ -3,7 +3,7 @@ import sys
 import typing,uuid
 from typing import Dict
 from base64 import b64decode, b64encode
-
+from ._i18n import _
 import itsdangerous
 from itsdangerous.exc import BadSignature
 
@@ -120,14 +120,7 @@ except(ImportError):
             raise ImportError("redis seen is not installed,please use `pip install redis` to install it.")
     pass
 
-# _KT = typing.TypeVar("_KT")
-# _VT = typing.TypeVar("_VT")
-# class sessionDict(dict):
-#     def __getitem__(self, __key: _KT) -> _VT:
-#         if __key in self:
-#             return super().__getitem__(__key)
-#         else:
-#             return None
+ 
 class SessionMiddleware:
     def __init__(
         self,

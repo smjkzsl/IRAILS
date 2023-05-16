@@ -24,17 +24,21 @@ from . import auth
 from . import database
 from ._loader import _load_apps
 from ._utils import get_controller_name,get_snaked_name
-from ._i18n import load_app_translations
-_=None
+
+from ._i18n import _
+
+
 __is_debug=config.get('debug',False)
 
-def __load_core_i18n():
-    _dir = os.path.dirname(__file__)
-    t = load_app_translations(_dir,True)
-    global _
-    _ = t.gettext
-__load_core_i18n()
+def singleton(cls):
+    instances = {}
+    def get_instance(*args,**kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args,**kwargs)
+        return instances[cls]
+    return get_instance
 
+@singleton
 class MvcApp(FastAPI):
     def __init__(self,  **kwargs):
         self.__authObj:auth.AuthenticationBackend_ = None 
@@ -212,7 +216,7 @@ def api_router(path:str="", version:str="",**allargs):
             def __init__(self,**kwags) -> None: 
                 
                 super().__init__()
-            def _user_logout(self,msg=_('your are successed logout!'),redirect:str="/"):
+            def _user_logout(self,msg=_('you are successed logout!'),redirect:str="/"):
                 """see .core.py"""
                 self.flash  = msg
                 if  hasattr(application,'authObj'):
@@ -222,7 +226,7 @@ def api_router(path:str="", version:str="",**allargs):
                     return {'status':'success','msg':msg}
                 else:
                     return self.redirect(redirect)
-            def _verity_successed(self,user, msg=_("User authentication successed!"),redirect_url='/'):
+            def _verity_successed(self,user, msg=_("User authentication successed!"),redirect='/'):
                 '''call by targetController''' 
                  
                 self.flash  = msg
@@ -237,7 +241,7 @@ def api_router(path:str="", version:str="",**allargs):
                     if accept_header == "application/json":
                         return {'status':'success','msg':msg }
                  
-                return RedirectResponse(redirect_url,status_code=StateCodes.HTTP_303_SEE_OTHER)
+                return RedirectResponse(redirect,status_code=StateCodes.HTTP_303_SEE_OTHER)
             def _verity_error(self,msg=_("User authentication failed!")):
                 '''call by targetController'''
                  

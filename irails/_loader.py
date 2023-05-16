@@ -2,7 +2,7 @@ import importlib
 import sys,os
 from .config import config,ROOT_PATH 
 from ._i18n import load_app_translations
-from gettext import gettext as _
+from ._i18n import   _
 
 app_dirs = []
 app_enabled = []

@@ -12,8 +12,8 @@ from typing import Dict
 from logging import Logger
 import inspect
 import datetime
-from irails._i18n import load_app_translations
- 
+from irails._i18n import load_app_translations,_
+
 __session_config = config.get('session') 
 _session_key = "session_id"
 alow_extensions = []
@@ -68,7 +68,7 @@ class BaseController:
         if len(m)>2:
             m = os.sep.join(m[-2:])
         else:
-            raise RuntimeError(f"load_app_translations:{m} is invalid app module") 
+            raise RuntimeError(_("load_app_translations:%s is invalid app module") % m) 
         languages = ['zh']
         if 'lang' in self._session:
             languages = self._session['lang']
@@ -273,7 +273,7 @@ class BaseController:
         try:
             form_params =  await  request.form()
         except Exception as e:
-            _log.info("while parse form raised:"+str(e.args))
+            _log.info(_("when parsing `Form params` raised:")+str(e.args))
             pass
 
         

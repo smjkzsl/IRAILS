@@ -7,8 +7,8 @@ from .controller_utils import (TEMPLATE_PATH_KEY, VER_KEY, ControllerBase,
                                _register_controller_to_router, _route_method)
 
  
-import inspect
- 
+from ._i18n import _
+
 class InferringRouter(APIRouter):
     """
     Overrides the route decorator logic to use the annotated return type as the `response_model` if unspecified.
@@ -89,7 +89,7 @@ class MvcRouter:
         """if path eq application._public_auth_url,the auth agr must set to 'none' """
         if MvcRouter.app and path == MvcRouter.app.public_auth_url:
             if 'auth' in kwargs and kwargs['auth']!='none':
-                raise RuntimeError('the public auth path must set to "none" on auth arguments') 
+                raise RuntimeError(_('the public auth path must set to "none" on auth arguments')) 
             elif not 'auth' in kwargs:
                  kwargs['auth'] = 'none'
         return _route_method(path, "get", *args, **kwargs)

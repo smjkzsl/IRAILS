@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2023-05-13 13:57\n"
-"PO-Revision-Date: 2023-05-13 13:57\n"
+"POT-Creation-Date: 2023-05-16 16:15\n"
+"PO-Revision-Date: 2023-05-16 16:15\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en_US\n"
@@ -17,137 +17,181 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: irails i18n 1.3.5\n"
+"X-Generator: irails i18n 1.3.14\n"
 
 
 
-#: E:\codedemo\IRAILS\irails\_loader.py:41
+#: E:\codedemo\IRAILS\irails\_loader.py:42
 msgid "Loading module:%s"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\_loader.py:48
+#: E:\codedemo\IRAILS\irails\_loader.py:49
 msgid "load app %s failed"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:51
-msgid "Please use api.http,MVC app not allow to use this direct!"
+#: E:\codedemo\IRAILS\irails\auth.py:63
+msgid "Could not separate Authorization scheme and token"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:55
-msgid "Please use api.post,MVC app not allow to use this direct!"
+#: E:\codedemo\IRAILS\irails\auth.py:65
+msgid "Authorization scheme %s is not supported"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:60
-msgid "Please use api.get,MVC app not allow to use this direct!"
+#: E:\codedemo\IRAILS\irails\auth.py:288
+msgid "Can't load module:%s"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:63
-msgid "Please use api.head,MVC app not allow to use this direct!"
+#: E:\codedemo\IRAILS\irails\base_controller.py:71
+msgid "load_app_translations:%s is invalid app module"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:67
-msgid "Please use api.put,MVC app not allow to use this direct!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:71
-msgid "Please use api.delete,MVC app not allow to use this direct!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:75
-msgid "Please use api.options,MVC app not allow to use this direct!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:79
-msgid "Please use api.patch,MVC app not allow to use this direct!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:83
-msgid "Please use api.trace,MVC app not allow to use this direct!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:97
-msgid "public_auth_url only can be setting once time,current is:%s"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:107
-msgid "user_auth_url only can be setting once time,current is:%s"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:142
-msgid "Warning: database.uri is empty in config"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:150
-msgid "%s auth type not support"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:174
-msgid "app dir must in apps dir"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:179
-msgid "route path must start with '/',%s is not alowed!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:209
-msgid "your are successed logout!"
-msgstr ""
-
-#: E:\codedemo\IRAILS\irails\core.py:219
+#: E:\codedemo\IRAILS\irails\base_controller.py:137
+#: E:\codedemo\IRAILS\irails\core.py:229
 msgid "User authentication successed!"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:235
+#: E:\codedemo\IRAILS\irails\base_controller.py:144
+msgid "You are successed logout!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\base_controller.py:148
+#: E:\codedemo\IRAILS\irails\core.py:245
 msgid "User authentication failed!"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:257
+#: E:\codedemo\IRAILS\irails\base_controller.py:276
+msgid "when parsing `Form params` raised:"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:70
+msgid "public_auth_url only can be setting once time,current is:%s"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:80
+msgid "user_auth_url only can be setting once time,current is:%s"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:103
+msgid "Please use api.http,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:107
+msgid "Please use api.post,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:112
+msgid "Please use api.get,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:115
+msgid "Please use api.head,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:119
+msgid "Please use api.put,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:123
+msgid "Please use api.delete,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:127
+msgid "Please use api.options,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:131
+msgid "Please use api.patch,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:135
+msgid "Please use api.trace,MVC app not allow to use this direct!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:152
+msgid "Warning: database.uri is empty in config"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:160
+msgid "%s auth type not support"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:184
+msgid "app dir must in apps dir"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:189
+msgid "route path must start with '/',%s is not alowed!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:219
+msgid "you are successed logout!"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\core.py:267
 msgid "your authencation has been expired!"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:282
+#: E:\codedemo\IRAILS\irails\core.py:292
 msgid "you are not authenticated,please login!"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:288
+#: E:\codedemo\IRAILS\irails\core.py:298
 msgid "Failed Auth on type:%s at url:%s  [User:%s]"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:353
+#: E:\codedemo\IRAILS\irails\core.py:363
 msgid "static files mouting..."
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:359
+#: E:\codedemo\IRAILS\irails\core.py:369
 msgid "checking database migrations...."
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:377
-msgid ""
-"\n"
-"\\init mvc app..."
+#: E:\codedemo\IRAILS\irails\core.py:387
+msgid "loading irails apps..."
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:379
+#: E:\codedemo\IRAILS\irails\core.py:389
 msgid "Load Apps Completed,%s loaded,%s unloaded"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:381
+#: E:\codedemo\IRAILS\irails\core.py:391
 msgid "not found any controller class"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:387
+#: E:\codedemo\IRAILS\irails\core.py:397
 msgid "checking database configure..."
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:400
+#: E:\codedemo\IRAILS\irails\core.py:410
 msgid "Not support %s ,Adapter config error in auth.casbin_adapter"
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:406
+#: E:\codedemo\IRAILS\irails\core.py:417
 msgid "init casbin auth system..."
 msgstr ""
 
-#: E:\codedemo\IRAILS\irails\core.py:408
-msgid "init mvc app end."
+#: E:\codedemo\IRAILS\irails\core.py:419
+msgid "load irails apps finished."
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\mvc_router.py:92
+msgid "the public auth path must set to \"none\" on auth arguments"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\view.py:54
+msgid "request instance type must be fastapi.Request"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\view.py:68
+msgid "TemplateSyntaxError on %s :line:%s ,%s"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\view.py:74
+msgid "%s raised TemplatesNotFound Error: `%s`"
+msgstr ""
+
+#: E:\codedemo\IRAILS\irails\view.py:79 E:\codedemo\IRAILS\irails\view.py:85
+msgid "Tempate %s raised Exception %s"
 msgstr ""
 

@@ -28,7 +28,7 @@ class TestController(BaseController):
         if username and password:
             #do veritied
             if username in ['bruce','alice'] and password:
-                return self._verity_successed(username,redirect)
+                return self._verity_successed(user= username,redirect= redirect)
             else:
                 return self._verity_error() 
         return self._verity_error()
