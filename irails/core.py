@@ -397,25 +397,27 @@ def generate_mvc_app():
         _log.info(_("checking database configure..."))
     check_init_database()
 
-    auth_type = config.get("auth",None)
-    _casbin_adapter_class=None
-    _adapter_uri:str=None
+    # Initializing the authentication system
+    auth_type = config.get("auth", None)
+    _casbin_adapter_class = None
+    _adapter_uri: str = None
     if auth_type:
-        auth_type=auth_type.get("type" )
+        auth_type = auth_type.get("type")
         if auth_type:
-            __type_casbin_adapter = config.get("auth").get("casbin_adapter","file")
-            _casbin_adapter_class =  auth.get_adapter_module(__type_casbin_adapter)
-            _adapter_uri = config.get("auth").get("adapter_uri") 
+            # Get the adapter type from the configuration
+            __type_casbin_adapter = config.get("auth").get("casbin_adapter", "file")
+            _casbin_adapter_class = auth.get_adapter_module(__type_casbin_adapter)
+            _adapter_uri = config.get("auth").get("adapter_uri")
+            # Raise an error if the adapter is not supported
             if not _casbin_adapter_class:
-                raise RuntimeError(_( "Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
-            
-    
+                raise RuntimeError(_("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
+    # Check for database migrations
     check_db_migrate()
-
+    # Initialize the authentication system if the adapter class and URI are present
     if _casbin_adapter_class and _adapter_uri:
-        _adapter_uri = os.path.abspath(os.path.join(ROOT_PATH,_adapter_uri))
-        _log.info(_("init casbin auth system..."))
-        application.authObj = __init_auth(application,auth_type,_casbin_adapter_class,_adapter_uri)
+        _adapter_uri = os.path.abspath(os.path.join(ROOT_PATH, _adapter_uri))
+    _log.info(_("init casbin auth system..."))
+    application.authObj = __init_auth(application, auth_type, _casbin_adapter_class, _adapter_uri)
     _log.info(_("load irails apps finished."))
     return application
 # import subprocess
