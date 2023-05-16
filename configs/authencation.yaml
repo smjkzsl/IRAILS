@@ -1,6 +1,7 @@
 auth:
   adapter_uri: './configs/casbin-adapter.csv'
   auth_model: ./configs/casbin-model.conf
+ 
   adapter_table: 'casbin_rule' 
   casbin_adapter: file
   secret_key: '123456'
