@@ -64,12 +64,12 @@ def url_for(url:str="",**kws):
 class BaseController:
     @property
     def _(self):
-        m = getattr(self,'__appdir__').split(os.sep)
-        if len(m)>2:
-            m = os.sep.join(m[-2:])
-        else:
-            raise RuntimeError(_("load_app_translations:%s is invalid app module") % m) 
-        languages = ['zh']
+        m = getattr(self,'__appdir__')#.split(os.sep)
+        # if len(m)>2:
+        #     m = os.sep.join(m[-2:])
+        # else:
+        #     raise RuntimeError(_("load_app_translations:%s is invalid app module") % m) 
+        languages = None
         if 'lang' in self._session:
             languages = self._session['lang']
         else:

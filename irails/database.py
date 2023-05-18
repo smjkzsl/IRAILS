@@ -9,10 +9,10 @@ from ._utils import camelize_classname,pluralize_collection
 from alembic import command
 from alembic.config import Config
 import configparser
-import re,os
+import re,os,sys
 from typing import Union
 from .log import _log
-from ._i18n import _
+from ._i18n import _,load_app_translations
 DataMap = None
 mapped_base = None
 engine:Engine=None 
@@ -20,10 +20,32 @@ class Base(DeclarativeBase):
     pass
 
  
+class _serviceMeta(type):
+    def __new__(cls, name, bases, attrs):
+        module_name = attrs['__module__']
+        module = sys.modules[module_name]
+        module_package = module.__package__
+        
+                
+        print(f"Creating class {name} in module {module_name}")
+        obj = super().__new__(cls, name, bases, attrs)
+        if module_package:
+            package_module = sys.modules[module_package]
+            service_package_path =  package_module.__path__[0]
+            app_dirs = service_package_path.split(os.sep)
+            if len(app_dirs)>2:
+                app_dirs = app_dirs[-2:]
+                setattr(obj,"__appdir__",".".join(app_dirs))
+                app_dir = os.path.dirname(service_package_path)
+                t = load_app_translations(app_dir)
+                setattr(obj,"_",t)
+        return obj
 
-class Service():
+class Service(metaclass=_serviceMeta):
     __all_generated = {}
     engine:Engine = engine
+    _ = _
+    
     @classmethod
     def session(self):
         if hasattr(self,"_session"):

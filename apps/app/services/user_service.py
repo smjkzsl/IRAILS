@@ -18,5 +18,6 @@ class UserService(Service):
             stmt = select(SysUser).where(SysUser.Id==uid) 
         user = session.scalars(stmt).one()
         return user
+        
     pass
  
