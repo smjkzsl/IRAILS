@@ -2,9 +2,10 @@
 A mvc framework used FastApi
 Simple and elegant use of FastApi in MVC mode
 
-[Docs](https://irails.2rails.cn/) 
+[Online Docs](https://irails.2rails.cn/) 
 # Welcome to IRAILS(python on rails)
-
+IRAILS is not just an ordinary imitation of Ruby on rails, but based on the characteristics of the Python language itself, combined with rich Python class libraries, it refuses to create wheels repeatedly, and can achieve web development with minimal code and configuration, making Python web development fast and powerful, and can be easily deployed on various platforms.
+The design concept of IRails refers to some RORs, but it has its own soul. It does not pursue the ultimate configuration and development, but rather appropriate configuration and development. Currently, it is in a preview version and will continue to improve in the future.
  
 
 ## Installation  
