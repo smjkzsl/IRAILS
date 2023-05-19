@@ -11,17 +11,63 @@ def get_controller_name(controller_name):
     return controller_re.match(controller_name).group(1)
  
 def to_camel_case(x):
-    """转大驼峰法命名"""
+    """
+    Converts variable_name to camel case notation.
+    """
+    # Using the regex module to find all instances of an underscore followed by a letter
+    # and then replacing that underscore with the uppercase of that letter.
+    # Example: hello_world -> HelloWorld
     s = re.sub('_([a-zA-Z])', lambda m: (m.group(1).upper()), x )
     return s[0].upper() + s[1:]
-def get_plural_name(name:str):
+def __init_inflect():
     import inflect
     global _pluralizer
     if not _pluralizer:
-        _pluralizer = inflect.engine()
+        _pluralizer=inflect.engine()
+     
+    return _pluralizer
+def get_plural_name(name:str):
+    """
+        Return the plural of text, where text is a noun.
+
+        If count supplied, then return text if count is one of:
+            1, a, an, one, each, every, this, that
+
+        otherwise return the plural.
+
+        Whitespace at the start and end is preserved.
+
+    """
+    _pluralizer = __init_inflect()
     return _pluralizer.plural(name)
+def get_singularize_name(name:str):
+    """
+    Return the singular of text, where text is a plural noun.
+
+        If count supplied, then return the singular if count is one of:
+            1, a, an, one, each, every, this, that or if count is None
+
+        otherwise return text unchanged.
+
+        Whitespace at the start and end is preserved.
+
+        >>> p = engine()
+        >>> p.singular_noun('horses')
+        'horse'
+        >>> p.singular_noun('knights')
+        'knight'
+    """
+    _pluralizer = __init_inflect()
+    return _pluralizer.singular_noun(name)
 
 def get_snaked_name(_name:str):
+    """
+    Converts a string to snake_case format.
+    :param name: string to be converted
+    :return: the string in snake_case format
+    """
+    # split the string at every occurrence of a capital letter that is not at the beginning of the string
+    # and insert "_" in between each splitted portion
     return snake_case_re.sub("_", _name).lower()
 def is_valid_filename(filename):
     if filename is None or len(filename) == 0:

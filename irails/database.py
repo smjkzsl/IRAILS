@@ -1,7 +1,7 @@
 from contextlib import contextmanager
-from sqlalchemy import DateTime, create_engine,Engine,MetaData, Table, Column, ForeignKey, func,select,join,TableClause,update
-from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker
-from sqlalchemy import text,TextClause
+from sqlalchemy import DateTime, Integer, String, create_engine,Engine,MetaData, Table, Column, ForeignKey, func,select,join,TableClause,update
+from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship
+from sqlalchemy import text,TextClause,Table
 from sqlalchemy.ext.automap import automap_base
 
 from ._utils import camelize_classname,pluralize_collection
@@ -14,6 +14,8 @@ from typing import Union
 from .log import _log
 from ._i18n import _,load_app_translations
 from .config import config
+from ._utils import get_plural_name,get_singularize_name
+
 DataMap = None
 mapped_base = None
 engine:Engine=None 
@@ -21,13 +23,50 @@ table_prefix=""
 cfg = config.get("database")
 if cfg:
     table_prefix = cfg.get("table_prefix","")
-
-class InitDbError(Exception):
-    pass
 class Base(DeclarativeBase):
     __abstract__ = True
     update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     create_at = Column(DateTime(timezone=True), server_default=func.now())
+class Relations():
+    @classmethod
+    def M2M(self,Tb1:Base,Tb2:Base):
+        '''set many to many relationship on :Tb1 and :Tb2'''
+        tb2 = get_plural_name(Tb2.__name__.lower())
+        tb1 = get_plural_name(Tb1.__name__.lower())
+        m2m_table = Table(f"{table_prefix}{tb1}_{tb2}", Base.metadata,
+        Column(f'{tb1}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True),
+        Column(f'{tb2}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True)
+        ) 
+        setattr(Tb1,f"{tb2}",relationship(tb2, secondary=m2m_table, back_populates=f"{Tb1.__tablename__}"))
+        setattr(Tb2,f"{tb1}",relationship(tb1, secondary=m2m_table, back_populates=f"{Tb2.__tablename__}"))
+        #tests
+        # if not hasattr(Tb1,'fullname'):
+        #     setattr(Tb1,'fullname',Column(String(50) ))
+        # if not hasattr(Tb2,'fullname'):
+        #     setattr(Tb2,'fullname',Column(String(50) ))
+        return m2m_table
+    @classmethod
+    def M2O(self,Tb1:Base,Tb2:Base):
+        '''set 
+            :Tb1 belongs to :Tb2
+            and :Tb2 hasmany :Tb1
+        '''
+        _tb1s = Tb1.__tablename__
+        _tb2s = Tb2.__tablename__
+        tb1 = get_singularize_name(_tb1s)
+        tb2 = get_singularize_name(_tb2s)
+        
+        if not hasattr(Tb1, f"{tb2}_id"):
+            setattr(Tb1, f"{tb2}_id",Column(Integer, ForeignKey(f'{tb2}.id'))) 
+        if not hasattr(Tb1,f"{tb2}"):
+            setattr(Tb1,f"{tb2}",relationship(f'{tb1}',back_populates=f'{tb2}'))
+        if not hasattr(Tb2,tb1):
+            setattr(Tb2,tb1,relationship(tb1,back_populates=tb2))
+        return Tb1,Tb2
+    pass
+class InitDbError(Exception):
+    pass
+
 
 
  

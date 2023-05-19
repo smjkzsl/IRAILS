@@ -3,11 +3,8 @@ from sqlalchemy import Table, Column, ForeignKey, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
  
 
-# 创建中间表，用于实现多对多关系
-user_role_table = Table(f"{database.table_prefix}user_role", database.Base.metadata,
-    Column('user_id', Integer, ForeignKey(f'{database.table_prefix}users.id'), primary_key=True),
-    Column('role_id', Integer, ForeignKey(f'{database.table_prefix}roles.id'), primary_key=True)
-)
+ 
+
 class User(database.Base):
     __tablename__ = f"{database.table_prefix}users"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -17,7 +14,7 @@ class User(database.Base):
     fullname: Mapped[str] = mapped_column(String(50))
 
     age: Mapped[str] = mapped_column(Integer())
-    roles = relationship('RoleModel', secondary=user_role_table, back_populates=f"{database.table_prefix}users")
+    #roles = relationship('RoleModel', secondary=user_role_table, back_populates=f"{database.table_prefix}users")
 
     
     def __repr__(self) -> str:
@@ -28,4 +25,9 @@ class Role(database.Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True, nullable=False)
-    users = relationship('users', secondary=user_role_table, back_populates=f'{database.table_prefix}roles')
+    #users = relationship('users', secondary=user_role_table, back_populates=f'{database.table_prefix}roles')
+# user_role_table =  Table(f"{database.table_prefix}user_role", database.Base.metadata,
+#     Column('user_id', Integer, ForeignKey(f'{database.table_prefix}users.id'), primary_key=True),
+#     Column('role_id', Integer, ForeignKey(f'{database.table_prefix}roles.id'), primary_key=True)
+# )
+database.Relations.M2M(User,Role)
