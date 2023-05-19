@@ -45,7 +45,7 @@ def _load_app(app_dir):
             if m=='controllers':
                 cnt += 1
         except ImportError as e:
-            if m=='controllers':
+            if m:#=='controllers':
                 _log.error(_("load app %s failed")%app_dir)
                 _log.error(e.args)
                 cnt -= 1

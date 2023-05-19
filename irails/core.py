@@ -373,6 +373,8 @@ def check_db_migrate():
         uri = db_cfg.get("uri")
         if uri:
             database.check_migration(application.data_engine,uri,alembic_ini)
+    except database.InitDbError as e:
+        raise
     except Exception as e:
         _log.disabled = False
         _log.error(e.args)

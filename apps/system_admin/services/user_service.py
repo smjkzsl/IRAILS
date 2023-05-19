@@ -1,7 +1,7 @@
 from irails.database import Service
 from sqlalchemy import select
 from typing import List
-from system.models import User
+from system_admin.models import User
 
 class UserService(Service):
     def get(self,id:int)->User:

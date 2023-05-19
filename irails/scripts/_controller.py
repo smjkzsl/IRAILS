@@ -105,14 +105,14 @@ class Generator():
                     dest = os.path.join(_current_dir , item['dest'])
                     micro = item['micro']
                     #controller file will generate last time
-                    self.gen_tpl(tpl_file=tpl,dest=dest,context=context,use_micro=micro,dir_only=dir=='controllers') 
+                    self.gen_tpl(tpl_file=tpl,dest=dest,context=context,use_micro=micro,dir_only=True) 
             controller_file = os.path.join(_current_dir,'controllers',f"{controler_path_name}_controller.py")
             __init_file = os.path.join(_current_dir,'controllers','__init__.py')
             ensure_line(__init_file,f"from . import {controler_path_name}_controller")
-            __init_file = os.path.join(_current_dir,'models','__init__.py')
-            ensure_line(__init_file,f"from . import {controler_path_name}_model")
-            __init_file = os.path.join(_current_dir,'services','__init__.py')
-            ensure_line(__init_file,f"from . import {controler_path_name}_service")
+            # __init_file = os.path.join(_current_dir,'models','__init__.py')
+            # ensure_line(__init_file,f"from . import {controler_path_name}_model")
+            # __init_file = os.path.join(_current_dir,'services','__init__.py')
+            # ensure_line(__init_file,f"from . import {controler_path_name}_service")
             
             for action in actions:
                 acts.append(f"""

@@ -1,6 +1,6 @@
 from irails.unit_test import *
-from system.services import UserService
-from system.models.user import User
+from system_admin.services import UserService
+from system_admin.models.user import User
 
 class TestUserService(ServiceTest):
     
@@ -21,7 +21,7 @@ class TestUserService(ServiceTest):
                 
             
         obj.age = "new_value"
-        obj = service.add(obj)
+        service.add(obj)
         id = obj.id
         query_obj = service.get(id)
         self.assertEqual(obj,query_obj)

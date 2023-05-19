@@ -1,10 +1,11 @@
 database:
   dbhost: 'localhost'
-  dbname: 'data/db/Admin.NET.db'
+  dbname: 'data/db/irails_admin.db'
   dbuser: 'sa'
   dbpassword: '123456'
   dbencode: 'latin-1'
   dbdecode: 'gbk'
+  table_prefix: 'irails_'
   # MySQL
   # mysql+pymysql://username:password@host:port/database_name 
   # PostgreSQL

@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from sqlalchemy import create_engine,Engine,MetaData, Table, Column, ForeignKey,select,join,TableClause,update
+from sqlalchemy import DateTime, create_engine,Engine,MetaData, Table, Column, ForeignKey, func,select,join,TableClause,update
 from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker
 from sqlalchemy import text,TextClause
 from sqlalchemy.ext.automap import automap_base
@@ -13,11 +13,22 @@ import re,os,sys
 from typing import Union
 from .log import _log
 from ._i18n import _,load_app_translations
+from .config import config
 DataMap = None
 mapped_base = None
 engine:Engine=None 
-class Base(DeclarativeBase):
+table_prefix=""
+cfg = config.get("database")
+if cfg:
+    table_prefix = cfg.get("table_prefix","")
+
+class InitDbError(Exception):
     pass
+class Base(DeclarativeBase):
+    __abstract__ = True
+    update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    create_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
  
 class _serviceMeta(type):
@@ -47,7 +58,7 @@ class Service(metaclass=_serviceMeta):
     _ = _
     
     @classmethod
-    def session(self):
+    def session(self)->Session:
         if hasattr(self,"_session"):
             return self._session
         if hasattr(self,'_session_local'):
@@ -155,7 +166,10 @@ def check_migration(engine:Engine,uri,alembic_ini):
         reversions_dir = os.path.join(reversions_dir,"versions")
         if not os.path.exists(reversions_dir):
             os.makedirs(reversions_dir,exist_ok=True)
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        raise InitDbError(e.args)
     _update_uri_to_ini()
     #  
     alembic_cfg = Config(alembic_ini)    
@@ -181,12 +195,15 @@ def init_database( uri:str,debug:bool=False,cfg=None):
         uri = cfg.get("uri","")
     if not uri:
         return None
-    global DataMap,mapped_base ,engine
+    global DataMap,mapped_base ,engine,table_prefix
+    
+    
     dbencode = cfg.get('dbencode')
     dbdecode = cfg.get('dbdecode')
     if uri.startswith('sqlite'):
+        from .config import ROOT_PATH
         db_directory = os.path.dirname(uri.split(':///')[1])
-        os.makedirs(db_directory, exist_ok=True) 
+        os.makedirs(os.path.join(ROOT_PATH, db_directory), exist_ok=True) 
 
     engine = create_engine(uri,  echo=False)
     dbfirst = cfg.get("dbfirst")

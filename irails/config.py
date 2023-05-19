@@ -175,6 +175,8 @@ class YamlConfig:
 if is_in_app(ROOT_PATH):
     ROOT_PATH = os.path.join(ROOT_PATH,"../..")
     config = YamlConfig( os.path.join(ROOT_PATH,"configs"))
+    if not is_cli_mode():
+        os.chdir(ROOT_PATH)
 elif IS_IN_irails:
     config = YamlConfig(os.path.join(ROOT_PATH, "configs"))
 else:
