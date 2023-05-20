@@ -12,4 +12,5 @@ class UserService(Service):
         return self.add(User,**kwargs) 
     def delete_user(self,**kwargs):
         return self.delete(User,**kwargs)
-        
+    def query_user(self,filters):
+        return self.query(User).filter(filters)    

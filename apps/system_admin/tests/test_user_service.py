@@ -30,3 +30,8 @@ class TestUserService(ServiceTest):
         self.assertEqual(len(users),2)
 
         self.assertEqual(users[0].roles[0],role)
+
+        #test query
+        users = service.query_user(User.name.like("bru%")).all()
+        self.assertEqual(len(users),1)
+        self.assertEqual(users[0].name,'bruce')

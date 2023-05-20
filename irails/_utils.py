@@ -81,7 +81,7 @@ def is_valid_filename(filename):
         return False
     return True
 
-def ensure_line(filepath, line_to_add):
+def ensure_line(filepath, line_to_add,create_if_not_exists=True):
     found = False
     lines = []
     if os.path.exists(filepath):
@@ -94,15 +94,20 @@ def ensure_line(filepath, line_to_add):
                 if line.strip() == line_to_add.strip():
                     found = True
                     break
+            if not found:# If the line is not in the file, add it
+                lines.append('\n' + line_to_add.strip() + '\n')
+                with open(filepath, 'w') as file:
+                    file.writelines(lines)
+                return True
     else:
-        with open(filepath,'w') as file:
-            file.write(line_to_add)
-        return True              
-    # If the line is not in the file, add it
-    if not found:
-        lines.append('\n' + line_to_add.strip() + '\n')
-        with open(filepath, 'w') as file:
-            file.writelines(lines)
+        if create_if_not_exists:
+            with open(filepath,'w') as file:
+                file.write(line_to_add)
+            return True  
+        else:
+            return False            
+    
+    
 _datetime_regex = re.compile(
 r'^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$'
 )

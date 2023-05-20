@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from sqlalchemy import DateTime, Integer, String, create_engine,Engine,MetaData, Table, Column, ForeignKey, func,select,join,TableClause,update
-from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship
+from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query
 from sqlalchemy import text,TextClause,Table
 from sqlalchemy.ext.automap import automap_base
 
@@ -118,6 +118,7 @@ class Service(metaclass=_serviceMeta):
         session = session_local()
         setattr(self,"_session",session)
         return session
+ 
     @classmethod
     def get(self,model:Base,id:int)->Base:
         return self.session().get(model,id)
@@ -142,7 +143,13 @@ class Service(metaclass=_serviceMeta):
         if kwargs:
             query = query.filter_by(**kwargs) 
         return query.all()
-          
+    @classmethod
+    def query(self,model:Base)->Query:
+        session = self.session()  
+        query = session.query(model) 
+         
+        return query
+    
     @classmethod
     def delete(self,model:Base,**kwargs)->int:
         session = self.session()  

@@ -17,6 +17,7 @@ class User(database.Base):
     age: Mapped[str] = mapped_column(Integer())
     roles:List['Role'] = []
 
+    password = Column(String(50),comment="Password")
     
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, name={self.name!r})"
