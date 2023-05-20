@@ -99,8 +99,9 @@ def main():
                 
                 tested_line.append(status) #OK or others
                 matched_fail = False
-            elif re.match(pattern=r"^FAIL:.*$", string=line):
-                fail+=1
+            elif re.match(pattern=r"^FAIL:.*$", string=line) or re.match(pattern=r"^ERROR:",string=line)  :
+                if not matched_fail:
+                    fail+=1
                 matched_fail=True
             elif  matched_fail:
                 tested_line.append(line) 

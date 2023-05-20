@@ -23,6 +23,7 @@ from ._utils import iJSONEncoder,is_datetime_format
 from ._i18n import _
 AUTH_EXPIRED='[EXPIRED]!'
 
+ 
 _session_name:str = ""
 
 class CasbinAuth:
@@ -43,14 +44,17 @@ class CasbinAuth:
                 return self.enforcer.remove_policy(sub,obj,act)
         raise RuntimeError("Casbin Enforcer is None")
     
-    def _auth(self,request:Request,username:str):
+    def _auth(self,request:Request,username):
         '''
         do verity,return True means `Success` and others `Failed`
         '''
         path = request.url.path
         method = request.method   
         if username:
-            user = username
+            if isinstance(username,BaseUser):
+                user = username.display_name
+            else:
+                user = username
         else:
             user = request.user.display_name if request.user.is_authenticated else 'anonymous'
 
@@ -133,6 +137,7 @@ class BasicAuth(AuthenticationBackend_):
         if not auth_type or auth_type.lower()=='public': 
             return True,  user
         result = _casbin_auth._auth(request=request,username=username)
+        
         return result, user
 
          
@@ -180,7 +185,7 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
     
      
     
-    async def authenticate(self, request,**kwargs) -> Union[None, Tuple[AuthCredentials, BaseUser]]:
+    async def authenticate(self, request:Request,**kwargs) -> Union[None, Tuple[AuthCredentials, BaseUser]]:
         auth_type:str = kwargs.get("auth_type")
 
         args = {'username_field':self.username_field, 'key':self.secret_key, 'algorithms': self.algorithm , 'audience':self.audience ,

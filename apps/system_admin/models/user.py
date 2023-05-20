@@ -1,3 +1,4 @@
+from typing import List
 from irails import database
 from sqlalchemy import Table, Column, ForeignKey, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,7 +15,7 @@ class User(database.Base):
     fullname: Mapped[str] = mapped_column(String(50))
 
     age: Mapped[str] = mapped_column(Integer())
-    #roles = relationship('RoleModel', secondary=user_role_table, back_populates=f"{database.table_prefix}users")
+    roles:List['Role'] = []
 
     
     def __repr__(self) -> str:
@@ -25,9 +26,6 @@ class Role(database.Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True, nullable=False)
-    #users = relationship('users', secondary=user_role_table, back_populates=f'{database.table_prefix}roles')
-# user_role_table =  Table(f"{database.table_prefix}user_role", database.Base.metadata,
-#     Column('user_id', Integer, ForeignKey(f'{database.table_prefix}users.id'), primary_key=True),
-#     Column('role_id', Integer, ForeignKey(f'{database.table_prefix}roles.id'), primary_key=True)
-# )
+    users:List['User'] = []
+
 database.Relations.M2M(User,Role)

@@ -10,7 +10,7 @@ from alembic import command
 from alembic.config import Config
 import configparser
 import re,os,sys
-from typing import Union
+from typing import Dict, List, Type, Union
 from .log import _log
 from ._i18n import _,load_app_translations
 from .config import config
@@ -28,22 +28,32 @@ class Base(DeclarativeBase):
     update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     create_at = Column(DateTime(timezone=True), server_default=func.now())
 class Relations():
+    __all = {}
     @classmethod
     def M2M(self,Tb1:Base,Tb2:Base):
-        '''set many to many relationship on :Tb1 and :Tb2'''
+        '''
+        set many to many relationship on :Tb1 and :Tb2\n
+        :Tb1 will added attribute tb2_tablename(if it's not setted)\n
+        :Tb2 will added attribute tb1_tablename(if it's not setted)\n
+        will auto created a table named :`Tb1.__tablename__ _ Tb2.__tablename__` and return it\n
+        like this:\n
+        `Table(f"{database.table_prefix}user_role", database.Base.metadata,\n
+        Column('user_id', Integer, ForeignKey(f'{database.table_prefix}users.id'), primary_key=True),\n
+            Column('role_id', Integer, ForeignKey(f'{database.table_prefix}roles.id'), primary_key=True)\n
+         )`
+        '''
         tb2 = get_plural_name(Tb2.__name__.lower())
         tb1 = get_plural_name(Tb1.__name__.lower())
-        m2m_table = Table(f"{table_prefix}{tb1}_{tb2}", Base.metadata,
-        Column(f'{tb1}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True),
-        Column(f'{tb2}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True)
+        tb1_naked_name = get_singularize_name(Tb1.__tablename__.replace(table_prefix,""))
+        tb2_naked_name = get_singularize_name(Tb2.__tablename__.replace(table_prefix,""))
+        m2m_table_name = f"{table_prefix}{tb1_naked_name}_{tb2_naked_name}"
+        m2m_table = Table(m2m_table_name, Base.metadata,
+        Column(f'{tb1_naked_name}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True),
+        Column(f'{tb2_naked_name}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True)
         ) 
-        setattr(Tb1,f"{tb2}",relationship(tb2, secondary=m2m_table, back_populates=f"{Tb1.__tablename__}"))
-        setattr(Tb2,f"{tb1}",relationship(tb1, secondary=m2m_table, back_populates=f"{Tb2.__tablename__}"))
-        #tests
-        # if not hasattr(Tb1,'fullname'):
-        #     setattr(Tb1,'fullname',Column(String(50) ))
-        # if not hasattr(Tb2,'fullname'):
-        #     setattr(Tb2,'fullname',Column(String(50) ))
+        setattr(Tb1,f"{tb2}",relationship(Tb2.__name__, secondary=m2m_table, back_populates=f"{tb1}"))
+        setattr(Tb2,f"{tb1}",relationship(Tb1.__name__, secondary=m2m_table, back_populates=f"{tb2}"))
+        self.__all[f"M2M{tb1}{tb2}"] = m2m_table
         return m2m_table
     @classmethod
     def M2O(self,Tb1:Base,Tb2:Base):
@@ -74,10 +84,9 @@ class _serviceMeta(type):
     def __new__(cls, name, bases, attrs):
         module_name = attrs['__module__']
         module = sys.modules[module_name]
-        module_package = module.__package__
-        
+        module_package = module.__package__ 
                 
-        print(f"Creating class {name} in module {module_name}")
+        # print(f"Creating class {name} in module {module_name}")
         obj = super().__new__(cls, name, bases, attrs)
         if module_package:
             package_module = sys.modules[module_package]
@@ -87,14 +96,15 @@ class _serviceMeta(type):
                 app_dirs = app_dirs[-2:]
                 setattr(obj,"__appdir__",".".join(app_dirs))
                 app_dir = os.path.dirname(service_package_path)
+                # auto set the i18n locales to the `app_name/locales`
                 t = load_app_translations(app_dir)
-                setattr(obj,"_",t)
+                setattr(obj,"_",t) #modify object
         return obj
 
 class Service(metaclass=_serviceMeta):
     __all_generated = {}
     engine:Engine = engine
-    _ = _
+    _ = _ #the i18n traslation object ,it's will auto redirect the `app_name/locales` dir i18n configure
     
     @classmethod
     def session(self)->Session:
@@ -108,7 +118,57 @@ class Service(metaclass=_serviceMeta):
         session = session_local()
         setattr(self,"_session",session)
         return session
-    
+    @classmethod
+    def get(self,model:Base,id:int)->Base:
+        return self.session().get(model,id)
+    @classmethod
+    def add(self,model:Union[Type,Base],**kwargs)->Base:
+        if isinstance(model,Base):
+            m=model
+        else:
+            if  kwargs  :
+                m=model(**kwargs)
+        if m:
+            session = self.session()
+            session.add(m)
+            session.commit()
+            session.merge(m)
+            return m
+        return None
+    @classmethod
+    def list(self,model:Base,**kwargs)->List[Base]:
+        session = self.session()  
+        query = session.query(model) 
+        if kwargs:
+            query = query.filter_by(**kwargs) 
+        return query.all()
+          
+    @classmethod
+    def delete(self,model:Base,**kwargs)->int:
+        session = self.session()  
+        if kwargs:
+            cnt = session.query(model).filter_by(**kwargs).delete()
+        else:
+            cnt = session.query(model).delete()
+        session.commit()
+        return cnt
+    @classmethod
+    def update(self,model:Base,filters:Dict=None, values:Dict=None)->Base:
+        cnt = 0
+        if values:
+            session = self.session() 
+            cnt = session.query(model).filter_by(**filters).update(values)
+            session.commit() 
+        return cnt
+    @classmethod
+    def flush(self,model:Base=None):
+        session = self.session()
+        if not model:
+            return session.commit()
+        if not model in session:
+            session.merge(model)
+        session.commit()
+         
     @classmethod
     @contextmanager 
     def get_session(cls):
@@ -140,6 +200,7 @@ class Service(metaclass=_serviceMeta):
         return ret
     @classmethod
     def get_all_mapped_tables(cls):
+        """ for `dbfirst` """
         if DataMap:
             return DataMap.tables
         else:
@@ -148,6 +209,7 @@ class Service(metaclass=_serviceMeta):
     def mapped(cls,table_name:str): 
         '''
         get the auto mapped table object
+        for `dbfirst`
         '''
         assert table_name
         if not DataMap :
@@ -219,69 +281,69 @@ def check_migration(engine:Engine,uri,alembic_ini):
         command.revision(alembic_cfg, autogenerate=True, message=msg) 
         # upgrade the db
         command.upgrade(alembic_cfg, "head") 
-def get_engine():
-    global engine
-    return engine
-def init_database( uri:str,debug:bool=False,cfg=None):
-    '''
-    :uri sqlalchemy connection string
-    :params debug mode of debug 
-    :cfg the database configure object
-    '''
-    if not cfg:
-        return None
-    if not uri:
-        uri = cfg.get("uri","")
-    if not uri:
-        return None
-    global DataMap,mapped_base ,engine,table_prefix
-    
-    
-    dbencode = cfg.get('dbencode')
-    dbdecode = cfg.get('dbdecode')
-    if uri.startswith('sqlite'):
-        from .config import ROOT_PATH
-        db_directory = os.path.dirname(uri.split(':///')[1])
-        os.makedirs(os.path.join(ROOT_PATH, db_directory), exist_ok=True) 
-
-    engine = create_engine(uri,  echo=False)
-    dbfirst = cfg.get("dbfirst")
-    maptables = cfg.get("maptables")
-    
-    if not dbfirst :
-        pass
-    elif dbfirst: 
-        def convert_varchar(s): 
-            try:
-                return s.encode(dbencode).decode(dbdecode)
-            except:
-                return s
-            
-        # produce our own MetaData object
-        DataMap = MetaData() 
-        # we can reflect it ourselves from a database, using options
-        # such as 'only' to limit what tables we look at...
-        DataMap.reflect(engine, only=maptables)
-        # we can then produce a set of mappings from this MetaData.
-        mapped_base = automap_base(metadata=DataMap)
-        mapped_base.prepare(autoload_with=engine,
-            classname_for_table=camelize_classname,
-            name_for_collection_relationship=pluralize_collection )
-         
-        engine.convert_varchar = convert_varchar
- 
-        pass
+def _test_connection():
     #test connect
     try:
         with engine.connect() as conn:
             _log.disabled = False
-            _log.debug('database connection successed:' + str(conn))
+            _log.debug(_('database connection successed:') + str(conn))
 
     except Exception as e:
         _log.disabled = False
-        _log.error("database connection failed!")  
-         
+        _log.error(_("database connection failed!"))  
+        raise
         exit(1)  
+def init_database(uri: str, debug: bool = False, cfg=None):
+    '''
+    Initializes the database connection.
+    :param uri: SQLAlchemy connection string
+    :param debug: Debug mode flag
+    :param cfg: The database configuration object
+    :return: Returns the engine object if successful, otherwise None
+    '''
+    if not cfg:
+        return None
+    if not uri:
+        uri = cfg.get("uri", "")
+    if not uri:
+        return None
+    global DataMap, mapped_base, engine, table_prefix
+     # Get the database encoding and decoding configurations
+    dbencode = cfg.get('dbencode')
+    dbdecode = cfg.get('dbdecode')
+    
+     # Check if the database is sqlite and create the directory
+    if uri.startswith('sqlite'):
+        from .config import ROOT_PATH
+        part = uri.split(':///')
+        db_directory  = os.path.dirname(part[1])
+        db_directory = os.path.abspath(os.path.join(ROOT_PATH, db_directory))
+        db_file = os.path.join(db_directory,os.path.basename(part[1]))
+        cfg['uri'] = uri = f"sqlite:///{db_file}"
+        os.makedirs(db_directory, exist_ok=True) 
+     # Get the maptables and dbfirst configurations
+    dbfirst = cfg.get("dbfirst") 
+    maptables = cfg.get("maptables") #if configured, only the listed tables will be mapped
 
+     # Create the engine object
+    engine = create_engine(uri, echo=False)
+
+    if dbfirst: # Normal database
+        def convert_varchar(s):
+            # Convert the string encoding to dbencode format
+            try:
+                return s.encode(dbencode).decode(dbdecode)
+            except:
+                return s
+         # Create a MetaData object and reflect the tables from the database
+        DataMap = MetaData() 
+        DataMap.reflect(engine, only=maptables)
+         # Create the mapped base object
+        mapped_base = automap_base(metadata=DataMap)
+        mapped_base.prepare(autoload_with=engine,
+            classname_for_table=camelize_classname,
+            name_for_collection_relationship=pluralize_collection )
+        engine.convert_varchar = convert_varchar
+     # Test the connection
+    _test_connection()
     return engine
- 

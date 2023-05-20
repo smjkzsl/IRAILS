@@ -22,7 +22,8 @@ def is_dev_mode(path):
 curdir = os.path.abspath(os.curdir)
 project_root = os.path.abspath(os.path.join(curdir,"../.."))
 if is_dev_mode(os.path.join(project_root,'irails')): 
-    sys.path.insert(-1, project_root)
+    
+    sys.path.insert(0, project_root)
     
 sys.path.insert(-1,os.path.abspath(os.curdir))
 from irails import __version__
