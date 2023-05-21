@@ -13,7 +13,7 @@ import re,os,sys
 from typing import Dict, List, Type, Union
 from .log import _log
 from ._i18n import _,load_app_translations
-from .config import config
+from .config import config,ROOT_PATH
 from ._utils import get_plural_name,get_singularize_name
 
 DataMap = None
@@ -259,19 +259,23 @@ def sanitize_path(path):
     sanitized_path = re.sub(illegal_chars, '_', path)
     return sanitized_path
 
-def check_migration(engine:Engine,uri,alembic_ini): 
+def check_migration(engine:Engine,uri,alembic_ini,upgrade=None): 
+    alembic_ini = os.path.abspath(os.path.join(ROOT_PATH,alembic_ini))
     def _update_uri_to_ini(): 
         #auto update alembic.ini sqlalchemy.url section 
+        
         config = configparser.ConfigParser() 
         # read ini config
         config.read(alembic_ini)
         config.set('alembic','sqlalchemy.url',uri)
+        script_location = config.get('alembic','script_location')
+        script_location= os.path.abspath(os.path.join(ROOT_PATH,script_location))
+        config.set("alembic",'script_location',script_location)
         # save modified ini file
         with open(alembic_ini, 'w') as f:
             config.write(f)
         #makesure the migrations directory exists
-        reversions_dir = config.get("alembic",'script_location')
-        reversions_dir = os.path.join(reversions_dir,"versions")
+        reversions_dir =  os.path.join(script_location,"versions")
         if not os.path.exists(reversions_dir):
             os.makedirs(reversions_dir,exist_ok=True)
     try:
@@ -285,9 +289,23 @@ def check_migration(engine:Engine,uri,alembic_ini):
         command.check(config=alembic_cfg)
     except Exception as e: 
         msg = sanitize_path(str(e.args)) 
-        command.revision(alembic_cfg, autogenerate=True, message=msg) 
+        msg = msg.replace('_New upgrade operations detected_','').replace("None","").replace(table_prefix,"")
+        if 'Target database is not up to date' in msg:
+            #check is check,the database version is not matched alembic
+            _log.warn(_('Target database is not up to date'))
+        else:
+            if isinstance(upgrade,bool):
+                #call by script ,igonred it
+                pass
+            else:
+                #create revision file
+                command.revision(alembic_cfg, autogenerate=True, message=msg) 
         # upgrade the db
-        command.upgrade(alembic_cfg, "head") 
+    to_revision = 'head'
+    if  upgrade is None or upgrade==True: 
+        command.upgrade(alembic_cfg, to_revision)    
+    else:
+        command.downgrade(alembic_cfg,"-1")
 def _test_connection():
     #test connect
     try:
@@ -321,7 +339,7 @@ def init_database(uri: str, debug: bool = False, cfg=None):
     
      # Check if the database is sqlite and create the directory
     if uri.startswith('sqlite'):
-        from .config import ROOT_PATH
+        
         part = uri.split(':///')
         db_directory  = os.path.dirname(part[1])
         db_directory = os.path.abspath(os.path.join(ROOT_PATH, db_directory))

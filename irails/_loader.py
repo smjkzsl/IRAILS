@@ -46,7 +46,7 @@ def _load_app(app_dir):
                 cnt += 1
         except ImportError as e:
             if m:#=='controllers':
-                _log.error(_("load app %s failed")%app_dir)
+                _log.error(_("load app %s failed")%module_name)
                 _log.error(e.args)
                 cnt -= 1
             else:
@@ -70,7 +70,7 @@ def _load_apps(debug=False,do_load:bool=True):
                     #_dir = os.path.join(app_dir,app)
                     _abs_app_path =  abs_app_dir
                     if _abs_app_path not in sys.path:
-                        sys.path.insert(-1,_abs_app_path)
+                        sys.path.insert(0,_abs_app_path)
                     debug and print('load app:'+app)
                     n = _load_app(app)
                     if n:

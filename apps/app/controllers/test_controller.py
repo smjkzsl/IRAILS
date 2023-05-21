@@ -3,7 +3,7 @@ from irails import route,api,Request,Response,BaseController,application,WebSock
 
 from typing import Any, Dict ,List
 from pydantic import conlist
-from app.services import UserService
+ 
 
 @application.on_event("startup")
 def startup():

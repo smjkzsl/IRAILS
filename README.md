@@ -65,6 +65,7 @@ The design concept of IRails refers to some RORs, but it has its own soul. It do
 * `irails i18n gettext`  --generate i18n in irails app dir
 * `irails shell`         --run python interpreter with buildin support contexts 
 * `irails test`          --run project tests 
+* `irails migrate`       --run database migrations
 
 ## Take a look configure file `general.yaml`
  

@@ -1,8 +1,8 @@
-"""(_New upgrade operations detected_ [('add_column', None, 'irails_users', Column('password', String(length=50), table=_irails_users_, comment='Password'))]_,)
+"""( [('add_column', , 'users', Column('password', String(length=50), table=_users_, comment='Password'))]_,)
 
-Revision ID: 0c20459aba85
+Revision ID: 06534dff989b
 Revises: 
-Create Date: 2023-05-20 22:16:15.058069
+Create Date: 2023-05-21 15:35:01.665896
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0c20459aba85'
+revision = '06534dff989b'
 down_revision = None
 branch_labels = None
 depends_on = None
