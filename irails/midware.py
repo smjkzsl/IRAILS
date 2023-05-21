@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import traceback
 
 from starlette.staticfiles import PathLike
-from .config import config
+from .config import config,ROOT_PATH
 from .log import _log
 from .midware_session import (SessionMiddleware,FileStorage,MemoryStorage,RedisStorage,SessionStorage,_SESSION_STORAGES)
 from fastapi.middleware.cors import CORSMiddleware
@@ -92,7 +92,8 @@ def mount_statics(app,static_paths={},debug=False):
                 _log.info(f"StaticDir:{_dir} mounted: {_url}")
             app.mount(_url,MvcStaticFiles(directory=_dir),name=_dir)       
     #mount public resources
-    public_dir =  os.path.abspath(config.get("public_dir"))
+    public_dir =  config.get("public_dir") 
+    public_dir = os.path.abspath(os.path.join(ROOT_PATH,public_dir))
     if not os.path.exists(public_dir):
         os.makedirs(public_dir) 
     app.mount('/public/',  MvcStaticFiles(directory=public_dir), name='public') 

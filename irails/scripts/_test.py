@@ -1,13 +1,16 @@
+import argparse
 import importlib
 import unittest
 import os,sys
 from irails.config import is_in_app,is_in_irails,config
+from irails._i18n import set_module_i18n
 curdir = os.path.abspath(os.curdir)
 
 def load_module(module_name:str,module_path:str):
     if os.path.exists(module_path):
         spec = importlib.util.spec_from_file_location(module_name, module_path)
         module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
         return module
     return None
@@ -20,30 +23,36 @@ def _get_tests(_root_path):
             if file.endswith('.py') and file.startswith('test_'):
                 all_files[name] = file_path
     return all_files
-def do_test_app(app_dir, print_out):
+def do_test_app(app_dir, print_out=None):
     
     test_files = _get_tests(app_dir)
+    app_package = os.path.basename(app_dir)
+    app_package_dir = os.path.dirname(app_dir)
+    if not app_package_dir in sys.path:
+        sys.path.insert(0,app_package_dir)
     for name in test_files:
         print(f"Starting test {test_files[name]}")
-        module = load_module(name,test_files[name])
+        module = load_module(f"{app_package}.tests.{name}",test_files[name])
+        
         if module:
+            
+            set_module_i18n(module,f"{app_package}.tests.{name}")
             sys.argv = [test_files[name]]
-            unittest.main(module=module,exit=False,buffer=print_out )
+            kwargs = {'module':module,'exit':False}
+            if print_out:
+                kwargs['buffer']=print_out
+            unittest.main(**kwargs)
     
-    
+    sys.path.remove(app_package_dir)
 def get_all_enabled_apps():
     from irails._loader import _load_apps
     apps = _load_apps(do_load=False)
     return apps
-def do_test_project(print_out): 
-    _old_stdout = sys.stdout
-    _old_stderr = sys.stderr
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
+def do_test_project(print_out=None): 
+     
     response = input("Do you want to continue to test all apps? (y/n)")
     if response.lower() == "y":
-        sys.stdout = _old_stdout
-        sys.stderr = _old_stderr
+         
         apps = get_all_enabled_apps() 
         for app in apps:
             dirs = app.split('.')
@@ -55,13 +64,21 @@ def do_test_project(print_out):
         print("User chose to cancel.")
     else:
         print("Invalid input.")
-    sys.stdout = _old_stdout
-    sys.stderr = _old_stderr
+     
 def main():
+    self_file = os.path.basename(__file__).lstrip("_").replace(".py",'')
+    parser = argparse.ArgumentParser(
+        usage=f"{sys.argv[0]} {self_file} [-h] [--verbose]",
+          description='run project or app tests')
+    parser.add_argument('-v','--verbose',action='store_true', help="full verbose with testing")  
+    args = parser.parse_args()  
     import io
-    print_out = io.StringIO() 
-    sys.stdout = print_out
-    sys.stderr = print_out
+    print_out = io.StringIO() if not args.verbose else None
+    if print_out:
+        sys.stdout = print_out
+        sys.stderr = print_out
+    if args.verbose:
+        sys.argv.pop()
     try:
         if is_in_app(curdir):
             do_test_app(curdir,print_out)
@@ -69,7 +86,11 @@ def main():
             do_test_project(print_out)
     except Exception as e:
         raise
-    if print_out:
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    if not print_out: 
+        return 0
+    else:
         import re
         pattern_starting = r"^Starting test .*$"
         pattern = r"Ran \d+ test in [\d\.]+s$" 
@@ -106,8 +127,7 @@ def main():
             elif  matched_fail:
                 tested_line.append(line) 
             lnt += 1
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
+    
     print("\n\ntest finished ,results:")
     print("====================================================")
     print("\n".join(tested_line))

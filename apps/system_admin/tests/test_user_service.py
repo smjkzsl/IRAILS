@@ -1,6 +1,7 @@
 from irails.unit_test import *
 from system_admin.services import UserService
 from system_admin.models.user import User,Role
+from irails._i18n import _
 
 class TestUserService(ServiceTest):
     
@@ -17,10 +18,10 @@ class TestUserService(ServiceTest):
         
         #new one again
         user1 = service.add(User,name="alice",fullname='alice jose',age=22)
-        self.assert_(user1.id)
+        self.assertTrue(user1.id)
 
         role:Role = service.add(Role,name="admin")
-        self.assert_(role.id)
+        self.assertTrue(role.id)
 
         role.users.append(user)
         role.users.append(user1)
@@ -35,3 +36,6 @@ class TestUserService(ServiceTest):
         users = service.query_user(User.name.like("bru%")).all()
         self.assertEqual(len(users),1)
         self.assertEqual(users[0].name,'bruce')
+        for u in users:
+            print(u)
+        print("Translation Test:",_("id"))

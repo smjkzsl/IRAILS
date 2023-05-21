@@ -187,7 +187,7 @@ def do_command(i18n_tool_file:str):
             if dev_mode:
                 sys.argv.append(cur_dir)
             else:
-                for d in ['controllers','services','models']:
+                for d in ['controllers','services','models','tests']:
                     sys.argv.append(d)
 
         if not '-o' in sys.argv:

@@ -1,21 +1,51 @@
-from contextlib import contextmanager
-from sqlalchemy import DateTime, Integer, String, create_engine,Engine,MetaData, Table, Column, ForeignKey, func,select,join,TableClause,update
-from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query
-from sqlalchemy import text,TextClause,Table
-from sqlalchemy.ext.automap import automap_base
-
-from ._utils import camelize_classname,pluralize_collection
- 
-from alembic import command
-from alembic.config import Config
 import configparser
 import re,os,sys
-from typing import Dict, List, Type, Union
+from typing import Any, Dict, List, Type, Union
+from contextlib import contextmanager
+from sqlalchemy import (DateTime, Integer, 
+                        String, Text, 
+                        create_engine,
+                        Engine,
+                        MetaData, 
+                        Table, 
+                        Column, 
+                        ForeignKey, 
+                        func,
+                        select,join,
+                        TableClause,
+                        update,
+                        event,text,TextClause,Table)
+from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query 
+from sqlalchemy.ext.automap import automap_base 
+from ._utils import camelize_classname,pluralize_collection 
+from alembic import command
+from alembic.config import Config 
 from .log import _log
-from ._i18n import _,load_app_translations
+from ._i18n import _,set_module_i18n
 from .config import config,ROOT_PATH
 from ._utils import get_plural_name,get_singularize_name
+ 
+events={
+'before_insert', 
+'after_insert', 
+'before_update', 
+'after_update',
+'before_delete',
+'after_delete', 
+'before_attach',
+'after_attach', 
+'before_commit',
+'after_commit',
+'before_rollback',
+'after_rollback',
+'after_soft_delete',
+'after_bulk_update', 
+'after_bulk_delete',
+'before_flush', 
+'after_flush',
+}
 
+ 
 DataMap = None
 mapped_base = None
 engine:Engine=None 
@@ -23,10 +53,19 @@ table_prefix=""
 cfg = config.get("database")
 if cfg:
     table_prefix = cfg.get("table_prefix","")
-class Base(DeclarativeBase):
+
+ 
+class Base( DeclarativeBase ):
     __abstract__ = True
     update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     create_at = Column(DateTime(timezone=True), server_default=func.now())
+    i18n_json_data = Column(Text,server_default='{}',info={'json':True})
+    def __init_subclass__(cls,*args,**kwargs) -> None: 
+        for e in events:
+            if hasattr(cls,e):
+                event.listen(cls, e, getattr(cls,e)) 
+        set_module_i18n(cls,cls.__module__)
+        super().__init_subclass__(*args,**kwargs)
 class Relations():
     __all = {}
     @classmethod
@@ -82,23 +121,9 @@ class InitDbError(Exception):
  
 class _serviceMeta(type):
     def __new__(cls, name, bases, attrs):
-        module_name = attrs['__module__']
-        module = sys.modules[module_name]
-        module_package = module.__package__ 
-                
-        # print(f"Creating class {name} in module {module_name}")
         obj = super().__new__(cls, name, bases, attrs)
-        if module_package:
-            package_module = sys.modules[module_package]
-            service_package_path =  package_module.__path__[0]
-            app_dirs = service_package_path.split(os.sep)
-            if len(app_dirs)>2:
-                app_dirs = app_dirs[-2:]
-                setattr(obj,"__appdir__",".".join(app_dirs))
-                app_dir = os.path.dirname(service_package_path)
-                # auto set the i18n locales to the `app_name/locales`
-                t = load_app_translations(app_dir)
-                setattr(obj,"_",t) #modify object
+        if obj.__name__!="Service":
+            set_module_i18n(obj=obj,module_name=attrs['__module__'])
         return obj
 
 class Service(metaclass=_serviceMeta):
@@ -342,7 +367,8 @@ def init_database(uri: str, debug: bool = False, cfg=None):
         
         part = uri.split(':///')
         db_directory  = os.path.dirname(part[1])
-        db_directory = os.path.abspath(os.path.join(ROOT_PATH, db_directory))
+        if not os.path.isabs(db_directory):
+            db_directory = os.path.abspath(os.path.join(ROOT_PATH, db_directory))
         db_file = os.path.join(db_directory,os.path.basename(part[1]))
         cfg['uri'] = uri = f"sqlite:///{db_file}"
         os.makedirs(db_directory, exist_ok=True) 

@@ -5,6 +5,7 @@ import importlib
 import os,sys
 import gettext
 from typing import Union
+
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
 _old_find = gettext.find
 
@@ -41,6 +42,29 @@ def check_compile_po(localedir,lang):
 
 __all_trans = {}          
 default_langs = ['en','zh'] 
+
+def set_module_i18n(obj, module_name ):
+     
+    module = sys.modules[module_name]
+    module_package = module.__package__ 
+      
+    if module_package:
+        if module_package in sys.modules:
+            package_module = sys.modules[module_package]
+        
+            service_package_path =  package_module.__path__[0]
+            app_dirs = service_package_path.split(os.sep)
+        else: #test  mode
+            app_dirs = module_package.split(".")
+            service_package_path = os.path.dirname(module.__file__)
+        if len(app_dirs)>=2:
+            app_dirs = app_dirs[-2:]
+            setattr(obj,"__appdir__",".".join(app_dirs))
+            app_dir = os.path.dirname(service_package_path)
+            # auto set the i18n locales to the `app_name/locales`
+            t = load_app_translations(app_dir)
+            # setattr(obj,"_",t) #modify object
+            setattr(module,'_',t.gettext)
 def load_app_translations(module_dir,lan=None) -> gettext.GNUTranslations: 
     global __all_trans
     
