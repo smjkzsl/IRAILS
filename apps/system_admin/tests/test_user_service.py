@@ -45,3 +45,15 @@ class TestUserService(ServiceTest):
         self.assertEqual(service.count(User),12)
         self.assertEqual(service.count(User,User.age>30),7)
         self.assertEqual(service.count(User,User.name.like('rebot%')),10)
+
+        
+        c=service.update(User,User.age>18,User.name.like('rebot%'), name="test")
+        self.assertEqual(c,10)
+        service.session().commit()
+        self.assertEqual(service.count(User,User.name.like('test')),10)
+
+        self.assertEqual(service.count(User,User.age==18),1)
+
+        #test select
+        rows = service.select(User,User.age>30)
+        self.assertEqual(len(rows),7)

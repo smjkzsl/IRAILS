@@ -1,6 +1,6 @@
 import configparser
 import re,os,sys
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Type, Union, overload
 from contextlib import contextmanager
 from sqlalchemy import (DateTime, Integer, 
                         String, Text, 
@@ -13,7 +13,7 @@ from sqlalchemy import (DateTime, Integer,
                         func,
                         select,join,
                         TableClause,
-                        update,
+                        update,insert,delete,
                         event,text,TextClause,Table)
 from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query 
 from sqlalchemy.ext.automap import automap_base 
@@ -137,11 +137,12 @@ class _serviceMeta(type):
         obj = super().__new__(cls, name, bases, attrs)
         if obj.__name__!="Service":
             set_module_i18n(obj=obj,module_name=attrs['__module__'])
+         
         return obj
 
 class Service(metaclass=_serviceMeta):
     __all_generated = {}
-    engine:Engine = engine
+     
     _ = _ #the i18n traslation object ,it's will auto redirect the `app_name/locales` dir i18n configure
     
     @classmethod
@@ -156,23 +157,58 @@ class Service(metaclass=_serviceMeta):
         session = session_local()
         setattr(self,"_session",session)
         return session
-    @classmethod
-    def query(self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any)->Query:
-        """get query object"""
-        session = self.session()  
-        
-        return  session.query(*entities,**kwargs)  
+     
     # @classmethod
-    # def group_by(self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any)->Query:
-    #     query = self.query(*entities,**kwargs) 
-    #     return query.group_by(entities[0]) 
+    # def query(self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any)->Query:
+    #     """get query object"""
+    #     session = self.session()   
+    #     return  session.query(*entities,**kwargs)  
+     
+    @classmethod
+    def query(self,model:Base,*args,**kwargs)->Query:
+        session = self.session()
+        query = session.query(model).filter(*args).filter_by(**kwargs)
+        return query
+    @classmethod
+    def insert(self,model:Base,**values)->int:
+        '''
+            execute insert :model with :values 
+            :return rowcount
+        '''
+        stmt = insert(model).values(**values)
+        with engine.begin() as conn:
+            ret = conn.execute(stmt)
+            conn.commit()
+            return ret.rowcount
+    @classmethod
+    def update(self,model:Base,*where,**values)->int:
+        '''
+            execute update :model with :values on :model by :where
+            :return rowcount
+        '''
+        stmt = update(model).where(*where).values(**values)
+        with  engine.begin() as conn:
+            return conn.execute(stmt).rowcount
+    @classmethod
+    def select(self,model:Base,*where)->List[Base]:
+        '''
+            execute select statement with :where condition on :model
+            :return rows of result
+        '''
+        stmt = select(model).where(*where)
+        with engine.begin() as conn:
+            ret = conn.execute(stmt)
+            return ret.fetchall()     
     
     @classmethod
     def count(self,model:Base,*args)->int:
+        '''
+            :return count by givened :args on :model
+        '''
         if hasattr(model,'id'):
             return self.session().query(func.count(model.id)).filter(*args).scalar()
         else:
-            return len(self.list(model=model))
+            return len(self.list( model,*args))
     @classmethod
     def get(self,model:Base,id:int)->Base:
         return self.session().get(model,id)
@@ -191,31 +227,25 @@ class Service(metaclass=_serviceMeta):
             return m
         return None
     @classmethod
-    def list(self,model:Base,**kwargs)->List[Base]:
+    def list(self,model:Base,*args, **kwargs)->List[Base]:
         session = self.session()  
         query = session.query(model) 
+        if args:
+            query = query.filter(*args)
         if kwargs:
             query = query.filter_by(**kwargs) 
         return query.all()
     
     
     @classmethod
-    def delete(self,model:Base,**kwargs)->int:
-        session = self.session()  
-        if kwargs:
-            cnt = session.query(model).filter_by(**kwargs).delete()
-        else:
-            cnt = session.query(model).delete()
-        session.commit()
+    def delete(self,model:Base,*args,**kwargs)->int:
+        query = self.query(model,*args,**kwargs)
+         
+        cnt = query.delete()
+        
+        self.session().commit()
         return cnt
-    @classmethod
-    def update(self,model:Base,filters:Dict=None, values:Dict=None)->Base:
-        cnt = 0
-        if values:
-            session = self.session() 
-            cnt = session.query(model).filter_by(**filters).update(values)
-            session.commit() 
-        return cnt
+    
     @classmethod
     def flush(self,model:Base=None):
         session = self.session()
@@ -229,7 +259,7 @@ class Service(metaclass=_serviceMeta):
     @contextmanager 
     def get_session(cls):
         """Provide a transactional scope around a series of operations."""
-        if not cls.engine:
+        if not  engine:
             yield None
             return
         if hasattr(cls,'_session_local'):
