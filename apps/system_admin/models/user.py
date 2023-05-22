@@ -2,7 +2,7 @@ from typing import List
 from irails import database
 from irails._i18n import _
 from sqlalchemy import Table, Column, ForeignKey, String, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship,validates
  
 
  

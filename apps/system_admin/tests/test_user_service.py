@@ -39,3 +39,9 @@ class TestUserService(ServiceTest):
         for u in users:
             print(u)
         print("Translation Test:",_("id"))
+
+        for i in range(18,28):
+            service.add(User,name=f"rebot{i}",fullname=f"test rebot{i}",age=i+10)
+        self.assertEqual(service.count(User),12)
+        self.assertEqual(service.count(User,User.age>30),7)
+        self.assertEqual(service.count(User,User.name.like('rebot%')),10)

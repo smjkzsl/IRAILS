@@ -17,6 +17,7 @@ from sqlalchemy import (DateTime, Integer,
                         event,text,TextClause,Table)
 from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query 
 from sqlalchemy.ext.automap import automap_base 
+from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from alembic import command
 from alembic.config import Config 
 from ._utils import camelize_classname,pluralize_collection 
@@ -155,7 +156,23 @@ class Service(metaclass=_serviceMeta):
         session = session_local()
         setattr(self,"_session",session)
         return session
- 
+    @classmethod
+    def query(self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any)->Query:
+        """get query object"""
+        session = self.session()  
+        
+        return  session.query(*entities,**kwargs)  
+    # @classmethod
+    # def group_by(self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any)->Query:
+    #     query = self.query(*entities,**kwargs) 
+    #     return query.group_by(entities[0]) 
+    
+    @classmethod
+    def count(self,model:Base,*args)->int:
+        if hasattr(model,'id'):
+            return self.session().query(func.count(model.id)).filter(*args).scalar()
+        else:
+            return len(self.list(model=model))
     @classmethod
     def get(self,model:Base,id:int)->Base:
         return self.session().get(model,id)
@@ -180,12 +197,7 @@ class Service(metaclass=_serviceMeta):
         if kwargs:
             query = query.filter_by(**kwargs) 
         return query.all()
-    @classmethod
-    def query(self,model:Base)->Query:
-        session = self.session()  
-        query = session.query(model) 
-         
-        return query
+    
     
     @classmethod
     def delete(self,model:Base,**kwargs)->int:
