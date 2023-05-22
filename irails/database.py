@@ -17,15 +17,15 @@ from sqlalchemy import (DateTime, Integer,
                         event,text,TextClause,Table)
 from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query 
 from sqlalchemy.ext.automap import automap_base 
-from ._utils import camelize_classname,pluralize_collection 
 from alembic import command
 from alembic.config import Config 
+from ._utils import camelize_classname,pluralize_collection 
 from .log import _log
 from ._i18n import _,set_module_i18n
 from .config import config,ROOT_PATH
 from ._utils import get_plural_name,get_singularize_name
  
-events={
+EVENTS={
 'before_insert', 
 'after_insert', 
 'before_update', 
@@ -59,9 +59,21 @@ class Base( DeclarativeBase ):
     __abstract__ = True
     update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     create_at = Column(DateTime(timezone=True), server_default=func.now())
+    #i18n_json_data={
+    #       'col1':{
+    #           'en':'bruce',
+    #           'zh':'布鲁斯'
+    #       },
+    #       'col2':{
+    #           'en':'hellow',
+    #           'zh':'你好'
+    #       },
+    #       ....
+    # 
+    # }
     i18n_json_data = Column(Text,server_default='{}',info={'json':True})
     def __init_subclass__(cls,*args,**kwargs) -> None: 
-        for e in events:
+        for e in EVENTS:
             if hasattr(cls,e):
                 event.listen(cls, e, getattr(cls,e)) 
         set_module_i18n(cls,cls.__module__)
@@ -158,7 +170,7 @@ class Service(metaclass=_serviceMeta):
             session = self.session()
             session.add(m)
             session.commit()
-            session.merge(m)
+            session.merge(m,load=False)
             return m
         return None
     @classmethod
@@ -267,16 +279,7 @@ class Service(metaclass=_serviceMeta):
         else:
             raise NameError()
 
-
-            
-# def ismongo_cloud(uri):
-#     import re 
-#     # uri = 'mongodb+srv://dbbruce:smjk123@atlascluster.siz4vrp.mongodb.net/?retryWrites=true&w=majority' 
-#     # 匹配 MongoDB Cloud 连接字符串的正则表达式
-#     regex = re.compile("mongodb\+srv:\/\/.*@.*\.mongodb\.net\/.*\?.*") 
-#     return regex.match(uri)
-      
-
+ 
 def sanitize_path(path):
     # 匹配非法字符
     illegal_chars = r'[\\/:\*\?"<>\|]'

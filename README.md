@@ -3,7 +3,7 @@ A mvc framework used FastApi
 Simple and elegant use of FastApi in MVC mode
 
 [Online Docs](https://irails.2rails.cn/) 
-# Welcome to IRAILS(python on rails)
+# Welcome to IRAILS
 IRAILS is not just an ordinary imitation of Ruby on rails, but based on the characteristics of the Python language itself, combined with rich Python class libraries, it refuses to create wheels repeatedly, and can achieve web development with minimal code and configuration, making Python web development fast and powerful, and can be easily deployed on various platforms.
 The design concept of IRails refers to some RORs, but it has its own soul. It does not pursue the ultimate configuration and development, but rather appropriate configuration and development. Currently, it is in a preview version and will continue to improve in the future.
  
@@ -66,60 +66,3 @@ The design concept of IRails refers to some RORs, but it has its own soul. It do
 * `irails shell`         --run python interpreter with buildin support contexts 
 * `irails test`          --run project tests 
 * `irails migrate`       --run database migrations
-
-## Take a look configure file `general.yaml`
- 
-``` 
-    app:
-        appdir:
-        - apps
-        enabled: null
-    root: apps.root
-
-    cors:
-        allow_credentials: true
-        allow_headers:
-            - '*'
-        allow_methods:
-            - '*'
-        allow_origins:
-            - '*'
-    debug: true
-    errors:
-        error_404_page: '{ROOT.public_dir}/error_404.html'
-        error_500_page: '{ROOT.public_dir}/error_500.html'
-    log:
-        file: ''
-        level: DEBUG
-        name: iRails
-    public_dir: ./public
-
-    view:
-        jinja2:
-            block_end_string: '%}'
-            block_start_string: '{%'
-            comment_end_string: '#}'
-            comment_start_string: '{#'
-            variable_end_string: '}'
-            variable_start_string: ${
-        static_format:
-        - vue
-        - html
-    i18n:
-        lang: ['zh']
-        url_lang_key: 'lang'
-```
-## Take a look controller file 
- 
-```python
-    from irails import api_router,api,Request,Response,BaseController,application
- 
-    @api_router(path='/{controller}',auth='none')
-    class AdminController(BaseController): 
-        @api.get("/index")
-        def index(self):
-            """
-            :title Admin
-            """
-            return self.view()
-```
