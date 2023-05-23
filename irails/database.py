@@ -1,8 +1,8 @@
 import configparser
 import re,os,sys
-from typing import Any, Dict, List, Type, Union, overload
+from typing import Any, Dict, List, Tuple, Type, Union, overload
 from contextlib import contextmanager
-from sqlalchemy import (DateTime, Integer, 
+from sqlalchemy import (Boolean, DateTime, Integer, 
                         String, Text, 
                         create_engine,
                         Engine,
@@ -52,34 +52,22 @@ mapped_base = None
 engine:Engine=None 
 table_prefix=""
 cfg = config.get("database")
+is_deleted_field = 'is_deleted'
+i18n_json_data_field = 'i18n_json_data'
 if cfg:
     table_prefix = cfg.get("table_prefix","")
-
+    is_deleted_field = cfg.get("is_deleted_field",'is_deleted')
+    i18n_json_data_field = cfg.get("i18n_json_data_field",'i18n_json_data')
  
 class Base( DeclarativeBase ):
-    __abstract__ = True
-    update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    create_at = Column(DateTime(timezone=True), server_default=func.now())
-    #i18n_json_data={
-    #       'col1':{
-    #           'en':'bruce',
-    #           'zh':'布鲁斯'
-    #       },
-    #       'col2':{
-    #           'en':'hellow',
-    #           'zh':'你好'
-    #       },
-    #       ....
-    # 
-    # }
-    i18n_json_data = Column(Text,server_default='{}',info={'json':True})
+    __abstract__ = True 
     def __init_subclass__(cls,*args,**kwargs) -> None: 
         for e in EVENTS:
             if hasattr(cls,e):
                 event.listen(cls, e, getattr(cls,e)) 
         set_module_i18n(cls,cls.__module__)
         super().__init_subclass__(*args,**kwargs)
-class Relations():
+class Schemes():
     __all = {}
     @classmethod
     def M2M(self,Tb1:Base,Tb2:Base):
@@ -118,14 +106,41 @@ class Relations():
         tb1 = get_singularize_name(_tb1s)
         tb2 = get_singularize_name(_tb2s)
         
-        if not hasattr(Tb1, f"{tb2}_id"):
-            setattr(Tb1, f"{tb2}_id",Column(Integer, ForeignKey(f'{tb2}.id'))) 
-        if not hasattr(Tb1,f"{tb2}"):
-            setattr(Tb1,f"{tb2}",relationship(f'{tb1}',back_populates=f'{tb2}'))
-        if not hasattr(Tb2,tb1):
-            setattr(Tb2,tb1,relationship(tb1,back_populates=tb2))
+        setattr(Tb1, f"{tb2}_id",Column(Integer, ForeignKey(f'{tb2}.id'))) 
+        setattr(Tb1,f"{tb2}",relationship(f'{tb1}',back_populates=f'{tb2}'))
+        setattr(Tb2,tb1,relationship(tb1,back_populates=tb2))
         return Tb1,Tb2
-    pass
+    @classmethod
+    def SOFT_DELETE(self,*tables):
+        """
+        set a `is_deleted` field on :tables
+        please use irails.service to query ,it will auto add the 'is_deleted' flag
+        """
+        for Tb in tables:
+            setattr(Tb,is_deleted_field,Column(Boolean, default=False))
+    @classmethod
+    def ADD_I18N(self,*tables):
+        #i18n_json_data={
+        #       'col1':{
+        #           'en':'bruce',
+        #           'zh':'布鲁斯'
+        #       },
+        #       'col2':{
+        #           'en':'hellow',
+        #           'zh':'你好'
+        #       },
+        #       ....
+        # 
+        # }
+        for tb in tables:
+            setattr(tb,i18n_json_data_field,Column(Text,server_default='{}',info={'json':True}))
+
+    @classmethod
+    def TIMESTAMPS(self,*tables):
+        '''add timestamp(update_at,create_at) field on :tables'''
+        for tb in tables:
+            tb.update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+            tb.create_at = Column(DateTime(timezone=True), server_default=func.now())        
 class InitDbError(Exception):
     pass
 
@@ -167,6 +182,10 @@ class Service(metaclass=_serviceMeta):
     @classmethod
     def query(self,model:Base,*args,**kwargs)->Query:
         session = self.session()
+        if hasattr(model,is_deleted_field):
+            if not kwargs:kwargs = {}
+            if not is_deleted_field in kwargs:
+                kwargs[is_deleted_field] = False
         query = session.query(model).filter(*args).filter_by(**kwargs)
         return query
     @classmethod
@@ -190,25 +209,35 @@ class Service(metaclass=_serviceMeta):
         with  engine.begin() as conn:
             return conn.execute(stmt).rowcount
     @classmethod
-    def select(self,model:Base,*where)->List[Base]:
+    def select(self,model:Base,*where,**kwargs)->List[Base]:
         '''
             execute select statement with :where condition on :model
             :return rows of result
         '''
-        stmt = select(model).where(*where)
+        if hasattr(model,is_deleted_field):
+            if not kwargs:kwargs = {}
+            if not is_deleted_field in kwargs:
+                kwargs[is_deleted_field] = False
+        stmt = select(model).where(*where).filter_by(**kwargs)
         with engine.begin() as conn:
             ret = conn.execute(stmt)
             return ret.fetchall()     
     
     @classmethod
-    def count(self,model:Base,*args)->int:
+    def count(self,model:Base,*args,**kwargs)->int:
         '''
             :return count by givened :args on :model
         '''
+        if hasattr(model,is_deleted_field):
+                if not kwargs:kwargs = {}
+                if not is_deleted_field in kwargs:
+                    kwargs[is_deleted_field] = False
         if hasattr(model,'id'):
-            return self.session().query(func.count(model.id)).filter(*args).scalar()
+            
+            q = self.query(func.count(model.id),*args,**kwargs)
+            return q.scalar()
         else:
-            return len(self.list( model,*args))
+            return len(self.list( model,*args,**kwargs))
     @classmethod
     def get(self,model:Base,id:int)->Base:
         return self.session().get(model,id)
@@ -227,7 +256,22 @@ class Service(metaclass=_serviceMeta):
             return m
         return None
     @classmethod
+    def bulk_add(self,values:List['Base']):
+        for item in values:
+            cls = item.__class__
+            if hasattr(cls,"before_insert"):
+                cls.before_insert(None,None,item)
+        with self.get_session() as session:
+            ret = session.bulk_save_objects(values )
+            session.commit()
+            return ret
+
+    @classmethod
     def list(self,model:Base,*args, **kwargs)->List[Base]:
+        if hasattr(model,is_deleted_field):
+            if not kwargs:kwargs = {}
+            if not is_deleted_field in kwargs:
+                kwargs[is_deleted_field] = False
         session = self.session()  
         query = session.query(model) 
         if args:
@@ -238,14 +282,23 @@ class Service(metaclass=_serviceMeta):
     
     
     @classmethod
-    def delete(self,model:Base,*args,**kwargs)->int:
-        query = self.query(model,*args,**kwargs)
-         
-        cnt = query.delete()
-        
+    def delete(self,model:Base,*args,**kwargs)->int:  
+        query = self.session().query(model).filter(*args).filter_by(**kwargs)
+        if hasattr(model,is_deleted_field):
+            rows = query.all()
+            for row in rows:
+                setattr(row,is_deleted_field,True) 
+            cnt = len(rows)
+        else:
+            cnt = query.delete() 
         self.session().commit()
         return cnt
-    
+    @classmethod
+    def real_delete(self,model:Base,*args,**kwargs):
+        query = self.session().query(model).filter(*args).filter_by(**kwargs)
+        cnt = query.delete()
+        self.session().commit()
+        return cnt
     @classmethod
     def flush(self,model:Base=None):
         session = self.session()
