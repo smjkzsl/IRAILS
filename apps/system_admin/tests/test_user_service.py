@@ -66,3 +66,24 @@ class TestUserService(ServiceTest):
         #test delete
         service.delete(User,User.age<30)
         self.assertEqual(service.count(User),8)
+    def test_pager(self):
+        import math
+        page_size = 3
+        page_num = 1
+        service:UserService = UserService()
+        q = service.query(User).order_by(User.name)
+        cnt = q.count()
+        self.assertEqual(3,math.ceil(cnt/page_size))
+        q = q.limit(page_size).offset(page_size * (page_num - 1))
+        rows = q.all()
+        self.assertEqual(len(rows),page_size)
+    def test_list_pager(self):
+        service:UserService=UserService(   )
+        pager = service.pager(User)
+        self.assertEqual(pager.page_count(),1,'总页数')
+        self.assertEqual(pager.count(),8,'总行数')
+        rows = pager.get(1)
+        self.assertEqual(len(rows),8,'当前页行数')
+        
+
+        

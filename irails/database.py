@@ -54,8 +54,12 @@ table_prefix=""
 cfg = config.get("database")
 is_deleted_field = 'is_deleted'
 i18n_json_data_field = 'i18n_json_data'
+page_size = 20
 if cfg:
     table_prefix = cfg.get("table_prefix","")
+    page_size = int(cfg.get("page_size",20))
+    if page_size<0 :
+        page_size=20
     is_deleted_field = cfg.get("is_deleted_field",'is_deleted')
     i18n_json_data_field = cfg.get("i18n_json_data_field",'i18n_json_data')
  
@@ -154,7 +158,24 @@ class _serviceMeta(type):
             set_module_i18n(obj=obj,module_name=attrs['__module__'])
          
         return obj
-
+class ListPager:
+    def __init__(self,query:Query,size:int=None ) -> None: 
+        self.query = query
+        if size:
+            self.page_size = size
+        else:
+            self.page_size = page_size 
+         
+    def count(self)->int:
+        return self.query.count()
+    def page_count(self)->int:
+        import math
+        return math.ceil(self.count()/self.page_size)
+    
+    def page(self,current=1)->Query:
+        return self.query.limit(self.page_size).offset(self.page_size*(current-1))
+    def get(self,current=1)->List[Base]:
+        return self.query.limit(self.page_size).offset(self.page_size*(current-1)).all()
 class Service(metaclass=_serviceMeta):
     __all_generated = {}
      
@@ -173,11 +194,12 @@ class Service(metaclass=_serviceMeta):
         setattr(self,"_session",session)
         return session
      
-    # @classmethod
-    # def query(self, *entities: _ColumnsClauseArgument[Any], **kwargs: Any)->Query:
-    #     """get query object"""
-    #     session = self.session()   
-    #     return  session.query(*entities,**kwargs)  
+    @classmethod
+    def pager(self,model:Base,*args,**kwargs)->ListPager:
+        """get query object"""
+
+        query = self.query(model,*args,**kwargs)
+        return ListPager(query=query)
      
     @classmethod
     def query(self,model:Base,*args,**kwargs)->Query:
@@ -434,7 +456,7 @@ def _test_connection():
     try:
         with engine.connect() as conn:
             _log.disabled = False
-            _log.debug(_('database connection successed:') + str(conn))
+            _log.debug(_('database connection successed:')) 
 
     except Exception as e:
         _log.disabled = False
