@@ -16,6 +16,7 @@ from sqlalchemy import (Boolean, DateTime, Integer,
                         update,insert,delete,
                         event,text,TextClause,Table,
                         inspect)
+import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query 
 from sqlalchemy.ext.automap import automap_base 
 from sqlalchemy.sql._typing import _ColumnsClauseArgument
@@ -69,8 +70,7 @@ class Base( DeclarativeBase ):
     def __init_subclass__(cls,*args,**kwargs) -> None: 
         super().__init_subclass__(*args,**kwargs)
         for e in EVENTS:
-            if hasattr(cls,e):
-                if callable(getattr(cls,e)):
+            if hasattr(cls,e) and callable(getattr(cls,e)):
                     event.listen(cls, e, getattr(cls,e)) 
         
         metas = inspect(cls)
@@ -113,7 +113,7 @@ class Schemes():
         self.__all[f"M2M{tb1}{tb2}"] = m2m_table
         return m2m_table
     @classmethod
-    def M2O(self, ChildTable: Base, ParentTable: Base):
+    def M2O(self, ChildTable: Base, ParentTable: Base,cascade='delete,all'):
         '''set 
         :ChildTable belongs to :ParentTable
         and :ParentTable hasmany :ChildTable
@@ -126,7 +126,7 @@ class Schemes():
         setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tbname}.id')))
         setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{child_tbname}'))
 
-        setattr(ParentTable, child_tbname, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade='delete,all'))
+        setattr(ParentTable, child_tbname, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade=cascade))
         return ChildTable, ParentTable
 
     @classmethod
@@ -138,7 +138,7 @@ class Schemes():
         for Tb in tables:
             setattr(Tb,is_deleted_field,Column(Boolean, default=False))
     @classmethod
-    def ADD_I18N(self,*tables):
+    def I18NABLE(self,*tables):
         #i18n_json_data={
         #       'col1':{
         #           'en':'bruce',
@@ -180,27 +180,33 @@ class ListPager:
             self.page_size = size
         else:
             self.page_size = page_size 
-         
-    def count(self)->int:
+    def order(self,*args):
+        query = self.query.order_by(*args)     
+        return ListPager(query=query,size=self.page_size)
+    
+    def count_all(self)->int:
         return self.query.count()
+    
     def page_count(self)->int:
         import math
-        return math.ceil(self.count()/self.page_size)
+        return math.ceil(self.count_all()/self.page_size)
     
-    def page(self,current=1)->Query:
-        return self.query.limit(self.page_size).offset(self.page_size*(current-1))
-    def get(self,current=1)->List[Base]:
-        return self.query.limit(self.page_size).offset(self.page_size*(current-1)).all()
+    def page(self,page_num=1)->Query:
+        return self.query.limit(self.page_size).offset(self.page_size*(page_num-1))
+    
+    def get(self,page_num=1)->List[Base]:
+        return self.query.limit(self.page_size).offset(self.page_size*(page_num-1)).all()
+    
 class Service(metaclass=_serviceMeta):
     __all_generated = {}
-     
+    _session:Session = None
     _ = _ #the i18n traslation object ,it's will auto redirect the `app_name/locales` dir i18n configure
     @contextmanager      
     @staticmethod 
     def get_session():
         """Provide a transactional scope around a series of operations."""
-        if hasattr(Service,'_session'):
-            session = getattr(Service,'_session')
+        if  Service._session:
+            session = Service._session
         else:
             session = Service.session()
         try:
@@ -213,7 +219,7 @@ class Service(metaclass=_serviceMeta):
         #     session.close()
     @classmethod
     def session(self)->Session:
-        if hasattr(Service,"_session"):
+        if  Service._session:
             return Service._session 
         Service._session = Session(bind=engine) 
         return Service._session
@@ -224,15 +230,32 @@ class Service(metaclass=_serviceMeta):
 
         query = self.query(model,*args,**kwargs)
         return ListPager(query=query)
-     
     @classmethod
-    def query(self,model:Base,*args,**kwargs)->Query:
-        '''Get a query object with auto passed is_deleted rows'''
+    def exists(self,model:Base,field_name:str,value:Any)->bool:
         session = self.session()
+        kwargs = {field_name:value}
+        try:
+            q = session.query(model).filter_by(**kwargs).one()
+        except sqlalchemy.exc.NoResultFound as e: 
+            return False
+        except sqlalchemy.orm.exc.MultipleResultsFound:
+            return True
+        return not q  is None
+    @classmethod
+    def __check_is_deleted_param(self,model:Base,**kwargs):
         if hasattr(model,is_deleted_field):
             if not kwargs:kwargs = {}
             if not is_deleted_field in kwargs:
                 kwargs[is_deleted_field] = False
+            else:
+                if kwargs[is_deleted_field]=='all':
+                    del kwargs[is_deleted_field]
+        return kwargs
+    @classmethod
+    def query(self,model:Base,*args,**kwargs)->Query:
+        '''Get a query object with auto passed is_deleted rows'''
+        session = self.session()
+        kwargs = self.__check_is_deleted_param(model,**kwargs)
         query = session.query(model).filter(*args).filter_by(**kwargs)
         return query
     
@@ -242,14 +265,23 @@ class Service(metaclass=_serviceMeta):
             execute select statement with :where condition on :model
             :return rows of result
         '''
-        if hasattr(model,is_deleted_field):
-            if not kwargs:kwargs = {}
-            if not is_deleted_field in kwargs:
-                kwargs[is_deleted_field] = False
+        kwargs = self.__check_is_deleted_param(model,**kwargs)
         stmt = select(model).where(*where).filter_by(**kwargs)
         with engine.begin() as conn:
             ret = conn.execute(stmt)
-            return ret.fetchall()     
+            return ret.fetchall()    
+    @classmethod
+    def list(self,model:Base,*args, **kwargs)->List[Base]:
+        '''Auto pass is_deleted if model has is_deleted field'''
+        kwargs = self.__check_is_deleted_param(model,**kwargs)
+        session = self.session()  
+        query = session.query(model) 
+        if args:
+            query = query.filter(*args)
+        if kwargs:
+            query = query.filter_by(**kwargs) 
+        return query.all()
+     
     @classmethod
     def update(self,model:Base,*where,**values)->int:
         '''
@@ -273,16 +305,15 @@ class Service(metaclass=_serviceMeta):
         ''' Auto pass if row has is_deleted field
             :return count by givened :args on :model
         '''
-        if hasattr(model,is_deleted_field):
-                if not kwargs:kwargs = {}
-                if not is_deleted_field in kwargs:
-                    kwargs[is_deleted_field] = False
+        kwargs = self.__check_is_deleted_param(model,**kwargs)
+        
         if hasattr(model,'id'):
             
             q = self.query(func.count(model.id),*args,**kwargs)
             return q.scalar()
         else:
             return len(self.list( model,*args,**kwargs))
+        
     @classmethod
     def get(self,model:Base,id:int)->Base:
         return self.session().get(model,id)
@@ -304,20 +335,7 @@ class Service(metaclass=_serviceMeta):
     def add_all(self,values:List['Base']):
         with self.get_session() as session: 
             session.add_all(values) 
-    @classmethod
-    def list(self,model:Base,*args, **kwargs)->List[Base]:
-        '''Auto pass is_deleted if model has is_deleted field'''
-        if hasattr(model,is_deleted_field):
-            if not kwargs:kwargs = {}
-            if not is_deleted_field in kwargs:
-                kwargs[is_deleted_field] = False
-        session = self.session()  
-        query = session.query(model) 
-        if args:
-            query = query.filter(*args)
-        if kwargs:
-            query = query.filter_by(**kwargs) 
-        return query.all()
+    
     
     
     @classmethod

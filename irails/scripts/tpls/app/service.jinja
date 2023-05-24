@@ -5,33 +5,5 @@ from {{app_name}}.models import {{model_name}}
 
 class {{service_name}}(Service):
 
-    def get_{{model_path_name}}(self,id:int)->{{model_name}}:
-        """
-        get {{model_name}} with givened param :id
-        """
-        return self.get({{model_name}},id) 
-
-    def list_{{model_path_name}}(self,**kwargs)->List[{{model_name}}]:
-        """
-        list all {{model_name}} with givened filters
-        like list_user(name="bruce") will return a list of user by name equal bruce
-        """
-        return self.list({{model_name}},**kwargs)
-
-    def add_{{model_path_name}}(self,**kwargs)->{{model_name}}:
-        """
-        add a {{model_name}} to database and return it
-        :kwargs can like this `name="bruce",age=19" 
-        """
-        return self.add({{model_name}},**kwargs) 
-    def query_{{model_path_name}}(self)->List[{{model_name}}]:
-        """return a Query"""
-        return self.query({{model_name}})
-
-    def delete_{{model_path_name}}(self,**kwargs)->int:
-        """
-        delete {{model_name}} by givened condition
-        warning: if kwargs is None,it's will delete all
-        """
-        return self.delete({{model_name}},**kwargs)
+    pass
         
