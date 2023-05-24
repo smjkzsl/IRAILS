@@ -92,28 +92,30 @@ class Schemes():
         tb2_naked_name = get_singularize_name(Tb2.__tablename__.replace(table_prefix,""))
         m2m_table_name = f"{table_prefix}{tb1_naked_name}_{tb2_naked_name}"
         m2m_table = Table(m2m_table_name, Base.metadata,
-        Column(f'{tb1_naked_name}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True),
-        Column(f'{tb2_naked_name}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True)
+            Column(f'{tb1_naked_name}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True  ),
+            Column(f'{tb2_naked_name}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True) 
         ) 
-        setattr(Tb1,f"{tb2}",relationship(Tb2.__name__, secondary=m2m_table, back_populates=f"{tb1}"))
-        setattr(Tb2,f"{tb1}",relationship(Tb1.__name__, secondary=m2m_table, back_populates=f"{tb2}"))
+        setattr(Tb1,f"{tb2}",relationship(Tb2.__name__, secondary=m2m_table, back_populates=f"{tb1}",passive_deletes=False  ))
+        setattr(Tb2,f"{tb1}",relationship(Tb1.__name__, secondary=m2m_table, back_populates=f"{tb2}",passive_deletes=False ))
         self.__all[f"M2M{tb1}{tb2}"] = m2m_table
         return m2m_table
     @classmethod
-    def M2O(self,Tb1:Base,Tb2:Base):
+    def M2O(self, ChildTable: Base, ParentTable: Base):
         '''set 
-            :Tb1 belongs to :Tb2
-            and :Tb2 hasmany :Tb1
+        :ChildTable belongs to :ParentTable
+        and :ParentTable hasmany :ChildTable
         '''
-        _tb1s = Tb1.__tablename__
-        _tb2s = Tb2.__tablename__
-        tb1 = get_singularize_name(_tb1s)
-        tb2 = get_singularize_name(_tb2s)
-        
-        setattr(Tb1, f"{tb2}_id",Column(Integer, ForeignKey(f'{tb2}.id'))) 
-        setattr(Tb1,f"{tb2}",relationship(f'{tb1}',back_populates=f'{tb2}'))
-        setattr(Tb2,tb1,relationship(tb1,back_populates=tb2))
-        return Tb1,Tb2
+        child_tablename = ChildTable.__tablename__
+        parent_tablename = ParentTable.__tablename__
+        child_tbname = get_singularize_name(child_tablename)
+        parent_tbname = get_singularize_name(parent_tablename)
+
+        setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tbname}.id')))
+        setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{child_tbname}'))
+
+        setattr(ParentTable, child_tbname, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade='delete,all'))
+        return ChildTable, ParentTable
+
     @classmethod
     def SOFT_DELETE(self,*tables):
         """
@@ -180,7 +182,32 @@ class Service(metaclass=_serviceMeta):
     __all_generated = {}
      
     _ = _ #the i18n traslation object ,it's will auto redirect the `app_name/locales` dir i18n configure
-    
+    @contextmanager      
+    @staticmethod 
+    def get_session():
+        """Provide a transactional scope around a series of operations."""
+        if not  engine:
+            yield None
+            return
+        if hasattr(Service,"_session"):
+            session = Service._session
+        else:
+            if hasattr(Service,'_session_local'):
+                session_local = getattr(Service,'_session_local')
+            else:
+                session_local =  sessionmaker(bind=engine)
+                setattr(Service,"_session_local", session_local) #cache sessionmaker object
+            session = session_local()
+            setattr(Service,"_session",session)
+         
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        # finally:
+        #     session.close()
     @classmethod
     def session(self)->Session:
         if hasattr(self,"_session"):
@@ -196,13 +223,14 @@ class Service(metaclass=_serviceMeta):
      
     @classmethod
     def pager(self,model:Base,*args,**kwargs)->ListPager:
-        """get query object"""
+        """get query object with auto passed is_deleted rows"""
 
         query = self.query(model,*args,**kwargs)
         return ListPager(query=query)
      
     @classmethod
     def query(self,model:Base,*args,**kwargs)->Query:
+        '''Get a query object with auto passed is_deleted rows'''
         session = self.session()
         if hasattr(model,is_deleted_field):
             if not kwargs:kwargs = {}
@@ -210,29 +238,10 @@ class Service(metaclass=_serviceMeta):
                 kwargs[is_deleted_field] = False
         query = session.query(model).filter(*args).filter_by(**kwargs)
         return query
-    @classmethod
-    def insert(self,model:Base,**values)->int:
-        '''
-            execute insert :model with :values 
-            :return rowcount
-        '''
-        stmt = insert(model).values(**values)
-        with engine.begin() as conn:
-            ret = conn.execute(stmt)
-            conn.commit()
-            return ret.rowcount
-    @classmethod
-    def update(self,model:Base,*where,**values)->int:
-        '''
-            execute update :model with :values on :model by :where
-            :return rowcount
-        '''
-        stmt = update(model).where(*where).values(**values)
-        with  engine.begin() as conn:
-            return conn.execute(stmt).rowcount
+    
     @classmethod
     def select(self,model:Base,*where,**kwargs)->List[Base]:
-        '''
+        ''' Auto pass if row has is_deleted field
             execute select statement with :where condition on :model
             :return rows of result
         '''
@@ -244,10 +253,27 @@ class Service(metaclass=_serviceMeta):
         with engine.begin() as conn:
             ret = conn.execute(stmt)
             return ret.fetchall()     
-    
+    @classmethod
+    def update(self,model:Base,*where,**values)->int:
+        '''
+            execute update :model with :values on :model by :where
+            :return rowcount
+        '''
+        q = self.query(model,*where) 
+        cnt = 0
+        for r in q:
+            for field in values:
+                setattr(r,field,values[field]) 
+            cnt+=1
+        try:
+            self.session().commit()
+        except Exception as e:
+            self.session().rollback()
+            raise e
+        return cnt
     @classmethod
     def count(self,model:Base,*args,**kwargs)->int:
-        '''
+        ''' Auto pass if row has is_deleted field
             :return count by givened :args on :model
         '''
         if hasattr(model,is_deleted_field):
@@ -278,18 +304,16 @@ class Service(metaclass=_serviceMeta):
             return m
         return None
     @classmethod
-    def bulk_add(self,values:List['Base']):
-        for item in values:
-            cls = item.__class__
-            if hasattr(cls,"before_insert"):
-                cls.before_insert(None,None,item)
-        with self.get_session() as session:
-            ret = session.bulk_save_objects(values )
-            session.commit()
-            return ret
+    def add_all(self,values:List['Base']):
+        
+        session = self.session()  
+        session.add_all(values)
+        session.commit()
+             
 
     @classmethod
     def list(self,model:Base,*args, **kwargs)->List[Base]:
+        '''Auto pass is_deleted if model has is_deleted field'''
         if hasattr(model,is_deleted_field):
             if not kwargs:kwargs = {}
             if not is_deleted_field in kwargs:
@@ -305,22 +329,31 @@ class Service(metaclass=_serviceMeta):
     
     @classmethod
     def delete(self,model:Base,*args,**kwargs)->int:  
-        query = self.session().query(model).filter(*args).filter_by(**kwargs)
-        if hasattr(model,is_deleted_field):
+        '''Soft delete if model has is_deleted field Else real delete'''
+        with self.get_session() as session:
+            query = session.query(model).filter(*args).filter_by(**kwargs)
             rows = query.all()
-            for row in rows:
-                setattr(row,is_deleted_field,True) 
+            if hasattr(model,is_deleted_field): 
+                for row in rows:
+                    setattr(row,is_deleted_field,True)  
+            else:
+                for row in rows:
+                    session.delete(row)
             cnt = len(rows)
-        else:
-            cnt = query.delete() 
-        self.session().commit()
-        return cnt
+            session.commit()
+            return cnt
     @classmethod
     def real_delete(self,model:Base,*args,**kwargs):
-        query = self.session().query(model).filter(*args).filter_by(**kwargs)
-        cnt = query.delete()
-        self.session().commit()
-        return cnt
+        '''Real delete rows in database'''
+        with self.get_session() as session: 
+            query = session.query(model).filter(*args).filter_by(**kwargs)
+            cnt = 0
+            for obj in query:
+                session.delete(obj)
+                cnt += 1
+         
+            return cnt
+
     @classmethod
     def flush(self,model:Base=None):
         session = self.session()
@@ -329,29 +362,8 @@ class Service(metaclass=_serviceMeta):
         if not model in session:
             session.merge(model)
         session.commit()
-         
-    @classmethod
-    @contextmanager 
-    def get_session(cls):
-        """Provide a transactional scope around a series of operations."""
-        if not  engine:
-            yield None
-            return
-        if hasattr(cls,'_session_local'):
-            session_local = getattr(cls,'_session_local')
-        else:
-            session_local =  sessionmaker(bind=engine)
-            setattr(cls,"_session_local", session_local) #cache sessionmaker object
-        session = session_local()
-         
-        try:
-            yield session
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
+
+    
     @classmethod
     def execute(cls,cmd:Union[str,TextClause],**kwargs):
         if not isinstance(cmd,TextClause):

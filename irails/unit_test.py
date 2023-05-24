@@ -1,5 +1,7 @@
 
 import unittest
+
+
 from .core import generate_mvc_app
 from ._i18n import set_module_i18n
 
@@ -27,16 +29,15 @@ class ServiceTest(_BaseUnitTest):
         from .config import config
         from ._loader import _load_apps
         from irails.database import Service,engine,Session,init_database
-        
+        from irails.database import check_migration
          
         # _load_apps()
-        if not hasattr(_BaseUnitTest,'engine'):
+        if not hasattr(ServiceTest,'engine'):
             db_cfg = config.get("database")
             db_uri = db_cfg.get("uri")
-            _BaseUnitTest.engine = init_database(db_uri,debug=True,cfg = db_cfg)
-        self.service = Service
-        self.engine = engine
-        if not hasattr(ServiceTest,'session'):
-            ServiceTest.session = Session(bind=self.engine)
-        
+            alembic_ini = db_cfg.get("alembic_ini")
+            ServiceTest.engine = init_database(db_uri,debug=True,cfg = db_cfg)
+            if ServiceTest.engine:
+                check_migration(engine=ServiceTest.engine,uri= db_uri,alembic_ini= alembic_ini )
+            ServiceTest.service = Service 
     pass
