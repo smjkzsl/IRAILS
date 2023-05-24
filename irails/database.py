@@ -14,8 +14,9 @@ from sqlalchemy import (Boolean, DateTime, Integer,
                         select,join,
                         TableClause,
                         update,insert,delete,
-                        event,text,TextClause,Table)
-from sqlalchemy.orm import DeclarativeBase,Session,sessionmaker,relationship,Query 
+                        event,text,TextClause,Table,
+                        inspect)
+from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query 
 from sqlalchemy.ext.automap import automap_base 
 from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from alembic import command
@@ -66,11 +67,23 @@ if cfg:
 class Base( DeclarativeBase ):
     __abstract__ = True 
     def __init_subclass__(cls,*args,**kwargs) -> None: 
+        super().__init_subclass__(*args,**kwargs)
         for e in EVENTS:
             if hasattr(cls,e):
-                event.listen(cls, e, getattr(cls,e)) 
+                if callable(getattr(cls,e)):
+                    event.listen(cls, e, getattr(cls,e)) 
+        
+        metas = inspect(cls)
+        for col in metas.columns:
+            func_name = f"on_change_{col.name}"
+            if hasattr(cls,func_name):
+                func = getattr(cls,func_name)
+                if callable(func) and not hasattr(func,'attched_event'):
+                    event.listen(getattr(cls,col.name),'set',func,retval=True)
+                    setattr(func,"attched_event",True)
+
         set_module_i18n(cls,cls.__module__)
-        super().__init_subclass__(*args,**kwargs)
+        
 class Schemes():
     __all = {}
     @classmethod
@@ -186,20 +199,10 @@ class Service(metaclass=_serviceMeta):
     @staticmethod 
     def get_session():
         """Provide a transactional scope around a series of operations."""
-        if not  engine:
-            yield None
-            return
-        if hasattr(Service,"_session"):
-            session = Service._session
+        if hasattr(Service,'_session'):
+            session = getattr(Service,'_session')
         else:
-            if hasattr(Service,'_session_local'):
-                session_local = getattr(Service,'_session_local')
-            else:
-                session_local =  sessionmaker(bind=engine)
-                setattr(Service,"_session_local", session_local) #cache sessionmaker object
-            session = session_local()
-            setattr(Service,"_session",session)
-         
+            session = Service.session()
         try:
             yield session
             session.commit()
@@ -210,16 +213,10 @@ class Service(metaclass=_serviceMeta):
         #     session.close()
     @classmethod
     def session(self)->Session:
-        if hasattr(self,"_session"):
-            return self._session
-        if hasattr(self,'_session_local'):
-            session_local = getattr(self,'_session_local')
-        else:
-            session_local =  sessionmaker(bind=engine)
-            setattr(self,"_session_local", session_local) #cache sessionmaker object
-        session = session_local()
-        setattr(self,"_session",session)
-        return session
+        if hasattr(Service,"_session"):
+            return Service._session 
+        Service._session = Session(bind=engine) 
+        return Service._session
      
     @classmethod
     def pager(self,model:Base,*args,**kwargs)->ListPager:
@@ -305,12 +302,8 @@ class Service(metaclass=_serviceMeta):
         return None
     @classmethod
     def add_all(self,values:List['Base']):
-        
-        session = self.session()  
-        session.add_all(values)
-        session.commit()
-             
-
+        with self.get_session() as session: 
+            session.add_all(values) 
     @classmethod
     def list(self,model:Base,*args, **kwargs)->List[Base]:
         '''Auto pass is_deleted if model has is_deleted field'''

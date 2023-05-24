@@ -58,6 +58,9 @@ class Role(database.Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True, nullable=False)
     users:List['User'] = []
+    def on_change_name(target, value, oldvalue, initiator):
+        print("Role:on_change_name" )
+        return value+" supper"
 
 database.Schemes.M2M(User,Role)
 database.Schemes.TIMESTAMPS(User,Role)
