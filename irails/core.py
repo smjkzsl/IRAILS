@@ -430,41 +430,10 @@ def generate_mvc_app():
     # Check for database migrations
     check_db_migrate()
     # Initialize the authentication system if the adapter class and URI are present
-    
+    from .log import set_logger
+    set_logger(_log,check_level=True)
     _log.info(_("init casbin auth system..."))
     application.casbin_auth = __init_auth(application, auth_type, _casbin_adapter_class, _adapter_uri)
     _log.info(_("load irails apps finished."))
     return application
-# import subprocess
-# import time
-# # 定义启动和停止进程的方法
-# def start_uvicon():
-#     cmd = 'uvicorn main:app --host 0.0.0.0 --port 8000'
-#     uvicorn_process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-#     return uvicorn_process
-
-# def restart_uvicon(uvicorn_process):
-#     uvicorn_process.terminate()
-#     # 等待 10 秒后重启进程
-#     time.sleep(10)
-#     # 启动进程
-#     uvicorn_process = start_uvicon()
-
-    
  
-
-
-# def run(app,*args,**kwargs): 
-#     import uvicorn
-#     global __is_debug 
-#     if  "debug" in kwargs:
-#         __is_debug = kwargs["debug"] 
-#         del kwargs['debug'] 
-#     if __is_debug:
-#         kwargs['reload'] = __is_debug
-#         kwargs['log_level'] = _log.level
-#         kwargs['reload_dirs'] = application.apps_dirs 
-#         uvicorn.run('irails.core:application', **kwargs)
-   
-         
-        

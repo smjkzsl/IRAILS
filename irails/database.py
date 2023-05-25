@@ -428,7 +428,8 @@ def sanitize_path(path):
     return sanitized_path
 
 def check_migration(engine:Engine,uri,alembic_ini,upgrade=None): 
-    alembic_ini = os.path.abspath(os.path.join(ROOT_PATH,alembic_ini))
+    if os.path.isabs(alembic_ini)==False:
+        alembic_ini = os.path.abspath(os.path.join(ROOT_PATH,alembic_ini))
     def _update_uri_to_ini(): 
         #auto update alembic.ini sqlalchemy.url section 
         

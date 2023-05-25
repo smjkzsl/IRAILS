@@ -1,10 +1,12 @@
 import logging,os,sys
 from .config import config
-def set_logger(logger: logging.Logger):
+def set_logger(logger: logging.Logger,check_level=False):
     log_config = config.get("log")
     if not log_config:
         return logger
-    __log_level = log_config.get('level', 'DEBUG')
+    __log_level = logging._nameToLevel[log_config.get('level', 'DEBUG')] 
+    if check_level:
+        return logger.setLevel(__log_level)
     __log_file = log_config.get('file', None)
 
     debug = config.get("debug", False)
@@ -24,18 +26,18 @@ def set_logger(logger: logging.Logger):
                 pass
 
         file_handler = logging.FileHandler(__log_file, mode='a')
-        file_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(__log_level)
         file_handler.setFormatter(logging.Formatter(
             fmt=log_format, datefmt=datefmt))
         if not file_handler in logger.handlers:
             logger.addHandler(file_handler)
 
     handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(__log_level)
     handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=datefmt))
     if not handler in logger.handlers:
         logger.addHandler(handler) 
-
+    _log.setLevel(__log_level)
 _log =   logging.getLogger()
 _log.setLevel(logging._nameToLevel['DEBUG'])
 

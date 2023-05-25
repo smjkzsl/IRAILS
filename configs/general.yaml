@@ -33,7 +33,6 @@ view:
     variable_end_string: '}'
     variable_start_string: ${
   static_format:
-  - vue
   - html
 i18n:
   lang: ['zh']
