@@ -10,8 +10,10 @@ class _BaseUnitTest(unittest.TestCase):
     def __init__(self,*args,**kwargv) -> None:
         super().__init__(*args,**kwargv)
     def __init_subclass__(cls,*args,**kwargs) -> None:  
-        set_module_i18n(cls,cls.__module__)
         super().__init_subclass__(*args,**kwargs)    
+        if not cls.__name__ in ['ControllerTest','ServiceTest']:
+            set_module_i18n(cls,cls.__module__)
+        
 class ControllerTest(_BaseUnitTest):
     
     def __init__(self,*args,**kwargv) -> None:
@@ -40,4 +42,4 @@ class ServiceTest(_BaseUnitTest):
             if ServiceTest.engine:
                 check_migration(engine=ServiceTest.engine,uri= db_uri,alembic_ini= alembic_ini )
             ServiceTest.service = Service 
-    pass
+     

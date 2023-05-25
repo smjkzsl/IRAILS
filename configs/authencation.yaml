@@ -1,5 +1,5 @@
 auth:
-  adapter_uri: #keep empty if adpter is sqlalchemy to user database.uri same
+  adapter_uri: '{database.uri}' # keep empty if adpter is sqlalchemy to user database.uri same
   auth_model: configs/casbin_templates/RBACT.conf
  
   adapter_table: 'casbin_rule' 

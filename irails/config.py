@@ -162,8 +162,9 @@ class YamlConfig:
                     value = value.replace(
                         "{" + name + "}", YamlConfig(config=self._raw_config).get(sub_key, ""))
                 else:
-                    segment_config = self.config.get(segment_name, {})
-                    if isinstance(segment_config, dict):
+                    # segment_config = self.config.get(segment_name, {})
+                    segment_config =  config.get(segment_name, {})
+                    if isinstance(segment_config, dict) or isinstance(segment_config,YamlConfig):
                         sub_keys = sub_key.split(".")
                         sub_value = segment_config
                         for sub_key in sub_keys:
