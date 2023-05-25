@@ -118,7 +118,9 @@ class YamlConfig:
 
     def delete(self, key: str):
         del self.config[key]
-
+    def __contains__(self,key):
+        return key in self.config
+    
     def _merge_dicts(self, dict1: Dict, dict2: Dict) -> Dict:
         for key in dict2:
             if key in dict1 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):

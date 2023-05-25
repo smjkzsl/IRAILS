@@ -81,8 +81,8 @@ class Base( DeclarativeBase ):
                 if callable(func) and not hasattr(func,'attched_event'):
                     event.listen(getattr(cls,col.name),'set',func,retval=True)
                     setattr(func,"attched_event",True)
-
-        set_module_i18n(cls,cls.__module__)
+        if not hasattr(cls,'__system__') or not getattr(cls,"__system__") is True:
+            set_module_i18n(cls,cls.__module__)
         
 class Schemes():
     __all = {}

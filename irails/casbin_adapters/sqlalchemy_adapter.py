@@ -17,7 +17,7 @@ if cfg and 'adapter_table' in cfg:
     
 class CasbinRule(database.Base):
     __tablename__ = rule_table
-
+    __system__ = True
     id = Column(Integer, primary_key=True)
     ptype = Column(String(255))
     v0 = Column(String(255))
@@ -55,8 +55,8 @@ class Adapter(persist.Adapter, persist.adapters.UpdateAdapter):
     def __init__(self, engine_uri, db_class=None, filtered=False):
          
         if isinstance(engine_uri, str):
-            if engine_uri == str(database.get_engine().engine.url) :
-                self._engine = database.get_engine()
+            if engine_uri == str(database.engine.url) :
+                self._engine = database.engine
             else:
                 self._engine = create_engine(engine_uri)
         else: 

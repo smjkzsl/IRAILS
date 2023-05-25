@@ -21,44 +21,104 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple, Type, Union,Dict
 from ._utils import iJSONEncoder,is_datetime_format
 from ._i18n import _
-AUTH_EXPIRED='[EXPIRED]!'
-
- 
+AUTH_EXPIRED='[EXPIRED]!' 
 _session_name:str = ""
 
+class DomainUser(BaseUser):
+    def __init__(self,username: str='anonymous',group:str="",domain:str="") -> None:
+        self.username = username
+        self._group = group
+        self._domain = domain
+        super().__init__()
+    @property
+    def group(self):
+        return self._group 
+    @group.setter
+    def group(self,value):
+        self._group = value
+    @property
+    def domain(self):
+        return self._domain    
+    @domain.setter
+    def domain(self,value):
+        self._domain=value
+    @property
+    def is_authenticated(self) -> bool:
+        return self.username!='anonymous'
+    @property
+    def display_name(self) -> str:
+        return self.username
+    @property
+    def identity(self) -> str:
+        identity = self.username
+        if self._group:
+            group = self._group
+            if self._domain:
+                group = self._domain+"."+group
+            identity+='@'+group
+        return identity
+    def __repr__(self):
+        return self.identity
+class BasicUser(DomainUser):
+    def __init__(self,username: str,group:str="",domain:str="") -> None: 
+        super().__init__(username,group,domain)
+    
+class JWTUser(DomainUser): 
+    def __init__(self, username: str, token: str, payload: dict,group:str="",domain:str="") -> None: 
+        self.token = token
+        self.payload = payload
+        super().__init__(username,group,domain) 
+     
+    
 class CasbinAuth:
     def __init__(self,enforcer:Enforcer,session_name="user") -> None:
         global _session_name
         self.enforcer = enforcer
         self.__session_name = _session_name = session_name
         pass
-    def modify_authorization(self,sub,obj,act,authorize:bool):
+    def policy(self,*args,**kwargs):
         """
         :sub(user_name or mainbody),:obj(resource or url),:act(action like 'GET','POST','DELETE')
         add or remove authorization info by :authorzie
         """
+        authorize = True
+        if kwargs and 'authorize' in kwargs:
+            authorize = kwargs['authorize']
         if self.enforcer:
             if authorize:
-                return self.enforcer.add_policy(sub,obj,act)
+                return self.enforcer.add_policy(*args) 
             else:
-                return self.enforcer.remove_policy(sub,obj,act)
+                return self.enforcer.remove_policy(*args)
         raise RuntimeError("Casbin Enforcer is None")
-    
-    def _auth(self,request:Request,username):
+    def grouping(self,*args,**kwargs):
+        '''grouping(`alice`,`admin`) add `alice` to group `admin` or delete it'''
+        authorize = True
+        if kwargs and 'authorize' in kwargs:
+            authorize = kwargs['authorize']
+        if self.enforcer:
+            if authorize:
+                return self.enforcer.add_grouping_policy(*args)
+            else: 
+                return self.enforcer.remove_grouping_policy(*args)
+        raise RuntimeError("Casbin Enforcer is None")
+    def is_grouping(self,*args):
+        ''' is_grouping('alice','admin')? return `alice` is belongs `admin` '''
+        if self.enforcer:
+            return self.enforcer.has_grouping_policy(*args)
+        raise RuntimeError("Casbin Enforcer is None")
+    def _auth(self,request:Request,user:DomainUser):
         '''
         do verity,return True means `Success` and others `Failed`
         '''
+         
+        sub = user.identity 
         path = request.url.path
-        method = request.method   
-        if username:
-            if isinstance(username,BaseUser):
-                user = username.display_name
-            else:
-                user = username
-        else:
-            user = request.user.display_name if request.user.is_authenticated else 'anonymous'
-
-        return self.enforcer.enforce(user, path, method)
+        method = request.method
+        param:Tuple = (sub,user.domain,path,method,)
+          
+          
+        return self.enforcer.enforce(*param)
+    
     def __get_token_from_header(self, authorization: str, prefix: str) -> str:
         """Parses the Authorization header and returns only the token"""
         try:
@@ -68,6 +128,7 @@ class CasbinAuth:
         if scheme.lower() != prefix.lower():
             raise AuthenticationError( _('Authorization scheme %s is not supported') % {scheme})
         return token
+    
     def get_user_from_request(self,request:Request,prefix:str="Bearer",is_jwt:bool=False,**kwargs) : 
         userobj = request.session.get(self.__session_name)
         payload = None
@@ -114,6 +175,7 @@ class CasbinAuth:
         return "","",None
     
 class AuthenticationBackend_(AuthenticationBackend):
+    user_class = DomainUser
     def create_access_token(self,**kwargs):
         raise NotImplementedError()
     def clear_userinfo(self,request:Request):
@@ -121,22 +183,29 @@ class AuthenticationBackend_(AuthenticationBackend):
     @property
     def casbin_auth(self)->CasbinAuth:
         return _casbin_auth
-    pass
+     
+
+
 class BasicAuth(AuthenticationBackend_):
+     
     def __init__(self,**kwargs) -> None:
+         
         super().__init__()
      
     
     async def authenticate(self, request:Request, **kwargs):
-        username,password,_ = _casbin_auth.get_user_from_request(request=request)
-        if not username:
+        userobj,password,_ = _casbin_auth.get_user_from_request(request=request)
+        if not userobj:
             return False,None
-        user = SimpleUser(username)
+        if isinstance(userobj,BasicUser):
+            user = userobj
+        elif isinstance(userobj,str): 
+            user = BasicUser(userobj)
         request.scope['user'] = user
         auth_type:str = kwargs.get("auth_type")
         if not auth_type or auth_type.lower()=='public': 
             return True,  user
-        result = _casbin_auth._auth(request=request,username=username)
+        result = _casbin_auth._auth(request=request,user=user)
         
         return result, user
 
@@ -145,30 +214,18 @@ class BasicAuth(AuthenticationBackend_):
         global _session_name
         del request.session[_session_name] 
         
-    def create_access_token(self,  username,**kwargs):
+    def create_access_token(self,  user:DomainUser,**kwargs):
         global _session_name
         request:Request = kwargs['request'] if 'request' in kwargs else None
         if request:
-            request.session[_session_name] = username
+            request.session[_session_name] = user
         return None
         
-class JWTUser(BaseUser):
-    def __init__(self, username: str, token: str, payload: dict) -> None:
-        self.username = username
-        self.token = token
-        self.payload = payload
 
-    @property
-    def is_authenticated(self) -> bool:
-        return True
-
-    @property
-    def display_name(self) -> str:
-        return self.username
 
 
 class JWTAuthenticationBackend(AuthenticationBackend_):
-
+     
     def __init__(self,
                  secret_key: str,
                  algorithm: str = 'HS256',
@@ -182,45 +239,47 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
         self.username_field = username_field
         self.audience = audience
         self.options = options or dict()
-    
+        
      
     
-    async def authenticate(self, request:Request,**kwargs) -> Union[None, Tuple[AuthCredentials, BaseUser]]:
+    async def authenticate(self, request:Request,**kwargs) -> Union[None, Tuple[AuthCredentials, JWTUser]]:
         auth_type:str = kwargs.get("auth_type")
 
         args = {'username_field':self.username_field, 'key':self.secret_key, 'algorithms': self.algorithm , 'audience':self.audience ,
                                             'options':self.options }
-        userobj,token,payload = _casbin_auth.get_user_from_request(request=request,
+        user_name,token,payload = _casbin_auth.get_user_from_request(request=request,
                                                                  prefix=self.prefix, 
                                                                  is_jwt=True,**args)
         if token==AUTH_EXPIRED:
+            self.clear_userinfo(request)
             return False,AUTH_EXPIRED
-         
-        user = userobj#SimpleUser(userobj['username'])
-        request.scope['user'] = user
+        jwtuser:BasicUser = DomainUser()
+        def from_payload(payload)->JWTUser:
+            return JWTUser(username=payload[self.username_field], 
+                              token=token,
+                              group=payload['group'],
+                              domain=payload['domain'],
+                              payload=payload) 
+        if user_name or token or payload: 
+            if payload and token:
+                jwtuser = from_payload(payload) 
+                request.scope['user'] = jwtuser
+        
         if  auth_type.lower()=='public': 
-            if userobj:
-                if hasattr(userobj,'token') or token or payload:
-                    if payload and token:
-                        request.scope['user'] = JWTUser(username=payload[self.username_field], token=token,
-                                                        payload=payload)  
-                        return True, request.scope['user']
-            
-            return False,None #auth public must login
-           
-        if  payload:
-            user = JWTUser(username=payload[self.username_field], token=token,
-                                                        payload=payload) 
-            request.scope['user'] = user
-            result = _casbin_auth._auth(request=request,username=payload[self.username_field])
-            
-            return result, user  
-        return False,None
+            return jwtuser.is_authenticated, jwtuser 
+        elif auth_type.lower()=='none':
+            return True,jwtuser
+        elif payload and not jwtuser.is_authenticated:
+            jwtuser = from_payload(payload) 
+            request.scope['user'] = jwtuser
+        result = _casbin_auth._auth(request=request,user=jwtuser) 
+        return result, jwtuser  
+         
     def clear_userinfo(self,request:Request):
         global _session_name
         if _session_name in request.session:
             del request.session[_session_name] 
-    def create_access_token(self,  user , expires_delta: timedelta = None,**kwargs)  :
+    def create_access_token(self,  user:DomainUser , expires_delta: timedelta = None,**kwargs)  :
         global _session_name
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
@@ -233,12 +292,14 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
             expire = datetime.utcnow() + timedelta(
                 minutes=expires_delta
             )
-        if isinstance(user,str):
-            auth_user_obj = {"exp": expire, "username": user }
-        elif isinstance(user,JWTUser):
-            auth_user_obj = {"exp": expire, "username": user.username}
-        elif isinstance(user,BaseUser):
-            auth_user_obj = {"exp": expire, "username": user.display_name}
+         
+        auth_user_obj = { 
+                          "exp": expire, 
+                          "username": user.username,
+                          "group":user.group,
+                          "domain":user.domain 
+                        }
+         
         request:Request = kwargs['request']
         
         access_token = jwt.encode(auth_user_obj, self.secret_key ,self.algorithm )
@@ -256,9 +317,12 @@ def init(app:FastAPI,backend:AuthenticationBackend,adapter_class:Type=None,**kwa
     global _casbin_auth
     cfg = config.get("auth")
     adapter_uri = kwagrs.get('adapter_uri',None)
+    
     del kwagrs['adapter_uri']
     model_file = cfg.get("auth_model",'./configs/casbin-model.conf') 
     model_file = os.path.abspath(os.path.join(ROOT_PATH,model_file))   
+    if adapter_class is FileAdapter and not os.path.isabs(adapter_uri):
+        adapter_uri = os.path.abspath(os.path.join(ROOT_PATH, adapter_uri))
     adapter = adapter_class(adapter_uri)
     enforcer = casbin.Enforcer(model_file, adapter)
    
@@ -274,7 +338,7 @@ def reload_adapter(app:FastAPI,adapter:Adapter=None):
     enforcer = casbin.Enforcer(model_file, adapter) 
     app.router.current_casbin_instance = enforcer
 
-def get_auth_backend(name:str)->AuthenticationBackend: 
+def get_auth_backend(name:str)->AuthenticationBackend_: 
     _auth_types = {'basic':BasicAuth,'jwt':JWTAuthenticationBackend}
     return _auth_types[name] if name in  _auth_types else None
 

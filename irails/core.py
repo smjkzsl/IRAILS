@@ -41,15 +41,20 @@ def singleton(cls):
 @singleton
 class MvcApp(FastAPI):
     def __init__(self,  **kwargs):
-        self.__authObj:auth.AuthenticationBackend_ = None 
+        self.__casbin_auth:auth.AuthenticationBackend_ = None 
         self._data_engine:database.Engine = None
         self.__user_auth_url=""
         self.__public_auth_url=""
         self.__app_views_dirs = {} 
         self.routers_map = {}
         self.__apps_dirs = []
+        self.auth_class = None
         super().__init__(**kwargs)
-    
+    def new_user(self,username:str)->auth.DomainUser:
+        if not self.auth_class:
+            raise RuntimeError('application.auth_class is None')
+        return self.auth_class(username=username)
+     
     @property
     def app_views_dirs(self)->Dict:
         return self.__app_views_dirs
@@ -80,15 +85,21 @@ class MvcApp(FastAPI):
             _log.warning(_("user_auth_url only can be setting once time,current is:%s") % self.__user_auth_url)
         self.__user_auth_url = url
     @property
-    def modify_authorization(self):
-        return self.__authObj.casbin_auth.modify_authorization
+    def policy(self):
+        return self.__casbin_auth.casbin_auth.policy
     @property
-    def authObj(self)->auth.AuthenticationBackend_:
-        return self.__authObj
+    def grouping(self):
+        return self.__casbin_auth.casbin_auth.grouping
+    @property
+    def is_grouping(self):
+        return self.__casbin_auth.casbin_auth.is_grouping
+    @property
+    def casbin_auth(self)->auth.AuthenticationBackend_:
+        return self.__casbin_auth
     
-    @authObj.setter
-    def authObj(self,value:auth.AuthenticationBackend_):
-        self.__authObj = value
+    @casbin_auth.setter
+    def casbin_auth(self,value:auth.AuthenticationBackend_):
+        self.__casbin_auth = value
      
     @property 
     def data_engine(self)->database.Engine:
@@ -158,7 +169,7 @@ def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
     auth_class = auth.get_auth_backend(auth_type)
     if not auth_class:
         raise RuntimeError(_("%s auth type not support") % auth_type)
-    
+    application.auth_class = auth_class.user_class
     
     secret_key = config.get("auth").get(f"secret_key","")
     kwargs = {'secret_key':secret_key,'adapter_uri':__adapter_uri} 
@@ -192,7 +203,8 @@ def api_router(path:str="", version:str="",**allargs):
             p += '/{version}' if v else ''
         if v and not path:
             p = "/{controller}/{version}"
-        return p
+        app_name = os.path.basename(app_dir)
+        return p.replace("{app}",app_name)
     path = format_path(path,version) 
      
     abs_path = os.path.join(ROOT_PATH,app_dir.lstrip(os.sep))
@@ -219,8 +231,8 @@ def api_router(path:str="", version:str="",**allargs):
             def _user_logout(self,msg=_('you are successed logout!'),redirect:str="/"):
                 """see .core.py"""
                 self.flash  = msg
-                if  hasattr(application,'authObj'):
-                    application.authObj.clear_userinfo(request=self.request)
+                if  hasattr(application,'casbin_auth'):
+                    application.casbin_auth.clear_userinfo(request=self.request)
                 accept_header = self.request.headers.get("Accept")    
                 if accept_header == "application/json":
                     return {'status':'success','msg':msg}
@@ -231,8 +243,8 @@ def api_router(path:str="", version:str="",**allargs):
                  
                 self.flash  = msg
                 accept_header = self._request.headers.get("Accept")
-                if  hasattr(application,'authObj'):
-                    access_token = application.authObj.create_access_token(user,request=self.request)
+                if  hasattr(application,'casbin_auth'):
+                    access_token = application.casbin_auth.create_access_token(user,request=self.request)
                 
                     if accept_header == "application/json":
                         return {'status':'success','msg':msg,'token':str(access_token)}
@@ -258,27 +270,27 @@ def api_router(path:str="", version:str="",**allargs):
                 '''called by .controller_util.py->route_method'''
                 auth_type = kwargs['auth_type'] 
                 
-                if not hasattr(application,'authObj') or application.authObj is None:
+                if auth_type.lower()=='none' or not hasattr(application,'casbin_auth') or application.casbin_auth is None:
                     return True,None
                 
                 kwargs['session'] = request.session  
-                ret,user = await application.authObj.authenticate(request,**kwargs)
+                ret,user = await application.casbin_auth.authenticate(request,**kwargs)
                 if user==auth.AUTH_EXPIRED:
                     request.session['flash']  = _("your authencation has been expired!"  )
                     user = False
-                if auth_type=='none':
-                    return True,user
+                if ret:
+                    return ret,user
                 def add_redirect_param(url: str, redirect_url: str) -> str:
                     if "?" in url:
                         return url + "&redirect=" + redirect_url
                     else:
                         return url + "?redirect=" + redirect_url
                 accept_header = request.headers.get("Accept")
-                if user: #continue singture 
+                if user and user.is_authenticated: #continue singture 
                     if config.get("session").get('auto_refresh_token',True):
-                        application.authObj.create_access_token(user=user, expires_delta=None,request=request)
-                #
-                if not ret and not user: 
+                        application.casbin_auth.create_access_token(user=user, expires_delta=None,request=request)
+                 
+                if not ret and not user or not user.is_authenticated: 
                     # _log.debug(_('Failed Auth on type:%s at url:%s') % (auth_type,str(request.url)))
                     if accept_header == "application/json":
                         return  ORJSONResponse(content={"message": "401 UNAUTHORIZED!"},
@@ -294,10 +306,10 @@ def api_router(path:str="", version:str="",**allargs):
                         return RedirectResponse(_auth_url,status_code=StateCodes.HTTP_303_SEE_OTHER),None
                     else:  
                         return RedirectResponse('/',status_code=StateCodes.HTTP_303_SEE_OTHER),None
-                elif user:
+                elif user and user.is_authenticated:
                     _log.debug(_('Failed Auth on type:%s at url:%s  [User:%s]') % (auth_type,str(request.url),str(user)))
                     return ret,user
-                return  False,None
+                return  ret,user
         setattr(puppetController,AUTH_KEY,allargs['auth'])         
         setattr(puppetController,"__name__",targetController.__name__)  
         
@@ -397,7 +409,7 @@ def generate_mvc_app():
     
     if __is_debug:
         _log.info(_("checking database configure..."))
-    check_init_database()
+    db_cfg = check_init_database()
 
     # Initializing the authentication system
     auth_type = config.get("auth", None)
@@ -410,16 +422,17 @@ def generate_mvc_app():
             __type_casbin_adapter = config.get("auth").get("casbin_adapter", "file")
             _casbin_adapter_class = auth.get_adapter_module(__type_casbin_adapter)
             _adapter_uri = config.get("auth").get("adapter_uri")
+            if not _adapter_uri:
+                _adapter_uri = db_cfg.get('uri')
             # Raise an error if the adapter is not supported
             if not _casbin_adapter_class:
                 raise RuntimeError(_("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
     # Check for database migrations
     check_db_migrate()
     # Initialize the authentication system if the adapter class and URI are present
-    if _casbin_adapter_class and _adapter_uri:
-        _adapter_uri = os.path.abspath(os.path.join(ROOT_PATH, _adapter_uri))
+    
     _log.info(_("init casbin auth system..."))
-    application.authObj = __init_auth(application, auth_type, _casbin_adapter_class, _adapter_uri)
+    application.casbin_auth = __init_auth(application, auth_type, _casbin_adapter_class, _adapter_uri)
     _log.info(_("load irails apps finished."))
     return application
 # import subprocess

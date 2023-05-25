@@ -8,5 +8,4 @@ class SysAdminController(BaseController):
     def index(self):
         return self.view()                
 
-     
-    
+ 

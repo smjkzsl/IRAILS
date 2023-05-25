@@ -9,7 +9,11 @@ from pydantic import conlist
 def startup():
     application.public_auth_url = '/user/login'
     application.user_auth_url = '/user/login'
-    application.modify_authorization('bruce','/xml','GET',True)
+    #p, admin, domain1, data1, read
+    application.policy('admin','system','/xml', 'GET', authorize=True)
+    application.policy('admin','system','/chatgpt', 'GET', authorize=True)
+    #g, alice, admin, domain1 
+    application.grouping('bruce','admin','system', authorize=True)
 @route(auth='public')
 class TestController(BaseController): 
     def __init__(self) -> None:
@@ -28,7 +32,9 @@ class TestController(BaseController):
         if username and password:
             #do veritied
             if username in ['bruce','alice'] and password:
-                return self._verity_successed(user= username,redirect= redirect)
+                user = application.new_user(username=username)
+                user.domain = "system"
+                return self._verity_successed(user = user,redirect= redirect)
             else:
                 return self._verity_error() 
         return self._verity_error()

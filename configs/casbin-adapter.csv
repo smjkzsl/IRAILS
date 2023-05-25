@@ -1,5 +1,0 @@
-p, anonymous, /, GET
-p, bruce, /docs, GET
-p, anonymous, /openapi.json, GET
-
-g, cathy, dataset1_admin
