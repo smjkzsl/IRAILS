@@ -13,6 +13,12 @@
         },
         mounted() {
             console.log('foo mounted')
+        },
+        setup(){
+            console.log("foo.vue setup...")
+        },
+        updated(){
+            console.log("foo.vue updated...")
         }
     }
 </script>

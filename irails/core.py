@@ -407,8 +407,7 @@ def generate_mvc_app():
     _register_controllers()
 
     
-    if __is_debug:
-        _log.info(_("checking database configure..."))
+    _log.info(_("checking database configure..."))
     db_cfg = check_init_database()
 
     # Initializing the authentication system
@@ -427,8 +426,9 @@ def generate_mvc_app():
             # Raise an error if the adapter is not supported
             if not _casbin_adapter_class:
                 raise RuntimeError(_("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
-    # Check for database migrations
-    check_db_migrate()
+    if __is_debug:
+        # Check for database migrations
+        check_db_migrate()
     # Initialize the authentication system if the adapter class and URI are present
     from .log import set_logger
     set_logger(_log,check_level=True)
