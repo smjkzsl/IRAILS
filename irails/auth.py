@@ -29,6 +29,8 @@ class DomainUser(BaseUser):
         self.username = username
         self._group = group
         self._domain = domain
+        self._lang = "zh"
+        self._timezone =  'Asia/Shanghai'
         super().__init__()
     @property
     def group(self):

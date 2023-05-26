@@ -14,7 +14,7 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import BaseRoute
 from fastapi.types import DecoratedCallable
 from .mvc_router import create_controller,MvcRouter as api,   register_controllers_to_app 
-from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY, VER_KEY,get_docs  
+from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY,DEFAULT_KEY, VER_KEY,get_docs  
 from .config import config,ROOT_PATH,_project_name
 from .log import _log,set_logger
 from fastapi.staticfiles import StaticFiles
@@ -185,7 +185,7 @@ def api_router(path:str="", version:str="",**allargs):
     '''
     if not 'auth' in allargs:
         allargs['auth'] = 'none'
-
+    
     caller_frame = inspect.currentframe().f_back
     caller_file = caller_frame.f_code.co_filename
     relative_path = caller_file.replace(ROOT_PATH,"")
@@ -329,7 +329,12 @@ def api_router(path:str="", version:str="",**allargs):
         if version:
             controller_current_view_path += '/' + version
         setattr(puppetController,"__view_url__",_view_url_path) 
-
+        if 'default' in allargs:
+            default_method=allargs['default'] 
+            setattr(targetController,DEFAULT_KEY,default_method)
+            del allargs['default']
+        else:
+            setattr(targetController,DEFAULT_KEY,'')
         #add app dir sub views to StaticFiles
         if not controller_current_view_path in application.app_views_dirs: #ensure  load it once
             application.app_views_dirs[controller_current_view_path.lower()] = _view_url_path.lower() 

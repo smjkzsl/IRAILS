@@ -38,6 +38,7 @@ KWARGS_KEY = "__custom_kwargs__"
 SIGNATURE_KEY = "__saved_signature__"
 ARGS_KEY = "__custom_args__"
 AUTH_KEY="__auth__"
+DEFAULT_KEY="__default_index__"
 
 
 class ControllerBase:
@@ -255,6 +256,7 @@ def _register_controller_to_router(router: APIRouter, controller: Type[Controlle
     # Get all the routes information
     routes_dict = _get_routes_in_controller(controller)
     generic_dict = _get_generic_type_var_dict(controller)
+    default_method = getattr(controller,DEFAULT_KEY)
 
     for name, value in routes_dict.items():
         member = getattr(controller, name)
@@ -264,7 +266,17 @@ def _register_controller_to_router(router: APIRouter, controller: Type[Controlle
         
         path = _compute_path(value[PATH_KEY], controller.__name__, path_template, version)
         kwargs = _update_generic_args(generic_dict, value[KWARGS_KEY])
-         
+        #check defalut method
+        if name==default_method:
+            #check is exists `_index_default_` func
+            if not hasattr(controller,f"_{name}_default_"):
+                p = path.split("/")
+                controller_path ='/'.join(p[:-1]) + '/'
+                _new_member = _copy_func(member)
+                _update_generic_parameters_signature(generic_dict, _new_member)
+                summa = router.get(controller_path,  **kwargs)(_new_member)
+                setattr(controller,f'_{name}_default_',summa)
+        
         if isinstance(value[METHOD_KEY],list):
             route_method = getattr(router, 'api_route') 
             # 添加到 fastapi apiroute
@@ -279,6 +291,8 @@ def _register_controller_to_router(router: APIRouter, controller: Type[Controlle
                 route_method = getattr(router, value[METHOD_KEY]) 
                 # 添加到 fastapi apiroute
                 new_route_method = route_method(path, **kwargs)(new_member)
+
+        
         setattr(controller, name, new_route_method)
     
     cbv(router)(controller)
@@ -293,7 +307,7 @@ def _route_method(path: str, method, *args, **mwargs):
     def wrapper(func ): 
         @wraps(func)
         async def actions_decorator(  *args, **kwargs):
-            auth_type:str = getattr(func,AUTH_KEY) 
+            
             has_request = kwargs.get("__has_request__")
             has_response = kwargs.get("__has_response__")
             cls:BaseController = None
@@ -302,7 +316,9 @@ def _route_method(path: str, method, *args, **mwargs):
             else:
                 module = inspect.getmodule(func)
                 cls = getattr(module, func.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0]) 
-             
+            auth_type:str = getattr(func,AUTH_KEY) 
+            if auth_type is None:
+                auth_type = getattr(cls,AUTH_KEY)
             response:Response = None
             result:Response = None
             
@@ -350,7 +366,7 @@ def _route_method(path: str, method, *args, **mwargs):
             del mwargs['__auth_url__']
 
         if not 'auth' in mwargs:
-            mwargs["auth"] = 'none'
+            mwargs["auth"] = None
         setattr(func,AUTH_KEY,mwargs['auth'])
         del mwargs['auth']
         setattr(actions_decorator, KWARGS_KEY, mwargs)

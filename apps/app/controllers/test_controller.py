@@ -11,10 +11,11 @@ def startup():
     application.user_auth_url = '/user/login'
     #p, admin, domain1, data1, read
     application.policy('admin','system','/xml', 'GET', authorize=True)
+    application.policy('admin','system','/sys_admin/*', 'GET', authorize=True)
     application.policy('admin','system','/chatgpt', 'GET', authorize=True)
     #g, alice, admin, domain1 
     application.grouping('bruce','admin','system', authorize=True)
-@route(auth='public')
+@route(auth='none')
 class TestController(BaseController): 
     def __init__(self) -> None:
         

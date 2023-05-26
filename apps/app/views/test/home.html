@@ -15,9 +15,10 @@
 
     </header>
     <nav>
-        {% for item in routers_map %} {% if 'GET' in routers_map[item]['methods'] %} {% if routers_map[item]['auth']=='none' or request.session['user'] %}
+        {% for item in routers_map %} {% if 'GET' in routers_map[item]['methods'] %}
+
         <a href="${routers_map[item]['path']}">${routers_map[item]['doc']
-                and routers_map[item]['doc']['title'] or item}</a> {% endif %} {% endif %} {% endfor %}
+                and routers_map[item]['doc']['title'] or item}</a> {% endif %} {% endfor %}
 
         <a href="#">About</a>
         <a href="#">Contact</a> {% if request.session['user'] %}

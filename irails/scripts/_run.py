@@ -5,7 +5,8 @@ from irails.config import IS_IN_irails
  
 from irails.core import application
 from irails.config import config
-
+from fastapi.logger import logger
+from irails.log import set_logger
 def main():
      
     if not IS_IN_irails:
@@ -33,11 +34,6 @@ def main():
         kwargs['reload_dirs'] = apps_dirs
         kwargs['reload_includes'] = ['*.po']
         kwargs['reload_excludes'] = ['*.pyc']
-    # module_path = 'main.py'
-    # spec = importlib.util.spec_from_file_location(module_path, module_path)
-    # module = importlib.util.module_from_spec(spec)
-    # spec.loader.exec_module(module) 
-    from irails.log import _log
-    kwargs['log_level'] = _log.level
+    
     uvicorn.run(app="irails.core:generate_mvc_app",**kwargs)      
        
