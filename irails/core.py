@@ -388,7 +388,8 @@ def _register_controllers():
 
 def check_db_migrate():
     db_cfg = config.get("database")
-    if __is_debug and db_cfg:
+    if not db_cfg:return
+    if __is_debug :
         _log.info(_("checking database migrations...."))
     try:
             
@@ -401,6 +402,24 @@ def check_db_migrate():
     except Exception as e:
         _log.disabled = False
         _log.error(e.args)
+def check_init_auth(db_cfg):
+    # Initializing the authentication system
+    auth_type = config.get("auth", None)
+    _casbin_adapter_class = None
+    _adapter_uri: str = None
+    if auth_type:
+        auth_type = auth_type.get("type")
+        if auth_type:
+            # Get the adapter type from the configuration
+            __type_casbin_adapter = config.get("auth").get("casbin_adapter", "file")
+            _casbin_adapter_class = auth.get_adapter_module(__type_casbin_adapter)
+            _adapter_uri = config.get("auth").get("adapter_uri")
+            if not _adapter_uri:
+                _adapter_uri = db_cfg.get('uri')
+            # Raise an error if the adapter is not supported
+            if not _casbin_adapter_class:
+                raise RuntimeError(_("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
+    return auth_type,_adapter_uri,_casbin_adapter_class
 def generate_mvc_app():
     global __is_debug
      
@@ -421,22 +440,7 @@ def generate_mvc_app():
     _log.info(_("checking database configure..."))
     db_cfg = check_init_database()
 
-    # Initializing the authentication system
-    auth_type = config.get("auth", None)
-    _casbin_adapter_class = None
-    _adapter_uri: str = None
-    if auth_type:
-        auth_type = auth_type.get("type")
-        if auth_type:
-            # Get the adapter type from the configuration
-            __type_casbin_adapter = config.get("auth").get("casbin_adapter", "file")
-            _casbin_adapter_class = auth.get_adapter_module(__type_casbin_adapter)
-            _adapter_uri = config.get("auth").get("adapter_uri")
-            if not _adapter_uri:
-                _adapter_uri = db_cfg.get('uri')
-            # Raise an error if the adapter is not supported
-            if not _casbin_adapter_class:
-                raise RuntimeError(_("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
+    auth_type,_adapter_uri,_casbin_adapter_class=check_init_auth(db_cfg)
     if __is_debug:
         # Check for database migrations
         check_db_migrate()

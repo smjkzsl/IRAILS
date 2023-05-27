@@ -32,13 +32,14 @@ class ServiceTest(_BaseUnitTest):
         from ._loader import _load_apps
         from irails.database import Service,engine,Session,init_database
         from irails.database import check_migration
-         
+        from irails.core import check_init_auth
         # _load_apps()
         if not hasattr(ServiceTest,'engine'):
             db_cfg = config.get("database")
             db_uri = db_cfg.get("uri")
             alembic_ini = db_cfg.get("alembic_ini")
             ServiceTest.engine = init_database(db_uri,debug=True,cfg = db_cfg)
+            check_init_auth(db_cfg)
             if ServiceTest.engine:
                 check_migration(engine=ServiceTest.engine,uri= db_uri,alembic_ini= alembic_ini )
             ServiceTest.service = Service 
