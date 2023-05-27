@@ -42,6 +42,7 @@ The design concept of IRails refers to some RORs, but it has its own soul. It do
     |   |   |   +---home                    ## The controller action's static file(name is same to the controller's class name)
     |   |   |   |       home.css            
     |   |   |   |       home.html           ## Static file corresponding to action(name is same to the controller's method name)
+    |   |   |---manifest.yaml               ## The app manifest for each app
     +---configs                             ## Project configure dir
     |       alembic.ini                     ## Alembic configure file (Generally, there is no need to change, used the database migration)
     |       casbin-adapter.csv              ## Casbin auth module config adapter file()
