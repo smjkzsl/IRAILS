@@ -1,14 +1,25 @@
+    async function request(url) {
+        try {
+            const response = await fetch(url)
+            const data = await response.json()
+
+            return data
+        } catch (error) {
+            console.error(error)
+            return null
+        }
+
+    }
     const api = {
         user: {
             async getCurrentUser() {
-                try {
-                    const response = await fetch('/system_admin/user/current_user')
-                    const data = await response.json()
-                    return data.username
-                } catch (error) {
-                    console.error(error)
-                    return null
-                }
+                return await request('/system_admin/user/current_user')
+            }
+        },
+        system: {
+            async getAppList() {
+                let data = await request('/system_admin/admin/app_list')
+                return data
             }
         }
     }

@@ -3,7 +3,7 @@
     <span style="position: absolute;left:10px;font-weight: bold;font-size: x-large;">Irails</span>
     <Suspense><el-dropdown>
 
-        <span>{{ username }} <el-icon style="padding: 5px;margin-top:3px;">
+        <span>{{ user.username }} <el-icon style="padding: 5px;margin-top:3px;">
             <setting />
           </el-icon></span>
 
@@ -34,11 +34,11 @@ export default {
   async mounted() {
     console.log('headers mounted')
 
-    this.username = await user.getCurrentUser()
+    this.user = await user.getCurrentUser()
   },
   data() {
     return {
-      username: ''
+      user: {username:''}
     }
   },
 
