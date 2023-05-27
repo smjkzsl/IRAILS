@@ -48,6 +48,7 @@ class MvcApp(FastAPI):
         self.__app_views_dirs = {} 
         self.routers_map = {}
         self.__apps_dirs = []
+        self.__apps = {}
         self.auth_user_class:auth.DomainUser = None
         super().__init__(**kwargs)
 
@@ -60,7 +61,10 @@ class MvcApp(FastAPI):
             userobj = self.auth_user_class(user.name)
             copy_attr(user,userobj,False)
             return userobj
-     
+    @property
+    def apps(self)->Dict:
+        return self.__apps
+    
     @property
     def app_views_dirs(self)->Dict:
         return self.__app_views_dirs
@@ -200,7 +204,7 @@ def api_router(path:str="", version:str="",**allargs):
     else:
         raise RuntimeError(_("app dir must in apps dir"))
      
-
+    app_name = os.path.basename(app_dir)
     def format_path(p,v):
         if p and not p.startswith("/"):
             raise RuntimeError(_("route path must start with '/',%s is not alowed!") % p)
@@ -209,7 +213,7 @@ def api_router(path:str="", version:str="",**allargs):
             p += '/{version}' if v else ''
         if v and not path:
             p = "/{controller}/{version}"
-        app_name = os.path.basename(app_dir)
+        
         return p.replace("{app}",app_name)
     path = format_path(path,version) 
      
@@ -226,8 +230,10 @@ def api_router(path:str="", version:str="",**allargs):
     def _wapper(targetController):  
         _name = app_dir.replace(os.sep,".").lstrip(".") + "." + targetController.__name__ + "@" + version 
         _controller_hash = f"{_name}" 
-        if not _controller_hash in __all_controller__:
-            __all_controller__[_controller_hash] = {'label':'new','obj': _controllerBase}
+        if not app_name in __all_controller__:
+            __all_controller__[app_name]={}
+        if _controller_hash not in __all_controller__[app_name]: 
+            __all_controller__[app_name][_controller_hash]= {'label':'new','obj': _controllerBase}
 
         class puppetController( targetController ,_controllerBase ): 
             '''puppet class inherited by the User defined controller class '''
@@ -359,29 +365,33 @@ def get_wrapped_endpoint(func):
     return ret
 def _register_controllers():
     global __is_debug
-    all_routers = []
-    all_routers_map = {}
-    for hash,dict_obj in __all_controller__.items():
+   
+    for app_name in __all_controller__:
+        for hash,dict_obj in __all_controller__[app_name].items():
+           
+            if dict_obj['label'] == 'new':
+                if __is_debug:  
+                    _log.info(hash+" mountting...")
+                app_router = register_controllers_to_app(application, dict_obj['obj'])
+                
+                application.apps[app_name]['router'] = app_router
+                dict_obj['label'] = 'mounted'
 
-        if dict_obj['label'] == 'new':
-            if __is_debug:  
-                _log.info(hash+" mountting...")
-            all_routers.append(register_controllers_to_app(application, dict_obj['obj']))
-            dict_obj['label'] = 'mounted'
-
-    for router in all_routers:
-        for r in router.routes:
-            funcname = str(r.endpoint).split('<function ')[1].split(" at ")[0] 
-            end_point_abs = get_wrapped_endpoint(r.endpoint)
-            auth_type = getattr(end_point_abs,AUTH_KEY) if hasattr(end_point_abs,AUTH_KEY) else 'None'
-            doc_map =  get_docs(r.description) if hasattr(r,'description') else {}
-            if hasattr(r,'methods'):
-                methods = r.methods
-            else:
-                methods = r.name
-            if __is_debug:  
-                _log.info((str(methods),r.path,funcname) )
-            application.routers_map[funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type,"endpoint":r.endpoint}
+             
+                for r in app_router.routes:
+                    funcname = str(r.endpoint).split('<function ')[1].split(" at ")[0] 
+                    end_point_abs = get_wrapped_endpoint(r.endpoint)
+                    auth_type = getattr(end_point_abs,AUTH_KEY) if hasattr(end_point_abs,AUTH_KEY) else 'None'
+                    doc_map =  get_docs(r.description) if hasattr(r,'description') else {}
+                    if hasattr(r,'methods'):
+                        methods = r.methods
+                    else:
+                        methods = r.name
+                    if __is_debug:  
+                        _log.info((str(methods),r.path,funcname) )
+                    if not 'route_map' in application.apps[app_name]: 
+                        application.apps[app_name]['route_map']={}
+                    application.apps[app_name]['route_map'][funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type,"endpoint":r.endpoint}
       
     _log.info(_("static files mouting..."))
     midware.init(app=application,debug=__is_debug)
@@ -423,14 +433,13 @@ def check_init_auth(db_cfg):
 def generate_mvc_app():
     global __is_debug
      
-    application.title = _project_name
-    
-    
-    
+    application.title = _project_name 
     
     _log.info(_("loading irails apps..."))
-    loaded,unloaded=_load_apps(debug=__is_debug) 
+    loaded,unloaded=_load_apps(debug=__is_debug,application=application) 
+
     _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %(loaded,unloaded))  
+
     if not len(__all_controller__)>0:
         raise RuntimeError(_("not found any controller class"))
     

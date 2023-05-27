@@ -7,5 +7,9 @@ from irails import route,api,Request,Response,BaseController,application
 class AdminController(BaseController):  
     @api.get('/index')
     def index(self):
+        '''
+        :title 控制面板
+        :nav true
+        '''
         return self.view()                
  

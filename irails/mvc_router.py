@@ -22,7 +22,7 @@ class InferringRouter(APIRouter):
     #         return super().add_api_route(path, endpoint, **kwargs)
         
 def register_controllers_to_app(app: FastAPI,
-                                controller_base: Type[ControllerBase]) -> None:
+                                controller_base: Type[ControllerBase]) -> InferringRouter:
     """
     Registers all the api routes inside child controllers of the base
     controller.

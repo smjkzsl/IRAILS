@@ -2,35 +2,113 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
-    <title>FastApi MVC Framework</title>
-    <link rel="stylesheet" href="home.css" />
-
+    <title>${app_name}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        header {
+            width: 100%;
+            background-color: #616161;
+            color: #252939;
+            padding: 20px 20px 40px 20px;
+        }
+        
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        nav li {
+            float: left;
+            margin-right: 20px;
+        }
+        
+        nav a {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 5px;
+        }
+        
+        nav ul ul {
+            display: none;
+            position: absolute;
+            z-index: 999;
+            background-color: #AAA;
+        }
+        
+        nav ul li:hover>ul {
+            display: inherit;
+        }
+        
+        nav ul ul li {
+            float: none;
+            width: 200px;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        nav ul ul ul li {
+            position: relative;
+            top: -60px;
+            left: 200px;
+        }
+        
+        nav a:hover {
+            background-color: black;
+        }
+        
+        #content {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        footer {
+            width: 100%;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            position: fixed;
+            bottom: 0;
+        }
+    </style>
 </head>
 
 <body>
-    <header style="text-align:left;display: flex;">
-        <h1>Python</h1>
-        <h4>on FastApi</h4>
+    <header>
+        <h1>IRails ${app_name}</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                {% for app_name in router_map %}
+                <li>
+                    <a href="#">${ router_map[app_name]['title'] }</a>
+                    <ul>
+                        {% for func in router_map[app_name] %} {% if 'GET' in router_map[app_name][func]['methods'] %}
+                        <li><a href="${ router_map[app_name][func]['path'] }">${router_map[app_name][func]['doc'] and router_map[app_name][func]['doc']['title'] or func}</a></li>
+                        {% endif %} {% endfor %}
 
+                    </ul>
+                </li>
+                {% endfor %}
+
+            </ul>
+        </nav>
     </header>
-    <nav>
-        {% for item in routers_map %} {% if 'GET' in routers_map[item]['methods'] %}
 
-        <a href="${routers_map[item]['path']}">${routers_map[item]['doc']
-                and routers_map[item]['doc']['title'] or item}</a> {% endif %} {% endfor %}
+    <div id="content">
+        <h2>Welcome to My Website!</h2>
+        <p>This is some sample content for the home page.${flash}</p>
+    </div>
 
-
-
-    </nav>
-    <section>
-        <h2>Welcome to my website</h2>
-        <p>This is an example of a responsive design that works well on both desktop and mobile devices.</p>
-        <p>here is the `text` variable in class method:${text}</p>
-        <p style="color:red"><b>${flash}</b></p>
-    </section>
     <footer>
-        <p>&copy; 2023 My Website</p>
+        &copy; 2022 My Website. All rights reserved.
     </footer>
 </body>
 

@@ -11,6 +11,9 @@ def startup():
 class UserController(BaseController):
     @api.get("/current_user")
     def current(self):
+        '''
+        :nav false
+        '''
         import copy
         user = copy.copy(self.request.user)
         assert not user is self.request.user

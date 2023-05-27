@@ -1,0 +1,12 @@
+name: 'IRails Control panel'
+title: '系统管理'
+description: "IRails Project Management System\n\
+"
+version: '1.0'
+author: 'bruce chou'
+slots: True
+plugins: []
+depends: []
+license: 'MIT'
+category: 'System'
+packages: ['controllers','models','services']

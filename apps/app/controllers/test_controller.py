@@ -43,8 +43,20 @@ class TestController(BaseController):
             c = 0
         self.session['home'] = c
         text = "Hello World! I'm in FastapiMvcFramework"
-        routers_map = application.routers_map
-        routers = application.routes 
+        router_map = {}
+        for app_name in application.apps:
+            if not app_name in router_map:
+                router_map[app_name]={}
+            router_map[app_name]['title'] = application.apps[app_name]['manifest']['title'] or app_name
+            for func in application.apps[app_name]['route_map']:
+                item = application.apps[app_name]['route_map'][func]
+                if item['doc']:
+                    if (not 'nav' in item['doc'] ) or ('nav' in item['doc'] and item['doc']['nav'].lower() != 'false'):
+
+                        router_map[app_name][func] = application.apps[app_name]['route_map'][func]
+                else:
+                    router_map[app_name][func] = application.apps[app_name]['route_map'][func]
+        app_name = application.title
         return self.view()
     
     @api.get("/xml",auth='user')

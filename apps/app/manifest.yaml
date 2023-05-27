@@ -1,0 +1,12 @@
+name: 'irails testing app'
+title: 'Test Home'
+description: "just test irails in dev mode\n\
+"
+version: '1.0'
+author: 'bruce chou'
+slots: True
+plugins: []
+depends: []
+license: 'MIT'
+category: 'test'
+packages: ['controllers']
