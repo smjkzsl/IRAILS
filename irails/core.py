@@ -23,7 +23,7 @@ from . import midware
 from . import auth
 from . import database
 from ._loader import _load_apps
-from ._utils import get_controller_name,get_snaked_name
+from ._utils import get_controller_name,get_snaked_name,copy_attr
 
 from ._i18n import _
 
@@ -50,14 +50,16 @@ class MvcApp(FastAPI):
         self.__apps_dirs = []
         self.auth_user_class:auth.DomainUser = None
         super().__init__(**kwargs)
-        
+
     def new_user(self,user:Union[database.Base,str])->auth.DomainUser:
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
         if isinstance(user,str):
             return self.auth_user_class(username=user)
-        elif isinstance(user,auth.DomainUser):
-            return self.auth_user_class(user.name)
+        elif isinstance(user,database.Base):
+            userobj = self.auth_user_class(user.name)
+            copy_attr(user,userobj,False)
+            return userobj
      
     @property
     def app_views_dirs(self)->Dict:

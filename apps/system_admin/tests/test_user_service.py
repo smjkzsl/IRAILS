@@ -62,6 +62,8 @@ class TestUserService(ServiceTest):
             # 删除满足条件的用户
          service.delete(User, User.age < 30)
          self.assertEqual(service.count(User), 8)
+         service.restore(service.get(User,1))
+         self.assertEqual(service.count(User), 9)
       def test_pager(self):
          import math
          page_size = 3

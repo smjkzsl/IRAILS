@@ -354,6 +354,23 @@ class Service(metaclass=_serviceMeta):
             session.commit()
             return cnt
     @classmethod
+    def restore(self,model:Union[Type,Base],*args,**kwargs):
+        '''Undelete . set is_deleted field False '''
+        with self.get_session() as session:
+            if isinstance(model,Base):
+                if hasattr(model,is_deleted_field): 
+                    setattr(model,is_deleted_field,False)
+                    return model
+            else: 
+                query = session.query(model).filter(*args).filter_by(**kwargs)
+                rows = query.all()
+                if hasattr(model,is_deleted_field): 
+                    for row in rows:
+                        setattr(row,is_deleted_field,False)   
+                cnt = len(rows)
+                 
+                return cnt
+    @classmethod
     def real_delete(self,model:Base,*args,**kwargs):
         '''Real delete rows in database'''
         with self.get_session() as session: 

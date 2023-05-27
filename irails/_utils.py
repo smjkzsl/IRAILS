@@ -158,3 +158,13 @@ def pluralize_collection(base, local_cls, referred_cls, constraint):
                          referred_name)[1:]
     pluralized = _pluralizer.plural(uncamelized)
     return pluralized
+def copy_attr(obj1:object, obj2:object,copy_none:bool=True):
+    """
+        将obj1的属性复制到obj2（如果obj2有相同的属性）。
+    """
+    for key, value in obj1.__dict__.items():
+        if hasattr(obj2, key):
+            if copy_none or value:
+                setattr(obj2, key, value)
+             
+            

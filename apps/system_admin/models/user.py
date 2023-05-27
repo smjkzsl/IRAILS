@@ -15,6 +15,8 @@ class User(database.Base):
 
     fullname: Mapped[str] = mapped_column(String(50))
 
+    domain:Mapped[str] = mapped_column(String(50),nullable=True, comment="user domain")
+    
     age: Mapped[str] = mapped_column(Integer())
     roles:List['Role'] = []
 
