@@ -83,14 +83,17 @@ def mount_statics(app,static_paths={},debug=False):
         if not _url.startswith('/'):
             _url='/'+_url
         _dir = os.path.normpath(_dir)
-        if _url=='/':
-            __roots[_dir] = _url
+        if os.path.exists(_dir):
+            if _url=='/':
+                __roots[_dir] = _url
+            else:
+                if not _url.endswith("/"):_url+="/"
+                _url = _url.lower()
+                if debug:
+                    _log.info(f"StaticDir:{_dir} mounted: {_url}")
+                app.mount(_url,MvcStaticFiles(directory=_dir),name=_dir)       
         else:
-            if not _url.endswith("/"):_url+="/"
-            _url = _url.lower()
-            if debug:
-                _log.info(f"StaticDir:{_dir} mounted: {_url}")
-            app.mount(_url,MvcStaticFiles(directory=_dir),name=_dir)       
+            _log.warn(f"StaticDir:{_dir} do not exists!")
     #mount public resources
     public_dir =  config.get("public_dir") 
     public_dir = os.path.abspath(os.path.join(ROOT_PATH,public_dir))

@@ -7,8 +7,7 @@ from pydantic import conlist
 
 @application.on_event("startup")
 def startup():
-    application.public_auth_url = '/user/login'
-    application.user_auth_url = '/user/login'
+    
     #p, admin, domain1, data1, read
     application.policy('admin','system','/xml', 'GET', authorize=True)
     application.policy('admin','system','/sys_admin/*', 'GET', authorize=True)
@@ -20,29 +19,7 @@ class TestController(BaseController):
     def __init__(self) -> None:
         
         super().__init__()
-    @api.get("/user/login" )
-    def login(self):
-        """:title Login"""  
-        redirect = self.get_param('redirect') if self.get_param('redirect') else '/' 
-        return self.view() 
-    @api.post("/test/verity_user",auth="none")
-    async def verity_user(self):  
-        username = self['username']
-        password = self['password']
-        redirect = self['redirect']
-        if username and password:
-            #do veritied
-            if username in ['bruce','alice'] and password:
-                user = application.new_user(username=username)
-                user.domain = "system"
-                return self._verity_successed(user = user,redirect= redirect)
-            else:
-                return self._verity_error() 
-        return self._verity_error()
     
-    @api.get("/user/logout")
-    def logout(self):
-        return self._user_logout()
     
     @api.post("/test/upload")
     async def upload_test(self, files: List[UploadFile] = File(...) ): 

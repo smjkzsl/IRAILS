@@ -20,10 +20,8 @@
         <a href="${routers_map[item]['path']}">${routers_map[item]['doc']
                 and routers_map[item]['doc']['title'] or item}</a> {% endif %} {% endfor %}
 
-        <a href="#">About</a>
-        <a href="#">Contact</a> {% if request.session['user'] %}
-        <a href="/user/logout"><b>${request.session['user']['username']}</b>
-                Logout</a> {% endif %}
+
+
     </nav>
     <section>
         <h2>Welcome to my website</h2>

@@ -48,12 +48,16 @@ class MvcApp(FastAPI):
         self.__app_views_dirs = {} 
         self.routers_map = {}
         self.__apps_dirs = []
-        self.auth_class = None
+        self.auth_user_class:auth.DomainUser = None
         super().__init__(**kwargs)
-    def new_user(self,username:str)->auth.DomainUser:
-        if not self.auth_class:
+        
+    def new_user(self,user:Union[database.Base,str])->auth.DomainUser:
+        if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
-        return self.auth_class(username=username)
+        if isinstance(user,str):
+            return self.auth_user_class(username=user)
+        elif isinstance(user,auth.DomainUser):
+            return self.auth_user_class(user.name)
      
     @property
     def app_views_dirs(self)->Dict:
@@ -169,7 +173,7 @@ def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
     auth_class = auth.get_auth_backend(auth_type)
     if not auth_class:
         raise RuntimeError(_("%s auth type not support") % auth_type)
-    application.auth_class = auth_class.user_class
+    application.auth_user_class = auth_class.user_class
     
     secret_key = config.get("auth").get(f"secret_key","")
     kwargs = {'secret_key':secret_key,'adapter_uri':__adapter_uri} 
