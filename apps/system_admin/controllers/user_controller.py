@@ -35,7 +35,7 @@ class UserController(BaseController):
             user = service.verity(username=username,password=password)
             if user:
                 userobj = application.new_user(user=user)
-                userobj.domain = "system"
+                 
                 return self._verity_successed(user = userobj,redirect= redirect)
             else:
                 return self._verity_error() 

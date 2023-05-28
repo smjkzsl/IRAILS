@@ -6,14 +6,12 @@ from pydantic import conlist
  
 
 @application.on_event("startup")
-def startup():
-    
+def startup(): 
     #p, admin, domain1, data1, read
     application.policy('admin','system','/xml', 'GET', authorize=True)
-    application.policy('admin','system','/sys_admin/*', 'GET', authorize=True)
-    application.policy('admin','system','/chatgpt', 'GET', authorize=True)
-    #g, alice, admin, domain1 
-    application.grouping('bruce','admin','system', authorize=True)
+ 
+    application.policy('kefu','system','/chatgpt', 'GET', authorize=True)
+  
 @route(auth='none')
 class TestController(BaseController): 
     def __init__(self) -> None:

@@ -7,3 +7,5 @@ auth:
   secret_key: '123456'
   session_name: user
   type: jwt
+  super_group: admin
+  super_domain: system

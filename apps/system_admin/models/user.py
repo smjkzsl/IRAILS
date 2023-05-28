@@ -30,7 +30,11 @@ class User(database.Base):
         if target.age and target.age<18:
             # 中断插入操作
             raise Exception('age must > 18')
-        
+        if target.name and not target.fullname:
+            target.fullname = target.name
+        if not target.domain:
+            target.domain='system'
+            
         if not target.password:
             password = target.name
         else:
@@ -62,7 +66,7 @@ class Role(database.Base):
     users:List['User'] = []
     def on_change_name(target, value, oldvalue, initiator):
         print("Role:on_change_name" )
-        return value+" supper"
+        return value 
 
 database.Schemes.M2M(User,Role)
 database.Schemes.TIMESTAMPS(User,Role)

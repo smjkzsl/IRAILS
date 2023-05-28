@@ -328,7 +328,7 @@ class Service(metaclass=_serviceMeta):
             session = self.session()
             session.add(m)
             session.commit()
-            session.merge(m,load=False)
+             
             return m
         return None
     @classmethod

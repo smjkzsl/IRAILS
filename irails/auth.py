@@ -17,7 +17,7 @@ from .config import config, ROOT_PATH
 from .log import _log
 import jwt
 from datetime import datetime, timedelta
-from typing import Optional, Tuple, Type, Union, Dict
+from typing import List, Optional, Tuple, Type, Union, Dict
 from ._utils import iJSONEncoder, is_datetime_format
 from ._i18n import _
 AUTH_EXPIRED = '[EXPIRED]!'
@@ -26,21 +26,28 @@ default_domain = "system"
 
 
 class DomainUser(BaseUser):
-    def __init__(self, username: str = 'anonymous', group: str = "", domain: str = "") -> None:
+    def __init__(self, username: str = 'anonymous', roles = [], domain: str = "") -> None:
+        '''
+        :group Roles 
+        :domain Tenant
+        '''
         self.username = username
-        self._group = group
+        self._roles = roles
         self._domain = domain or default_domain
         self._lang = "zh"
         self._timezone = 'Asia/Shanghai'
         super().__init__()
 
     @property
-    def group(self):
-        return self._group
+    def roles(self):
+        return self._roles
 
-    @group.setter
-    def group(self, value):
-        self._group = value
+    @roles.setter
+    def roles(self, value:List):
+        names=[]
+        for row in value:
+            names.append(row.name)
+        self._roles = names
 
     @property
     def domain(self):
@@ -63,8 +70,8 @@ class DomainUser(BaseUser):
     @property
     def identity(self) -> str:
         identity = self.username
-        if self._group:
-            group = self._group
+        if self._roles:
+            group = self._roles
             if self._domain:
                 group = self._domain+"."+group
             identity += '@'+group
@@ -130,8 +137,9 @@ class CasbinAuth:
         '''
         do verity,return True means `Success` and others `Failed`
         '''
-
-        sub = user.identity
+        if not user.roles:
+            raise RuntimeError(_("User must have a role %s") % user)
+        sub = ','.join(user.roles)
         path = request.url.path
         method = request.method
         param: Tuple = (sub, user.domain, path, method,)
@@ -227,9 +235,14 @@ class BasicAuth(AuthenticationBackend_):
             user = BasicUser(userobj)
         request.scope['user'] = user
         auth_type: str = kwargs.get("auth_type")
-        if not auth_type or auth_type.lower() == 'public':
+        if not auth_type or auth_type.lower() == 'none':
             return True,  user
-        result = _casbin_auth._auth(request=request, user=user)
+        elif auth_type.lower() == 'public':
+            return user.is_authenticated, user
+        elif not user.is_authenticated:
+            return False.user
+        else:
+            result = _casbin_auth._auth(request=request, user=user)
 
         return result, user
 
@@ -289,10 +302,10 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
             return jwtuser.is_authenticated, jwtuser
         elif auth_type.lower() == 'none':
             return True, jwtuser
-        elif payload and not jwtuser.is_authenticated:
-            jwtuser = from_payload(payload)
-            request.scope['user'] = jwtuser
-        result = _casbin_auth._auth(request=request, user=jwtuser)
+        elif   not jwtuser.is_authenticated: 
+            return False,jwtuser
+        else:
+            result = _casbin_auth._auth(request=request, user=jwtuser)
         return result, jwtuser
 
     def clear_userinfo(self, request: Request):
@@ -317,7 +330,7 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
         auth_user_obj = {
             "exp": expire,
             "username": user.username,
-            "group": user.group,
+            "group": user.roles,
             "domain": user.domain
         }
 
@@ -340,16 +353,34 @@ def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = Non
     __session_name = config.get("auth").get("session_name", 'user')
     global _casbin_auth
     cfg = config.get("auth")
+    super_domain = cfg.get('super_domain','system')
+    super_group = cfg.get('super_group','admin')
+
     adapter_uri = kwagrs.get('adapter_uri', None)
 
     del kwagrs['adapter_uri']
     model_file = cfg.get("auth_model", './configs/casbin-model.conf')
-    model_file = os.path.abspath(os.path.join(ROOT_PATH, model_file))
+    if not os.path.isabs(model_file):
+        model_file = os.path.abspath(os.path.join(ROOT_PATH, model_file))
+    if not os.path.exists(model_file):
+        raise RuntimeError(_("Casbin model file %s does not exists!")%model_file)
+    
     if adapter_class is FileAdapter and not os.path.isabs(adapter_uri):
         adapter_uri = os.path.abspath(os.path.join(ROOT_PATH, adapter_uri))
     adapter = adapter_class(adapter_uri)
-    enforcer = casbin.Enforcer(model_file, adapter)
+    from casbin.model import Model
+    model = Model()
+    with open(model_file,'r',encoding='utf-8') as f: 
+        model_content = f.read()
+        # if super_user and super_group:
+        #     model_content = model_content.replace("${super_user}",super_user).replace("${super_group}",super_group)
+        model.load_model_from_text(model_content)
+    enforcer = casbin.Enforcer(model, adapter)
 
+    def is_super(roles,domain): 
+        return super_group in roles and domain == super_domain
+    
+    enforcer.add_function('is_super',is_super)
     _casbin_auth = CasbinAuth(enforcer=enforcer, session_name=__session_name)
 
     return backend(**kwagrs)
