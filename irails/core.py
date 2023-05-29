@@ -52,14 +52,15 @@ class MvcApp(FastAPI):
         self.auth_user_class:auth.DomainUser = None
         super().__init__(**kwargs)
 
-    def new_user(self,user:Union[database.Base,str])->auth.DomainUser:
+    async def new_user(self,user:Union[database.Base,str])->auth.DomainUser:
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
         if isinstance(user,str):
             return self.auth_user_class(username=user)
         elif isinstance(user,database.Base):
-            userobj = self.auth_user_class(user.name)
-            copy_attr(user,userobj,False)
+            userobj:auth.DomainUser = self.auth_user_class(user.name)
+            await copy_attr(user,userobj,False)
+            userobj.set_roles(user.roles) 
             return userobj
     @property
     def apps(self)->Dict:
@@ -305,7 +306,7 @@ def api_router(path:str="", version:str="",**allargs):
                 if not ret and not user or not user.is_authenticated: 
                     # _log.debug(_('Failed Auth on type:%s at url:%s') % (auth_type,str(request.url)))
                     if accept_header == "application/json":
-                        return  ORJSONResponse(content={"message": "401 UNAUTHORIZED!"},
+                        return  JSONResponse(content={"message": "401 UNAUTHORIZED!"},
                                                    status_code=StateCodes.HTTP_401_UNAUTHORIZED),None
                     _auth_url = getattr(application,f"{auth_type}_auth_url") 
 

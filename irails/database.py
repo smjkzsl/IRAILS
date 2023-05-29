@@ -395,7 +395,7 @@ class Service(metaclass=_serviceMeta):
     @classmethod
     def execute(cls,cmd:Union[str,TextClause],**kwargs):
         if not isinstance(cmd,TextClause):
-            cmd = text(str)
+            cmd = text(cmd)
         with engine.begin() as conn:
             ret = conn.execute(cmd,**kwargs)
         return ret

@@ -42,5 +42,5 @@ class ServiceTest(_BaseUnitTest):
             check_init_auth(db_cfg)
             if ServiceTest.engine:
                 check_migration(engine=ServiceTest.engine,uri= db_uri,alembic_ini= alembic_ini )
-            ServiceTest.service = Service 
+            self.service = Service()
      

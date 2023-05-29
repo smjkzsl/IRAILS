@@ -47,11 +47,15 @@ def __check_if_enabled(app_name):
             (isinstance(app_enabled,list) and app_name in app_enabled))
 
 def load_module(module_name:str,module_path:str):
-    if os.path.exists(module_path):
+    if os.path.exists(module_path) and not module_name in sys.modules:
         spec = importlib.util.spec_from_file_location(module_name, module_path)
         module = importlib.util.module_from_spec(spec)
+
         spec.loader.exec_module(module)
+        sys.modules[module_name] = module
         return module
+    elif module_name in sys.modules:
+        return sys.modules[module_name]
     return None
 def _load_app(app_dir,manifest:dict): 
     if not manifest:

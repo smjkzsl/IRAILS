@@ -24,6 +24,15 @@ AUTH_EXPIRED = '[EXPIRED]!'
 _session_name: str = ""
 default_domain = "system"
 
+cfg = config.get("auth")
+super_domain = cfg.get('super_domain','system')
+super_group = cfg.get('super_group','admin')
+_gEnforor:Enforcer = None
+def is_super(username,domain,*args,**kwargs): 
+    roles =_gEnforor.get_roles_for_user_in_domain(username,super_domain)
+    super_users =  _gEnforor.get_users_for_role_in_domain(super_group,super_domain)#['root', 'bruce']
+    # p = _gEnforor.get_permissions_for_user_in_domain(username,domain)
+    return super_group in roles and username in super_users
 
 class DomainUser(BaseUser):
     def __init__(self, username: str = 'anonymous', roles = [], domain: str = "") -> None:
@@ -42,8 +51,7 @@ class DomainUser(BaseUser):
     def roles(self):
         return self._roles
 
-    @roles.setter
-    def roles(self, value:List):
+    def set_roles(self, value:List):
         names=[]
         for row in value:
             names.append(row.name)
@@ -73,7 +81,7 @@ class DomainUser(BaseUser):
         if self._roles:
             group = self._roles
             if self._domain:
-                group = self._domain+"."+group
+                group = self._domain+"."+ ','.join(group)
             identity += '@'+group
         return identity
 
@@ -139,12 +147,12 @@ class CasbinAuth:
         '''
         if not user.roles:
             raise RuntimeError(_("User must have a role %s") % user)
-        sub = ','.join(user.roles)
-        path = request.url.path
-        method = request.method
-        param: Tuple = (sub, user.domain, path, method,)
+        sub = user.username  
+        dom = user.domain  
+        obj = request.url.path
+        act = request.method 
 
-        return self.enforcer.enforce(*param)
+        return self.enforcer.enforce(sub, dom, obj, act)
 
     def __get_token_from_header(self, authorization: str, prefix: str) -> str:
         """Parses the Authorization header and returns only the token"""
@@ -167,13 +175,16 @@ class CasbinAuth:
             username_field = kwargs['username_field']
             auth = request.headers["Authorization"] if 'Authorization' in request.headers else None
             if auth:
-                scheme, credentials = auth.split()
-                token = self.__get_token_from_header(
-                    authorization=auth, prefix=prefix)
-
-                del kwargs['username_field']
+                scheme, credentials = auth.split(' ')
                 try:
+                    token = self.__get_token_from_header(
+                        authorization=auth, prefix=prefix)
+
+                    del kwargs['username_field']
+                
                     payload = jwt.decode(token, **kwargs)
+                except  AuthenticationError as e:
+                    return "", "", None
                 except jwt.InvalidTokenError as e:
                     msg = _('token %s has been expired(%s)' % (token, e.args))
                     _log.debug(msg)
@@ -351,10 +362,8 @@ def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = Non
         kwargs:secret_key=KEY
     """
     __session_name = config.get("auth").get("session_name", 'user')
-    global _casbin_auth
-    cfg = config.get("auth")
-    super_domain = cfg.get('super_domain','system')
-    super_group = cfg.get('super_group','admin')
+    global _casbin_auth,_gEnforor
+    
 
     adapter_uri = kwagrs.get('adapter_uri', None)
 
@@ -375,25 +384,14 @@ def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = Non
         # if super_user and super_group:
         #     model_content = model_content.replace("${super_user}",super_user).replace("${super_group}",super_group)
         model.load_model_from_text(model_content)
-    enforcer = casbin.Enforcer(model, adapter)
-
-    def is_super(roles,domain): 
-        return super_group in roles and domain == super_domain
-    
+    enforcer = casbin.Enforcer(model, adapter) 
     enforcer.add_function('is_super',is_super)
+    _gEnforor=enforcer
     _casbin_auth = CasbinAuth(enforcer=enforcer, session_name=__session_name)
 
     return backend(**kwagrs)
 
-
-def reload_adapter(app: FastAPI, adapter: Adapter = None):
-    cfg = config.get("auth")
-    model_file = cfg.get("auth_model", './configs/casbin-model.conf')
-    if not adapter:
-        adapter_file = cfg.get("auth_adapter", './configs/casbin-adapter.csv')
-        adapter = FileAdapter(adapter_file)
-    enforcer = casbin.Enforcer(model_file, adapter)
-    app.router.current_casbin_instance = enforcer
+ 
 
 
 def get_auth_backend(name: str) -> AuthenticationBackend_:

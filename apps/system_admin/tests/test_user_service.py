@@ -25,7 +25,7 @@ class TestUserService(ServiceTest):
          self.assertTrue(role.id)
             # 将用户添加到角色中
          role.users.append(user)
-         role.users.append(user1)
+          
          service.flush(role)
           
          service.add(User,name="root",domain="system",age=40)
@@ -34,3 +34,8 @@ class TestUserService(ServiceTest):
          root_user.roles.append(role)
          service.flush()
         
+         role_kefu = Role(name="kefu")
+         service.add(role_kefu)
+         alice_user = service.query(User,name='alice').one()
+         alice_user.roles.append(role_kefu)
+         service.flush()

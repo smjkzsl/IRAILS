@@ -23,27 +23,41 @@ def _get_tests(_root_path):
             if file.endswith('.py') and file.startswith('test_'):
                 all_files[name] = file_path
     return all_files
+
+def do_test_file(app_dir,file_name,print_out=None):
+    if not os.path.isabs(file_name):
+        test_files = _get_tests(app_dir)
+        if file_name in test_files:
+            file_name = test_files[file_name]
+        else:
+            raise FileNotFoundError(file_name)
+    name,ext = os.path.splitext(os.path.basename(file_name))
+
+    app_package = os.path.basename(app_dir)    
+    module = load_module(f"{app_package}.tests.{name}",file_name)
+    
+    if module:
+        
+        set_module_i18n(module,f"{app_package}.tests.{name}")
+        sys.argv = [file_name]
+        kwargs = {'module':module,'exit':False}
+        if print_out:
+            kwargs['buffer']=print_out
+        unittest.main(**kwargs)
+
 def do_test_app(app_dir, print_out=None):
     
     test_files = _get_tests(app_dir)
-    app_package = os.path.basename(app_dir)
+    
     app_package_dir = os.path.dirname(app_dir)
     if not app_package_dir in sys.path:
         sys.path.insert(0,app_package_dir)
     for name in test_files:
         print(f"Starting test {test_files[name]}")
-        module = load_module(f"{app_package}.tests.{name}",test_files[name])
-        
-        if module:
-            
-            set_module_i18n(module,f"{app_package}.tests.{name}")
-            sys.argv = [test_files[name]]
-            kwargs = {'module':module,'exit':False}
-            if print_out:
-                kwargs['buffer']=print_out
-            unittest.main(**kwargs)
+        do_test_file(app_dir, test_files[name])
     
     sys.path.remove(app_package_dir)
+
 def get_all_enabled_apps():
     from irails._loader import _load_apps
     apps = _load_apps(do_load=False)
@@ -71,6 +85,7 @@ def main():
         usage=f"{sys.argv[0]} {self_file} [-h] [--verbose]",
           description='run project or app tests')
     parser.add_argument('-v','--verbose',action='store_true', help="full verbose with testing")  
+    parser.add_argument('args', nargs=argparse.REMAINDER,help="test names in app `tests` dir...")
     args = parser.parse_args()  
     import io
     print_out = io.StringIO() if not args.verbose else None
@@ -78,10 +93,20 @@ def main():
         sys.stdout = print_out
         sys.stderr = print_out
     if args.verbose:
-        sys.argv.pop()
+        if '-v' in sys.argv:
+            sys.argv.remove('-v')
+        if '--verbose' in sys.argv:
+            sys.argv.remove('--verbose')
     try:
+        if args.args:
+            for name in args.args:
+                sys.argv.remove(name)
         if is_in_app(curdir):
-            do_test_app(curdir,print_out)
+            if args.args: 
+                for name in args.args:
+                    do_test_file(curdir,name,print_out)
+            else:
+                do_test_app(curdir,print_out)
         elif is_in_irails(curdir):
             do_test_project(print_out)
     except Exception as e:

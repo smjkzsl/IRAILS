@@ -16,6 +16,7 @@ if cfg and 'adapter_table' in cfg:
     rule_table = cfg.get('adapter_table','casbin_rule')
     
 class CasbinRule(database.Base):
+    extend_existing=True
     __tablename__ = rule_table
     __system__ = True
     id = Column(Integer, primary_key=True)
