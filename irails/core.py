@@ -118,6 +118,33 @@ class MvcApp(FastAPI):
     @data_engine.setter
     def data_engine(self,value):
         self._data_engine = value
+
+    def app_list(self,group_by_controller=False)->List:
+        import copy
+        apps = []
+        for app_name in self.apps:
+            manifest=copy.copy(self.apps[app_name]['manifest'])
+            route_map = copy.copy(self.apps[app_name]['route_map'])
+            for item in route_map:
+                if 'endpoint' in route_map[item]:
+                    del route_map[item]['endpoint']
+            if group_by_controller:
+                funcs={}
+            else:
+                funcs = []
+            for item in route_map:
+                _item = route_map[item]
+                _item.update({'function':item})
+                if group_by_controller:
+                    ctrl_name = item.split(".")[0]
+                    funcs[ctrl_name] = _item
+                    pass
+                else:
+                    funcs.append(_item)
+            manifest.update({'app_name':app_name,'routes':funcs})
+             
+            apps.append(manifest)
+        return apps
     def __repr__(self):
         return f'<IRails:{self.title}>'
     def route(self, *args,**kwargs):

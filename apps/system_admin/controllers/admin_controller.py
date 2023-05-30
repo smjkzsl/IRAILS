@@ -21,7 +21,7 @@ class AdminController(BaseController):
         '''
         :title Api Docs
         '''
-        return docs.get_swagger_ui_html(openapi_url=application.openapi_url, title="API documentation")
+        return docs.get_swagger_ui_html(oauth2_redirect_url="/system_admin/user/verity", openapi_url=application.openapi_url, title="API documentation")
 
     @api.get("/redoc",auth='public',include_in_schema=False)
     def redoc(self):
@@ -50,21 +50,5 @@ class AdminController(BaseController):
         '''
         :nav false
         '''
-        import copy
-        apps = []
-        for app_name in application.apps:
-            manifest=copy.copy(application.apps[app_name]['manifest'])
-            route_map = copy.copy(application.apps[app_name]['route_map'])
-            for item in route_map:
-                if 'endpoint' in route_map[item]:
-                    del route_map[item]['endpoint']
-            funcs = []
-            for item in route_map:
-                _item = route_map[item]
-                _item.update({'function':item})
-                funcs.append(_item)
-            manifest.update({'app_name':app_name,'routes':funcs})
-             
-            apps.append(manifest)
-
+        apps = application.app_list() 
         return apps
