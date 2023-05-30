@@ -17,36 +17,22 @@
 
  
 <script>
-import applist_page from './pages/apps.vue'
-// 1. 定义路由组件.
-// 也可以从其他文件导入
+// import applist_page from './pages/apps.vue'
+import VueRouter from "/public/libs/vue-router@4.2.1/dist/vue-router.global.js"
+import {system} from './api/api.js'
+import {ref} from 'vue'
 
-const About = {
-  template: '<div>About</div>'
-}
 
-// 2. 定义一些路由
-// 每个路由都需要映射到一个组件。
-// 我们后面再讨论嵌套路由。
-const routes = [{
-  path: '/',
-  name: 'AppList',
-  component: applist_page
-}, {
-  path: '/about',
-  name: 'About',
-  component: About
-},]
-// 3. 创建路由实例并传递 `routes` 配置
-// 你可以在这里输入更多的配置，但我们在这里
-// 暂时保持简单
-const router = VueRouter.createRouter({
-  // 4. 内部提供了 history 模式的实现。为了简单起见，我们在这里使用 hash 模式。
-  history: VueRouter.createWebHashHistory(),
-  routes, // `routes: routes` 的缩写
-})
-app.use(router)
+ 
 import { Menu as IconMenu, Message, Setting } from 'element_icon'
+
+const router = VueRouter.createRouter({
+        history: VueRouter.createWebHashHistory(),
+        routes: [],
+      })
+app.use(router)
+
+
 export default {
   components: {
     IconMenu, Message, Setting
@@ -56,9 +42,39 @@ export default {
   },
   mounted() {
     console.log('menus mounted')
+    this.getPages()
+  },
+  methods:{
+    async getPages(){
+      let data = await system.getPagesList() 
+      console.log(data)
+      let _routes = []
+      for(var item in data){
+        let _name = item
+        let url = data[_name]
+        const menuItem = {
+          name: _name,
+          path: '/' + _name ,
+          // icon: route.meta.icon,
+          label: _name,
+          // 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
+          component: () => import(url),
+        };
+        router.addRoute(menuItem)
+        router.replace(router.currentRoute.value.fullPath)
+
+        
+         
+      } 
+      debugger
+      this.routes = router.getRoutes()
+      console.log(router.getRoutes())
+    },
   },
   setup() {
-    return {
+    
+    const routes = ref(router.options.routes)
+    return { 
       routes
     }
 

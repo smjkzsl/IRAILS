@@ -6,8 +6,7 @@
       <el-table :data="applist" :border="parentBorder" style="width: 100%">
         <el-table-column type="expand">
           <template #default="props">
-            <div m="2">
-             
+            <div m="2"> 
               <h3>Routes</h3>
               <el-table :data="props.row.routes" :border="childBorder">
                 <el-table-column label="Controller" prop="function" :formatter="get_controller" width="150" />
@@ -22,7 +21,7 @@
         </el-table-column>
         <el-table-column label="App Name" prop="app_name" width="150"/>
         <el-table-column label="Version" prop="version" width="80" />
-        <el-table-column label="Author" prop="author" width="80" />
+        <el-table-column label="Author" prop="author" width="150" />
         <el-table-column label="License" prop="license" width="100" />
         <el-table-column label="Title" prop="title" />
         <el-table-column label="Category" prop="category" width="80"/>
@@ -38,8 +37,7 @@
 <script>
 const { ElTable, ElTableColumn, ref } = Vue
 import { system } from 'api/api.js'
-const parentBorder = ref(true)
-const childBorder = ref(true)
+
 export default {
   components: {
     ElTable, ElTableColumn
@@ -72,8 +70,10 @@ export default {
   },
   setup(props, context) {
     const applist = Vue.ref([])
+    const parentBorder = ref(true)
+    const childBorder = ref(false)
     return {
-      applist,
+      applist,parentBorder,childBorder
     }
   },
   updated() {

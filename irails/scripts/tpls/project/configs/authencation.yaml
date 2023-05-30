@@ -1,7 +1,11 @@
 auth:
-  adapter_uri: './configs/casbin-adapter.csv'
-  auth_model: ./configs/casbin-model.conf
+  adapter_uri: '{database.uri}' # keep empty if adpter is sqlalchemy to user database.uri same
+  auth_model: configs/casbin_templates/RBACT.conf
+ 
+  adapter_table: 'casbin_rule' 
+  casbin_adapter: sqlalchemy
   secret_key: '123456'
-  casbin_adapter: file 
   session_name: user
   type: jwt
+  super_group: admin
+  super_domain: system

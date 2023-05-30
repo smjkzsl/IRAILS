@@ -25,17 +25,21 @@ _session_name: str = ""
 default_domain = "system"
 
 cfg = config.get("auth")
-super_domain = cfg.get('super_domain','system')
-super_group = cfg.get('super_group','admin')
-_gEnforor:Enforcer = None
-def is_super(username,domain,*args,**kwargs): 
-    roles =_gEnforor.get_roles_for_user_in_domain(username,super_domain)
-    super_users =  _gEnforor.get_users_for_role_in_domain(super_group,super_domain)#['root', 'bruce']
-    # p = _gEnforor.get_permissions_for_user_in_domain(username,domain)
+super_domain = cfg.get('super_domain', 'system')
+super_group = cfg.get('super_group', 'admin')
+casbin_enforcer: Enforcer = None
+_casbin_auth: 'CasbinAuth' = None
+
+def is_super(username, domain, *args, **kwargs):
+    roles = casbin_enforcer.get_roles_for_user_in_domain(username, super_domain)
+    super_users = casbin_enforcer.get_users_for_role_in_domain(
+        super_group, super_domain)  # ['root', 'bruce']
+
     return super_group in roles and username in super_users
 
+
 class DomainUser(BaseUser):
-    def __init__(self, username: str = 'anonymous', roles = [], domain: str = "") -> None:
+    def __init__(self, username: str = 'anonymous', roles=[], domain: str = "") -> None:
         '''
         :group Roles 
         :domain Tenant
@@ -51,8 +55,8 @@ class DomainUser(BaseUser):
     def roles(self):
         return self._roles
 
-    def set_roles(self, value:List):
-        names=[]
+    def set_roles(self, value: List):
+        names = []
         for row in value:
             names.append(row.name)
         self._roles = names
@@ -81,7 +85,7 @@ class DomainUser(BaseUser):
         if self._roles:
             group = self._roles
             if self._domain:
-                group = self._domain+"."+ ','.join(group)
+                group = self._domain+"." + ','.join(group)
             identity += '@'+group
         return identity
 
@@ -147,10 +151,10 @@ class CasbinAuth:
         '''
         if not user.roles:
             raise RuntimeError(_("User must have a role %s") % user)
-        sub = user.username  
-        dom = user.domain  
+        sub = user.username
+        dom = user.domain
         obj = request.url.path
-        act = request.method 
+        act = request.method
 
         return self.enforcer.enforce(sub, dom, obj, act)
 
@@ -181,9 +185,9 @@ class CasbinAuth:
                         authorization=auth, prefix=prefix)
 
                     del kwargs['username_field']
-                
+
                     payload = jwt.decode(token, **kwargs)
-                except  AuthenticationError as e:
+                except AuthenticationError as e:
                     return "", "", None
                 except jwt.InvalidTokenError as e:
                     msg = _('token %s has been expired(%s)' % (token, e.args))
@@ -288,11 +292,14 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
     async def authenticate(self, request: Request, **kwargs) -> Union[None, Tuple[AuthCredentials, JWTUser]]:
         auth_type: str = kwargs.get("auth_type")
 
-        args = {'username_field': self.username_field, 'key': self.secret_key, 'algorithms': self.algorithm, 'audience': self.audience,
+        _kwargs = {'username_field': self.username_field, 
+                'key': self.secret_key, 
+                'algorithms': self.algorithm, 
+                'audience': self.audience,
                 'options': self.options}
         user_name, token, payload = _casbin_auth.get_user_from_request(request=request,
                                                                        prefix=self.prefix,
-                                                                       is_jwt=True, **args)
+                                                                       is_jwt=True, **_kwargs)
         if token == AUTH_EXPIRED:
             self.clear_userinfo(request)
             return False, AUTH_EXPIRED
@@ -313,8 +320,8 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
             return jwtuser.is_authenticated, jwtuser
         elif auth_type.lower() == 'none':
             return True, jwtuser
-        elif   not jwtuser.is_authenticated: 
-            return False,jwtuser
+        elif not jwtuser.is_authenticated:
+            return False, jwtuser
         else:
             result = _casbin_auth._auth(request=request, user=jwtuser)
         return result, jwtuser
@@ -354,7 +361,7 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
         return access_token
 
 
-_casbin_auth: CasbinAuth = None
+
 
 
 def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = None, **kwagrs) -> AuthenticationBackend:
@@ -362,8 +369,7 @@ def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = Non
         kwargs:secret_key=KEY
     """
     __session_name = config.get("auth").get("session_name", 'user')
-    global _casbin_auth,_gEnforor
-    
+    global _casbin_auth, casbin_enforcer
 
     adapter_uri = kwagrs.get('adapter_uri', None)
 
@@ -372,26 +378,25 @@ def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = Non
     if not os.path.isabs(model_file):
         model_file = os.path.abspath(os.path.join(ROOT_PATH, model_file))
     if not os.path.exists(model_file):
-        raise RuntimeError(_("Casbin model file %s does not exists!")%model_file)
-    
+        raise RuntimeError(
+            _("Casbin model file %s does not exists!") % model_file)
+
     if adapter_class is FileAdapter and not os.path.isabs(adapter_uri):
         adapter_uri = os.path.abspath(os.path.join(ROOT_PATH, adapter_uri))
     adapter = adapter_class(adapter_uri)
     from casbin.model import Model
     model = Model()
-    with open(model_file,'r',encoding='utf-8') as f: 
+    with open(model_file, 'r', encoding='utf-8') as f:
         model_content = f.read()
         # if super_user and super_group:
         #     model_content = model_content.replace("${super_user}",super_user).replace("${super_group}",super_group)
         model.load_model_from_text(model_content)
-    enforcer = casbin.Enforcer(model, adapter) 
-    enforcer.add_function('is_super',is_super)
-    _gEnforor=enforcer
-    _casbin_auth = CasbinAuth(enforcer=enforcer, session_name=__session_name)
+    casbin_enforcer = casbin.Enforcer(model, adapter)
+    casbin_enforcer.add_function('is_super', is_super)
+     
+    _casbin_auth = CasbinAuth(enforcer=casbin_enforcer, session_name=__session_name)
 
     return backend(**kwagrs)
-
- 
 
 
 def get_auth_backend(name: str) -> AuthenticationBackend_:

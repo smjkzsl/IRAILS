@@ -20,6 +20,10 @@
             async getAppList() {
                 let data = await request('/system_admin/admin/app_list')
                 return data
+            },
+            async getPagesList() {
+                let data = await request('/system_admin/admin/pages_list')
+                return data
             }
         }
     }

@@ -62,6 +62,7 @@ def url_for(url:str="",**kws):
     return url_path.lower() + url.strip()
 
 class BaseController:
+    __app_name:str=""
     @property
     def _(self):
         m = getattr(self,'__appdir__')#.split(os.sep)
@@ -148,8 +149,25 @@ class BaseController:
     def _verity_error(self,msg="User authentication failed!"):
         """return Response for show Verity failed infomation"""
         pass
-     
-    # @property
+    def vue_sfc_app(self,path="./public/vue_home.html", main_vue="main.vue"):
+        """
+        return a view based vue3 used ElementPlus and use vue3_sfc_loader
+        """
+        from jinja2 import Template
+        from .view import get_view_configure
+        view_config = get_view_configure()
+        context = {'main':main_vue}
+        if not os.path.isabs(path):
+            path = os.path.abspath(os.path.join(ROOT_PATH,path))
+        if os.path.exists(path):
+            with open(path,'r',encoding='utf-8') as f:
+                content = f.read()
+            dest_content = content 
+            template = Template(content,**view_config)
+            dest_content = template.render(context)
+            return HTMLResponse(content=dest_content)
+        raise FileNotFoundError(path)
+ 
     def view(self,content:str="",view_path:str="", format:str="html", context: dict=None,local2context:bool=True,**kwargs): 
         """
         return a Response by template file

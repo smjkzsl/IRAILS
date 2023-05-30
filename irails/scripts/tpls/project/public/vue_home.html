@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+
+<head>
+    <title>System Admin</title>
+    <link rel="stylesheet" href="/public/libs/element-plus@2.3.3/theme-chalk/index.css">
+</head>
+
+<body>
+    <script src="/public/vue@3.2.36/dist/vue.global.js"></script>
+    <script src="/public/libs/element-plus@2.3.3/dist/index.full.js"></script>
+    <script src="/public/libs/vue-router@4.2.1/dist/vue-router.global.js"></script>
+    <script src="/public/libs/element-plus@2.3.3/icons-vue@2.1.0/dist/index.iife.min.js"></script>
+
+    <script src="/public/libs/vue3-sfc-loader.js"></script>
+    <script src="/public/libs/vue3-sfc-loader-config.js"></script>
+    <script>
+        var app = Vue.createApp(Vue.defineAsyncComponent(() => window['vue3-sfc-loader'].loadModule('${ main }', vue3_loader_options)))
+        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+            app.component(key, component)
+        }
+        app.use(ElementPlus)
+        app.mount(document.body);
+    </script>
+</body>
+
+</html>

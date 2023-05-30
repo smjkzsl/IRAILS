@@ -252,7 +252,7 @@ def api_router(path:str="", version:str="",**allargs):
     
     _controllerBase = create_controller(path,version)  
     
-    
+    setattr(_controllerBase,"__app_name__",app_name)
     
     
     def _wapper(targetController):  

@@ -12,7 +12,7 @@ env_configs = {}
 static_format = []
 
 
-def __get_view_configure():
+def get_view_configure():
     global static_format, env_configs
     # {'variable_start_string':'${','variable_end_string':'}'}
     env_options = config.get("view")
@@ -21,8 +21,9 @@ def __get_view_configure():
         env_options = env_options.get("jinja2")
         env_configs = env_options.config
 
+    return env_configs
 
-__get_view_configure()
+get_view_configure()
 
 
 class _View(object):

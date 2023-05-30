@@ -1,9 +1,10 @@
 const vue3_loader_options = {
 
     moduleCache: {
-        vue: Vue,
+        'vue': Vue,
         element_ui: ElementPlus,
         element_icon: ElementPlusIconsVue,
+        '/public/libs/vue-router@4.2.1/dist/vue-router.global.js': VueRouter
 
     },
 
