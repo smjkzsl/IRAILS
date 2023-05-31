@@ -68,6 +68,16 @@ if cfg:
 class Base( DeclarativeBase ):
     __abstract__ = True 
     def __init_subclass__(cls,*args,**kwargs) -> None: 
+
+        #auto set table_prefix
+        if hasattr(cls,'__tablename__'):
+            _tbname:str = getattr(cls,"__tablename__")
+            if _tbname and table_prefix and not _tbname.startswith(table_prefix):
+                setattr(cls,'__tablename__',f'{table_prefix}{_tbname}')
+        else:
+            _tbname = table_prefix + get_plural_name(cls.__name__)        
+            setattr(cls,'__tablename__',_tbname)
+
         super().__init_subclass__(*args,**kwargs)
         for e in EVENTS:
             if hasattr(cls,e) and callable(getattr(cls,e)):
@@ -328,7 +338,7 @@ class Service(metaclass=_serviceMeta):
             session = self.session()
             session.add(m)
             session.commit()
-             
+            session.refresh(m) 
             return m
         return None
     @classmethod

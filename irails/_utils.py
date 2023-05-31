@@ -39,7 +39,7 @@ def get_plural_name(name:str):
 
     """
     _pluralizer = __init_inflect()
-    return _pluralizer.plural(name)
+    return _pluralizer.plural(name.lower())
 def get_singularize_name(name:str):
     """
     Return the singular of text, where text is a plural noun.

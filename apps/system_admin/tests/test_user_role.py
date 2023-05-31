@@ -60,7 +60,9 @@ class TestUserRole(ControllerTest):
         result = self._request(path='/xml',ret_json=False)
         self.assertEqual(result.status_code,403)
         self.user_login(username='bruce')
+        application.grouping('bruce','admin','system',authorize=False)
         result = self._request(path='/chatgpt',ret_json=False)
+        
         self.assertEqual(result.status_code,403)
         result = self._request(path='/xml',ret_json=False)
         self.assertEqual(result.status_code,403)

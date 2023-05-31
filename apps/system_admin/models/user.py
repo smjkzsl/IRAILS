@@ -8,19 +8,19 @@ import hashlib,os
  
 
 class User(database.Base):
-    __tablename__ = f"{database.table_prefix}users"
+     
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    name: Mapped[str] = mapped_column(String(50),nullable=False)
-
+    username: Mapped[str] = mapped_column(String(50),nullable=False)
+     
     fullname: Mapped[str] = mapped_column(String(50))
 
     domain:Mapped[str] = mapped_column(String(50),nullable=True, comment="user domain")
-    
+    password = Column(String(50),comment="Password",nullable=False)
     age: Mapped[str] = mapped_column(Integer())
     roles:List['Role'] = []
 
-    password = Column(String(50),comment="Password",nullable=False)
+    
     salt = Column(String(50),comment="salt")
     remark = Column(String(255),comment="description")
 
@@ -30,13 +30,13 @@ class User(database.Base):
         if target.age and target.age<18:
             # 中断插入操作
             raise Exception('age must > 18')
-        if target.name and not target.fullname:
-            target.fullname = target.name
+        if target.username and not target.fullname:
+            target.fullname = target.username
         if not target.domain:
             target.domain='system'
             
         if not target.password:
-            password = target.name
+            password = target.username
         else:
             password = target.password
         salt = self.generate_salt()
@@ -55,11 +55,11 @@ class User(database.Base):
         return os.urandom(16).hex()
     
     def __repr__(self) -> str:
-        name = _(self.name)
+        name = _(self.username)
         return f"User(id={self.id!r}, name={name})"
 
 class Role(database.Base):
-    __tablename__ = f"{database.table_prefix}roles"
+    __tablename__ = f"roles"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=True, nullable=False)

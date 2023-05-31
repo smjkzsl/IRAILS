@@ -58,7 +58,7 @@ class MvcApp(FastAPI):
         if isinstance(user,str):
             return self.auth_user_class(username=user)
         elif isinstance(user,database.Base):
-            userobj:auth.DomainUser = self.auth_user_class(user.name)
+            userobj:auth.DomainUser = self.auth_user_class(user.username)
             await copy_attr(user,userobj,False)
             userobj.set_roles(user.roles) 
             return userobj

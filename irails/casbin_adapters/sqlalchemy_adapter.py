@@ -14,7 +14,7 @@ rule_table = 'casbin_rule'
 cfg = config.get("auth")
 if cfg and 'adapter_table' in cfg:
     rule_table = cfg.get('adapter_table','casbin_rule')
-    
+rule_table = f'{database.table_prefix}{rule_table}' 
 class CasbinRule(database.Base):
     extend_existing=True
     __tablename__ = rule_table
