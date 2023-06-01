@@ -8,11 +8,19 @@ controller_re = re.compile("([\\w]+)Controller")
 
 _pluralizer = None
 def get_controller_name(controller_name):
+    """
+    >>> get_controller_name("TestController")
+    >>> 'Test'
+    """
     return controller_re.match(controller_name).group(1)
  
 def to_camel_case(x):
     """
     Converts variable_name to camel case notation.
+    
+    >>> to_camel_case('hello_world')
+    >>> 'HelloWorld'
+
     """
     # Using the regex module to find all instances of an underscore followed by a letter
     # and then replacing that underscore with the uppercase of that letter.
@@ -65,6 +73,8 @@ def get_snaked_name(_name:str):
     Converts a string to snake_case format.
     :param name: string to be converted
     :return: the string in snake_case format
+    >>> get_snaked_name("MyCount")
+    >>> 'my_count'
     """
     # split the string at every occurrence of a capital letter that is not at the beginning of the string
     # and insert "_" in between each splitted portion
@@ -138,16 +148,22 @@ class iJSONEncoder(JSONEncoder):
 
 
 def camelize_classname(base, tablename, table):
-    "Produce a 'camelized' class name, e.g. "
-    "'words_and_underscores' -> 'WordsAndUnderscores'"
+    """
+    Produce a 'camelized' class name, e.g. 
+    'words_and_underscores' -> 'WordsAndUnderscores'
+    """
 
     return str(tablename[0].upper() + \
             re.sub(r'_([a-z])', lambda m: m.group(1).upper(), tablename[1:]))
 
 
 def pluralize_collection(base, local_cls, referred_cls, constraint):
-    "Produce an 'uncamelized', 'pluralized' class name, e.g. "
-    "'SomeTerm' -> 'some_terms'"
+    """
+    Produce an 'uncamelized', 'pluralized' class name, e.g. "
+    "'SomeTerm' -> 'some_terms'
+    
+    """
+    
     import inflect
     global _pluralizer
     if not _pluralizer:
@@ -167,4 +183,10 @@ async def copy_attr(obj1:object, obj2:object,copy_none:bool=True):
             if copy_none or value:
                     setattr(obj2, key, value)
              
-            
+def singleton(cls):
+    instances = {}
+    def get_instance(*args,**kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args,**kwargs)
+        return instances[cls]
+    return get_instance

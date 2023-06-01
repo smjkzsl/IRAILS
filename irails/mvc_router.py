@@ -2,9 +2,14 @@
 """
 from typing import Type,TYPE_CHECKING, Any, Callable, get_type_hints 
 from fastapi import FastAPI,APIRouter  
-from .controller_utils import (TEMPLATE_PATH_KEY, VER_KEY, ControllerBase,
+from .controller_utils import (TEMPLATE_PATH_KEY, 
+                               VER_KEY, 
+                               ControllerBase,
                                _get_leaf_controllers,
-                               _register_controller_to_router, _route_method)
+                               _register_controller_to_router, 
+                               _route_method,
+                               )
+
 
  
 from ._i18n import _
@@ -75,7 +80,7 @@ def create_controller(template_path_prefix: str = "", version: str = "") -> Type
     return GeneratedController
 
 
-class MvcRouter: 
+class Api: 
     """ """
     @classmethod
     def init(cls,app):
@@ -87,7 +92,7 @@ class MvcRouter:
     @staticmethod
     def get(path: str, *args, **kwargs): 
         """if path eq application._public_auth_url,the auth agr must set to 'none' """
-        if MvcRouter.app and path == MvcRouter.app.public_auth_url:
+        if Api.app and path == Api.app.public_auth_url:
             if 'auth' in kwargs and kwargs['auth']!='none':
                 raise RuntimeError(_('the public auth path must set to "none" on auth arguments')) 
             elif not 'auth' in kwargs:

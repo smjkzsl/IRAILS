@@ -120,7 +120,7 @@ except(ImportError):
             raise ImportError("redis seen is not installed,please use `pip install redis` to install it.")
     pass
 
- 
+# todo: End user disabled cookie,use the http header 'Authorzition' info?
 class SessionMiddleware:
     def __init__(
         self,

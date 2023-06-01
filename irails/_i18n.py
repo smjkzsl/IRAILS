@@ -1,13 +1,13 @@
-import datetime
+ 
 import gettext
 import importlib  
 
 import os,sys
 import gettext
-from typing import Union
+ 
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
-_old_find = gettext.find
+# _old_find = gettext.find
 
 
 def load_module(module_name:str,module_path:str):
@@ -98,7 +98,7 @@ def load_app_translations(module_dir,lan=None) -> gettext.GNUTranslations:
     return ret
  
  
-def __load_core_i18n():
+def __init_load_i18n():
 
     _dir = os.path.dirname(__file__)
     # Locate a .mo file using the gettext strategy
@@ -145,4 +145,4 @@ def __load_core_i18n():
     gettext.find=__new_find #rewrite find method
     t = load_app_translations(_dir)
     return  t.gettext
-_=__load_core_i18n()
+_=__init_load_i18n()

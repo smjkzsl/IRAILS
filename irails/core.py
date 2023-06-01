@@ -13,7 +13,7 @@ from fastapi.utils import generate_unique_id
 from starlette.responses import JSONResponse, Response
 from starlette.routing import BaseRoute
 from fastapi.types import DecoratedCallable
-from .mvc_router import create_controller,MvcRouter as api,   register_controllers_to_app 
+from .mvc_router import create_controller,Api as api,   register_controllers_to_app 
 from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY,DEFAULT_KEY, VER_KEY,get_docs  
 from .config import config,ROOT_PATH,_project_name
 from .log import _log,set_logger
@@ -23,20 +23,11 @@ from . import midware
 from . import auth
 from . import database
 from ._loader import _load_apps
-from ._utils import get_controller_name,get_snaked_name,copy_attr
+from ._utils import get_controller_name,get_snaked_name,copy_attr,singleton
 
-from ._i18n import _
+from ._i18n import _ 
 
-
-__is_debug=config.get('debug',False)
-
-def singleton(cls):
-    instances = {}
-    def get_instance(*args,**kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args,**kwargs)
-        return instances[cls]
-    return get_instance
+__is_debug=config.get('debug',False) 
 
 @singleton
 class MvcApp(FastAPI):
@@ -45,13 +36,14 @@ class MvcApp(FastAPI):
         self._data_engine:database.Engine = None
         self.__user_auth_url=""
         self.__public_auth_url=""
-        self.__app_views_dirs = {} 
+        # self.__app_views_dirs = {} 
         self.routers_map = {}
         self.__apps_dirs = []
         self.__apps = {}
         self.auth_user_class:auth.DomainUser = None
         super().__init__(**kwargs)
-
+        # set variable in MvcRouter
+        api.init(self)
     async def new_user(self,user:Union[database.Base,str])->auth.DomainUser:
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
@@ -66,12 +58,12 @@ class MvcApp(FastAPI):
     def apps(self)->Dict:
         return self.__apps
     
-    @property
-    def app_views_dirs(self)->Dict:
-        return self.__app_views_dirs
-    @app_views_dirs.setter
-    def app_views_dirs(self,key,value):
-        self.__app_views_dirs[key]=value
+    # @property
+    # def app_views_dirs(self)->Dict:
+    #     return self.__app_views_dirs
+    # @app_views_dirs.setter
+    # def app_views_dirs(self,key,value):
+    #     self.__app_views_dirs[key]=value
     @property
     def apps_dirs(self)->List:
         return self.__apps_dirs
@@ -184,12 +176,11 @@ class MvcApp(FastAPI):
         raise RuntimeError(_("Please use api.trace,MVC app not allow to use this direct!"))
         #return super().trace(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
     
-__app = MvcApp(docs_url=None,redoc_url=None ) 
+application = MvcApp(docs_url=None,redoc_url=None ) 
 
-__all_controller__ = {}
 
-application = __app
-api.init(application)
+ 
+
 
  
 def check_init_database(): 
@@ -256,12 +247,13 @@ def api_router(path:str="", version:str="",**allargs):
     
     
     def _wapper(targetController):  
-        _name = app_dir.replace(os.sep,".").lstrip(".") + "." + targetController.__name__ + "@" + version 
-        _controller_hash = f"{_name}" 
-        if not app_name in __all_controller__:
-            __all_controller__[app_name]={}
-        if _controller_hash not in __all_controller__[app_name]: 
-            __all_controller__[app_name][_controller_hash]= {'label':'new','obj': _controllerBase}
+        _controller_hash = app_dir.replace(os.sep,".").lstrip(".") + "." + targetController.__name__ + "@" + version 
+         
+        if not app_name in application.apps:
+            application.apps[app_name]={'routes':{},'view_dirs':{}}
+         
+        if  not _controller_hash in application.apps[app_name]['routes']: 
+            application.apps[app_name]['routes'][_controller_hash]= {'label':'new','obj': _controllerBase}
 
         class puppetController( targetController ,_controllerBase ): 
             '''puppet class inherited by the User defined controller class '''
@@ -376,11 +368,10 @@ def api_router(path:str="", version:str="",**allargs):
         else:
             setattr(targetController,DEFAULT_KEY,'')
         #add app dir sub views to StaticFiles
-        if not controller_current_view_path in application.app_views_dirs: #ensure  load it once
-            application.app_views_dirs[controller_current_view_path.lower()] = _view_url_path.lower() 
-            #path match static files
-            
-            
+        controller_current_view_path=controller_current_view_path.lower()
+        if not controller_current_view_path in application.apps[app_name]['view_dirs']: #ensure  load it once
+            application.apps[app_name]['view_dirs'][controller_current_view_path] = _view_url_path.lower() 
+           
  
         return puppetController 
     return _wapper #: @puppetController 
@@ -393,10 +384,10 @@ def get_wrapped_endpoint(func):
     return ret
 def _register_controllers():
     global __is_debug
-   
-    for app_name in __all_controller__:
-        for hash,dict_obj in __all_controller__[app_name].items():
-           
+    controller_count=0
+    for app_name in application.apps:
+        for hash,dict_obj in application.apps[app_name]['routes'].items():
+            controller_count+=1
             if dict_obj['label'] == 'new':
                 if __is_debug:  
                     _log.info(hash+" mountting...")
@@ -420,7 +411,10 @@ def _register_controllers():
                     if not 'route_map' in application.apps[app_name]: 
                         application.apps[app_name]['route_map']={}
                     application.apps[app_name]['route_map'][funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type,"endpoint":r.endpoint}
-      
+    
+    if not  (controller_count)>0:
+        raise RuntimeError(_("not found any controller class"))
+    
     _log.info(_("static files mouting..."))
     midware.init(app=application,debug=__is_debug)
 
@@ -468,8 +462,7 @@ def generate_mvc_app():
 
     _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %(loaded,unloaded))  
 
-    if not len(__all_controller__)>0:
-        raise RuntimeError(_("not found any controller class"))
+    
     
     _register_controllers()
 

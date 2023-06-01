@@ -105,11 +105,13 @@ def _load_apps(debug=False,do_load:bool=True,application:object=None):
                         if n:
                             if application:
                                 if not app in application.apps:
-                                    application.apps[app] = {}
-                                elif application.apps[app]['manifest']:
+                                    application.apps[app] = {'routes':{}}
+                                if not 'manifest' in application.apps[app]:
+                                    application.apps[app]['manifest'] = manifest
+                                else:
                                     raise RuntimeError(_('The app:%s already loaded,Duplicate name in (%s) ') % (app,abs_app_dir))
                                  
-                                application.apps[app]['manifest'] = manifest
+                                
                             loaded = loaded + 1
                         else:
                             unloaded = unloaded + 1
