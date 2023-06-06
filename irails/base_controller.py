@@ -62,14 +62,10 @@ def url_for(url:str="",**kws):
     return url_path.lower() + url.strip()
 
 class BaseController:
-    __app_name:str=""
+ 
     @property
     def _(self):
-        m = getattr(self,'__appdir__')#.split(os.sep)
-        # if len(m)>2:
-        #     m = os.sep.join(m[-2:])
-        # else:
-        #     raise RuntimeError(_("load_app_translations:%s is invalid app module") % m) 
+        m = getattr(self,'__appdir__') 
         languages = None
         if 'lang' in self._session:
             languages = self._session['lang']
@@ -156,7 +152,8 @@ class BaseController:
         from jinja2 import Template
         from .view import get_view_configure
         view_config = get_view_configure()
-        context = {'main':main_vue,'title':title}
+        context = {'main':main_vue,'title':title,"request":self.request}
+
         if not os.path.isabs(path):
             path = os.path.abspath(os.path.join(ROOT_PATH,path))
         if os.path.exists(path):
@@ -271,7 +268,7 @@ class BaseController:
         
         url = self.request.url.scheme + "://" + self.request.url.netloc + save_file
         return save_file,url
-    async def __constructor__(base_controller_class,request:Request,response:Response):  
+    async def __constructor__(base_controller_class:'BaseController',request:Request,response:Response):  
         '''don't call this'''
         
         if not _session_key in request.cookies or not request.cookies[_session_key]:
@@ -315,7 +312,7 @@ class BaseController:
             lang = query_params[url_lang_key]
             request.session['lang'] = [lang]
         
-    async def __destructor__(base_controller_class,new_response:Response):  
+    async def __destructor__(base_controller_class:'BaseController',new_response:Response):  
         '''do not call this anywhere'''
         def process_cookies(response:Response, cookies,old_cookies):
             

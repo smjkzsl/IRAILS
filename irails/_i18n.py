@@ -7,14 +7,16 @@ import gettext
  
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
-# _old_find = gettext.find
-
+ 
 
 def load_module(module_name:str,module_path:str):
+    if module_name in sys.modules:
+        return sys.modules[module_name]
     if os.path.exists(module_path):
         spec = importlib.util.spec_from_file_location(module_name, module_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+        sys.modules[module_name] = module
         return module
     return None
 def check_compile_po(localedir,lang): 
@@ -37,9 +39,7 @@ def check_compile_po(localedir,lang):
         pod_time =  (os.stat(po_file).st_mtime) 
         if pod_time>mod_time: 
             do_mfgmft()
-# 获取当前模块的 ModuleSpec 实例
-# module_spec = importlib.util.find_spec(__name__)
-
+ 
 __all_trans = {}          
 default_langs = ['en','zh'] 
 
@@ -59,12 +59,13 @@ def set_module_i18n(obj, module_name ):
             service_package_path = os.path.dirname(module.__file__)
         if len(app_dirs)>=2:
             app_dirs = app_dirs[-2:]
-            setattr(obj,"__appdir__",".".join(app_dirs))
+            setattr(obj,"__app_package__",".".join(app_dirs))
             app_dir = os.path.dirname(service_package_path)
             # auto set the i18n locales to the `app_name/locales`
             t = load_app_translations(app_dir)
             # setattr(obj,"_",t) #modify object
             setattr(module,'_',t.gettext)
+
 def load_app_translations(module_dir,lan=None) -> gettext.GNUTranslations: 
     global __all_trans
     
@@ -146,3 +147,11 @@ def __init_load_i18n():
     t = load_app_translations(_dir)
     return  t.gettext
 _=__init_load_i18n()
+
+# import inspect
+# def get_importing_module():
+#     caller_frame = inspect.stack()[1]
+#     caller_module = inspect.getmodule(caller_frame[0])
+#     return caller_module.__name__
+# print(get_importing_module() + ' importing me')
+ 

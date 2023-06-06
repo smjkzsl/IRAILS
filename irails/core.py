@@ -1,63 +1,58 @@
-from enum import Enum
-import time,os,inspect,datetime
-from typing import Any, Callable,Dict, List, Optional, Sequence, Type, Union
-from fastapi.routing import APIRoute 
-from fastapi import (APIRouter, FastAPI, 
+
+import os
+import inspect
+from typing import Dict, List, Union
+from fastapi import (FastAPI,
                      Request,
-                     Response, routing,
+                     Response,
                      status as StateCodes)
-from fastapi.datastructures import Default
-from fastapi.encoders import DictIntStrAny, SetIntStr
-from fastapi.params import Depends
-from fastapi.utils import generate_unique_id
-from starlette.responses import JSONResponse, Response
-from starlette.routing import BaseRoute
-from fastapi.types import DecoratedCallable
-from .mvc_router import create_controller,Api as api,   register_controllers_to_app 
-from .controller_utils import  TEMPLATE_PATH_KEY,AUTH_KEY,DEFAULT_KEY, VER_KEY,get_docs  
-from .config import config,ROOT_PATH,_project_name
-from .log import _log,set_logger
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse,JSONResponse,ORJSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse
+from .mvc_router import create_controller, Api as api,   register_controllers_to_app
+from .controller_utils import AUTH_KEY, DEFAULT_KEY,  get_docs
+from .config import config, ROOT_PATH, _project_name
+from .log import _log
 from . import midware
 from . import auth
 from . import database
 from ._loader import _load_apps
-from ._utils import get_controller_name,get_snaked_name,copy_attr,singleton
+from ._utils import get_controller_name, get_snaked_name, copy_attr, singleton, add_redirect_param
+from ._i18n import _
 
-from ._i18n import _ 
+__is_debug = config.get('debug', False)
+auto_refresh_token = config.get("session").get('auto_refresh_token', True)
 
-__is_debug=config.get('debug',False) 
 
 @singleton
 class MvcApp(FastAPI):
     def __init__(self,  **kwargs):
-        self.__casbin_auth:auth.AuthenticationBackend_ = None 
-        self._data_engine:database.Engine = None
-        self.__user_auth_url=""
-        self.__public_auth_url=""
-        # self.__app_views_dirs = {} 
+        self.__casbin_auth: auth.AuthenticationBackend_ = None
+        self._data_engine: database.Engine = None
+        self.__user_auth_url = ""
+        self.__public_auth_url = ""
+        # self.__app_views_dirs = {}
         self.routers_map = {}
         self.__apps_dirs = []
         self.__apps = {}
-        self.auth_user_class:auth.DomainUser = None
+        self.auth_user_class: auth.DomainUser = None
         super().__init__(**kwargs)
         # set variable in MvcRouter
         api.init(self)
-    async def new_user(self,user:Union[database.Base,str])->auth.DomainUser:
+
+    async def new_user(self, user: Union[database.Base, str]) -> auth.DomainUser:
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
-        if isinstance(user,str):
+        if isinstance(user, str):
             return self.auth_user_class(username=user)
-        elif isinstance(user,database.Base):
-            userobj:auth.DomainUser = self.auth_user_class(user.username)
-            await copy_attr(user,userobj,False)
-            userobj.set_roles(user.roles) 
+        elif isinstance(user, database.Base):
+            userobj: auth.DomainUser = self.auth_user_class(user.username)
+            await copy_attr(user, userobj, False)
+            userobj.set_roles(user.roles)
             return userobj
+
     @property
-    def apps(self)->Dict:
+    def apps(self) -> Dict:
         return self.__apps
-    
+
     # @property
     # def app_views_dirs(self)->Dict:
     #     return self.__app_views_dirs
@@ -65,147 +60,172 @@ class MvcApp(FastAPI):
     # def app_views_dirs(self,key,value):
     #     self.__app_views_dirs[key]=value
     @property
-    def apps_dirs(self)->List:
+    def apps_dirs(self) -> List:
         return self.__apps_dirs
-    
+
     @property
     def public_auth_url(self):
         """public user auth url"""
         return self.__public_auth_url
+
     @public_auth_url.setter
-    def public_auth_url(self,url):
+    def public_auth_url(self, url):
         if self.__public_auth_url:
-            _log.warning(_("public_auth_url only can be setting once time,current is:%s") % self.__public_auth_url)
+            _log.warning(
+                _("public_auth_url only can be setting once time,current is:%s") % self.__public_auth_url)
         self.__public_auth_url = url
-        
+
     @property
     def user_auth_url(self):
         """internal user auth url"""
         return self.__user_auth_url
+
     @user_auth_url.setter
-    def user_auth_url(self,url):
+    def user_auth_url(self, url):
         if self.__user_auth_url:
-            _log.warning(_("user_auth_url only can be setting once time,current is:%s") % self.__user_auth_url)
+            _log.warning(
+                _("user_auth_url only can be setting once time,current is:%s") % self.__user_auth_url)
         self.__user_auth_url = url
+
     @property
     def policy(self):
         return self.__casbin_auth.casbin_auth.policy
+
     @property
     def grouping(self):
         return self.__casbin_auth.casbin_auth.grouping
+
     @property
     def is_grouping(self):
         return self.__casbin_auth.casbin_auth.is_grouping
+
     @property
-    def casbin_auth(self)->auth.AuthenticationBackend_:
+    def casbin_auth(self) -> auth.AuthenticationBackend_:
         return self.__casbin_auth
-    
+
     @casbin_auth.setter
-    def casbin_auth(self,value:auth.AuthenticationBackend_):
+    def casbin_auth(self, value: auth.AuthenticationBackend_):
         self.__casbin_auth = value
-     
-    @property 
-    def data_engine(self)->database.Engine:
+
+    @property
+    def data_engine(self) -> database.Engine:
         return self._data_engine
+
     @data_engine.setter
-    def data_engine(self,value):
+    def data_engine(self, value):
         self._data_engine = value
 
-    def app_list(self,group_by_controller=False)->List:
+    def app_list(self, group_by_controller=False) -> List:
         import copy
         apps = []
         for app_name in self.apps:
-            manifest=copy.copy(self.apps[app_name]['manifest'])
+            manifest = copy.copy(self.apps[app_name]['manifest'])
             route_map = copy.copy(self.apps[app_name]['route_map'])
             for item in route_map:
                 if 'endpoint' in route_map[item]:
                     del route_map[item]['endpoint']
             if group_by_controller:
-                funcs={}
+                funcs = {}
             else:
                 funcs = []
             for item in route_map:
                 _item = route_map[item]
-                _item.update({'function':item})
+                _item.update({'function': item})
                 if group_by_controller:
                     ctrl_name = item.split(".")[0]
                     funcs[ctrl_name] = _item
                     pass
                 else:
                     funcs.append(_item)
-            manifest.update({'app_name':app_name,'routes':funcs})
-             
+            manifest.update({'app_name': app_name, 'routes': funcs})
+
             apps.append(manifest)
         return apps
+
     def __repr__(self):
         return f'<IRails:{self.title}>'
-    def route(self, *args,**kwargs):
+
+    def route(self, *args, **kwargs):
         '''disabled'''
-        raise RuntimeError(_("Please use api.http,MVC app not allow to use this direct!"))
-        #return super().route(path, methods, name, include_in_schema)
-    def post(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.http,MVC app not allow to use this direct!"))
+        # return super().route(path, methods, name, include_in_schema)
+
+    def post(self, *args, **kwargs):
         '''disabled'''
-        raise RuntimeError(_("Please use api.post,MVC app not allow to use this direct!"))
-        #return super().post(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    
-    def get(self,*args,**kwargs):
-        #return super().get(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-        raise RuntimeError(_("Please use api.get,MVC app not allow to use this direct!"))
-    def head(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.post,MVC app not allow to use this direct!"))
+        # return super().post(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+
+    def get(self, *args, **kwargs):
+        # return super().get(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+        raise RuntimeError(
+            _("Please use api.get,MVC app not allow to use this direct!"))
+
+    def head(self, *args, **kwargs):
         """disabled"""
-        raise RuntimeError(_("Please use api.head,MVC app not allow to use this direct!"))
-        #return super().head(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    def put(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.head,MVC app not allow to use this direct!"))
+        # return super().head(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+
+    def put(self, *args, **kwargs):
         """disabled"""
-        raise RuntimeError(_("Please use api.put,MVC app not allow to use this direct!"))
-        #return super().put(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    def delete(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.put,MVC app not allow to use this direct!"))
+        # return super().put(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+
+    def delete(self, *args, **kwargs):
         '''disabled'''
-        raise RuntimeError(_("Please use api.delete,MVC app not allow to use this direct!"))
-        #return super().delete(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    def options(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.delete,MVC app not allow to use this direct!"))
+        # return super().delete(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+
+    def options(self, *args, **kwargs):
         '''disabled'''
-        raise RuntimeError(_("Please use api.options,MVC app not allow to use this direct!"))
-        #return super().options(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    def patch(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.options,MVC app not allow to use this direct!"))
+        # return super().options(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+
+    def patch(self, *args, **kwargs):
         '''disabled'''
-        raise RuntimeError(_("Please use api.patch,MVC app not allow to use this direct!"))
-        #return super().patch(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    def trace(self, *args,**kwargs):
+        raise RuntimeError(
+            _("Please use api.patch,MVC app not allow to use this direct!"))
+        # return super().patch(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
+
+    def trace(self, *args, **kwargs):
         '''disabled'''
-        raise RuntimeError(_("Please use api.trace,MVC app not allow to use this direct!"))
-        #return super().trace(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
-    
-application = MvcApp(docs_url=None,redoc_url=None ) 
+        raise RuntimeError(
+            _("Please use api.trace,MVC app not allow to use this direct!"))
+        # return super().trace(path, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, name=name, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
 
 
- 
+application = MvcApp(docs_url=None, redoc_url=None)
 
 
- 
-def check_init_database(): 
+def check_init_database():
     db_cfg = config.get("database")
-    db_uri:str = db_cfg.get("uri")
-    if db_uri: 
-        application.data_engine=database.init_database(db_uri,__is_debug,cfg=db_cfg)
+    db_uri: str = db_cfg.get("uri")
+    if db_uri:
+        application.data_engine = database.init_database(
+            db_uri, __is_debug, cfg=db_cfg)
     else:
         _log.warn(_("Warning: database.uri is empty in config"))
     return db_cfg
 
-def __init_auth(app,auth_type:str,casbin_adapter_class,__adapter_uri):
-    
-    
+
+def __init_auth(app, auth_type: str, casbin_adapter_class, __adapter_uri):
+
     auth_class = auth.get_auth_backend(auth_type)
     if not auth_class:
         raise RuntimeError(_("%s auth type not support") % auth_type)
     application.auth_user_class = auth_class.user_class
-    
-    secret_key = config.get("auth").get(f"secret_key","")
-    kwargs = {'secret_key':secret_key,'adapter_uri':__adapter_uri} 
-    return auth.init(app=app, backend = auth_class,adapter_class=casbin_adapter_class, **kwargs)
+
+    secret_key = config.get("auth").get(f"secret_key", "")
+    kwargs = {'secret_key': secret_key, 'adapter_uri': __adapter_uri}
+    return auth.init(app=app, backend=auth_class, adapter_class=casbin_adapter_class, **kwargs)
 
 
-def api_router(path:str="", version:str="",**allargs):  
+def api_router(path: str = "", version: str = "", **allargs):
     '''
     :param path :special path format ,ex. '/{controller}/{version}'
            if given any value,it's will be ensure {controller} flag in here auto
@@ -214,226 +234,252 @@ def api_router(path:str="", version:str="",**allargs):
     '''
     if not 'auth' in allargs:
         allargs['auth'] = 'none'
-    
+
     caller_frame = inspect.currentframe().f_back
     caller_file = caller_frame.f_code.co_filename
-    relative_path = caller_file.replace(ROOT_PATH,"")
-    if relative_path.count(os.sep)>2:
-        app_dir = os.sep.join(relative_path.split(os.sep)[:-2]) # os.path.dirname(os.path.dirname(relative_path)).replace(os.sep,"")
+    relative_path = caller_file.replace(ROOT_PATH, "")
+    if relative_path.count(os.sep) > 2:
+        # os.path.dirname(os.path.dirname(relative_path)).replace(os.sep,"")
+        app_dir = os.sep.join(relative_path.split(os.sep)[:-2])
     else:
         raise RuntimeError(_("app dir must in apps dir"))
-     
+
     app_name = os.path.basename(app_dir)
-    def format_path(p,v):
+
+    def format_path(p, v):
         if p and not p.startswith("/"):
-            raise RuntimeError(_("route path must start with '/',%s is not alowed!") % p)
-        if p and  '{controller}' not in p :
-            p += '/{controller}' 
+            raise RuntimeError(
+                _("route path must start with '/',%s is not alowed!") % p)
+        if p and '{controller}' not in p:
+            p += '/{controller}'
             p += '/{version}' if v else ''
         if v and not path:
             p = "/{controller}/{version}"
-        
-        return p.replace("{app}",app_name)
-    path = format_path(path,version) 
-     
-    abs_path = os.path.join(ROOT_PATH,app_dir.lstrip(os.sep))
+
+        return p.replace("{app}", app_name)
+    path = format_path(path, version)
+
+    abs_path = os.path.join(ROOT_PATH, app_dir.lstrip(os.sep))
 
     if os.path.dirname(abs_path) not in application.apps_dirs:
         application.apps_dirs.append(os.path.dirname(abs_path))
-    
-    _controllerBase = create_controller(path,version)  
-    
-    setattr(_controllerBase,"__app_name__",app_name)
-    
-    
-    def _wapper(targetController):  
-        _controller_hash = app_dir.replace(os.sep,".").lstrip(".") + "." + targetController.__name__ + "@" + version 
-         
-        if not app_name in application.apps:
-            application.apps[app_name]={'routes':{},'view_dirs':{}}
-         
-        if  not _controller_hash in application.apps[app_name]['routes']: 
-            application.apps[app_name]['routes'][_controller_hash]= {'label':'new','obj': _controllerBase}
 
-        class puppetController( targetController ,_controllerBase ): 
+    _controllerBase = create_controller(path, version)
+
+    setattr(_controllerBase, "__app_name__", app_name)
+
+    def _wapper(targetController):
+        _controller_hash = app_dir.replace(os.sep, ".").lstrip(
+            ".") + "." + targetController.__name__ + "@" + version
+
+        if not app_name in application.apps:
+            application.apps[app_name] = {'routes': {}, 'view_dirs': {}}
+
+        if not _controller_hash in application.apps[app_name]['routes']:
+            application.apps[app_name]['routes'][_controller_hash] = {
+                'label': 'new', 'obj': _controllerBase}
+
+        class puppetController(targetController, _controllerBase):
             '''puppet class inherited by the User defined controller class '''
-            def __init__(self,**kwags) -> None: 
-                
+
+            def __init__(self, **kwags) -> None:
+
                 super().__init__()
-            def _user_logout(self,msg=_('you are successed logout!'),redirect:str="/"):
+
+            def _user_logout(self, msg=_('you are successed logout!'), redirect: str = "/"):
                 """see .core.py"""
-                self.flash  = msg
-                if  hasattr(application,'casbin_auth'):
-                    application.casbin_auth.clear_userinfo(request=self.request)
-                accept_header = self.request.headers.get("Accept")    
-                if accept_header == "application/json":
-                    return {'status':'success','msg':msg}
-                else:
-                    return self.redirect(redirect)
-            def _verity_successed(self,user, msg=_("User authentication successed!"),redirect='/'):
-                '''call by targetController''' 
-                 
-                self.flash  = msg
-                accept_header = self._request.headers.get("Accept")
-                if  hasattr(application,'casbin_auth'):
-                    access_token = application.casbin_auth.create_access_token(user,request=self.request)
-                
-                    if accept_header == "application/json":
-                        return {'status':'success','msg':msg,'token':str(access_token)}
-                     
-                else:  
-                    if accept_header == "application/json":
-                        return {'status':'success','msg':msg }
-                 
-                return RedirectResponse(redirect,status_code=StateCodes.HTTP_303_SEE_OTHER)
-            def _verity_error(self,msg=_("User authentication failed!")):
-                '''call by targetController'''
-                 
-                self.flash  = msg 
-                
+                self.flash = msg
+                if hasattr(application, 'casbin_auth'):
+                    application.casbin_auth.clear_userinfo(
+                        request=self.request)
                 accept_header = self.request.headers.get("Accept")
                 if accept_header == "application/json":
-                    return JSONResponse(content={'status':StateCodes.HTTP_200_OK,'msg':msg})
-                url =  self.request.headers.get("Referer") or '/'
-                return RedirectResponse(url,status_code=StateCodes.HTTP_303_SEE_OTHER),None
-            
-            @classmethod
-            async def _auth__(cls,request:Request,response:Response,**kwargs):
-                '''called by .controller_util.py->route_method'''
-                auth_type = kwargs['auth_type'] 
-                
-                if auth_type.lower()=='none' or not hasattr(application,'casbin_auth') or application.casbin_auth is None:
-                    return True,None
-                
-                kwargs['session'] = request.session  
-                ret,user = await application.casbin_auth.authenticate(request,**kwargs)
-                if user==auth.AUTH_EXPIRED:
-                    request.session['flash']  = _("your authencation has been expired!"  )
-                    user = False
-                if ret:
-                    return ret,user
-                def add_redirect_param(url: str, redirect_url: str) -> str:
-                    if "?" in url:
-                        return url + "&redirect=" + redirect_url
-                    else:
-                        return url + "?redirect=" + redirect_url
-                accept_header = request.headers.get("Accept")
-                if user and user.is_authenticated: #continue singture 
-                    if config.get("session").get('auto_refresh_token',True):
-                        application.casbin_auth.create_access_token(user=user, expires_delta=None,request=request)
-                 
-                if not ret and not user or not user.is_authenticated: 
-                    # _log.debug(_('Failed Auth on type:%s at url:%s') % (auth_type,str(request.url)))
+                    return {'status': 'success', 'msg': msg}
+                else:
+                    return self.redirect(redirect)
+
+            def _verity_successed(self, user, msg=_("User authentication successed!"), redirect='/'):
+                '''call by targetController'''
+
+                self.flash = msg
+                accept_header = self._request.headers.get("Accept")
+                if hasattr(application, 'casbin_auth'):
+                    access_token = application.casbin_auth.create_access_token(
+                        user, request=self.request)
+
                     if accept_header == "application/json":
-                        return  JSONResponse(content={"message": "401 UNAUTHORIZED!"},
-                                                   status_code=StateCodes.HTTP_401_UNAUTHORIZED),None
-                    _auth_url = getattr(application,f"{auth_type}_auth_url") 
+                        return {'status': 'success', 'msg': msg, 'token': str(access_token)}
 
-                    if _auth_url: 
-                        if 'flash' not in request.session:
-                            request.session['flash']=''
-                        if request.session['flash']=="":
-                            request.session['flash']  = _("you are not authenticated,please login!")
-                        _auth_url = add_redirect_param(_auth_url,str(request.url))
-                        return RedirectResponse(_auth_url,status_code=StateCodes.HTTP_303_SEE_OTHER),None
-                    else:  
-                        return RedirectResponse('/',status_code=StateCodes.HTTP_303_SEE_OTHER),None
+                else:
+                    if accept_header == "application/json":
+                        return {'status': 'success', 'msg': msg}
+
+                return RedirectResponse(redirect, status_code=StateCodes.HTTP_303_SEE_OTHER)
+
+            def _verity_error(self, msg=_("User authentication failed!")):
+                '''call by targetController'''
+
+                self.flash = msg
+
+                accept_header = self.request.headers.get("Accept")
+                if accept_header == "application/json":
+                    return JSONResponse(content={'status': StateCodes.HTTP_200_OK, 'msg': msg})
+                url = self.request.headers.get("Referer") or '/'
+                return RedirectResponse(url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
+
+            @classmethod
+            async def _auth__(cls, request: Request, response: Response, **kwargs):
+                '''called by .controller_util.py->route_method'''
+                auth_type = kwargs['auth_type']
+
+                if auth_type.lower() == 'none' or not hasattr(application, 'casbin_auth') or application.casbin_auth is None:
+                    return True, None
+
+                kwargs['session'] = request.session
+                ret, user = await application.casbin_auth.authenticate(request, **kwargs)
+                if user == auth.AUTH_EXPIRED:
+                    request.session['flash'] = _(
+                        "your authencation has been expired!")
+                    user = False
+
+                if user and user.is_authenticated:  # continue singture
+                    if auto_refresh_token:
+                        application.casbin_auth.create_access_token(
+                            user=user, expires_delta=None, request=request)
+
+                if ret:  # auth successed
+                    return ret, user
+
+                accept_header = request.headers.get("Accept")
+
+                if not ret and not user or not user.is_authenticated:
+                    # not login user redirect to login page if has redirect page(is general page)
+                    # if is json mode it's just return json message.
+
+                    if accept_header == "application/json":
+                        return JSONResponse(content={"message": "401 UNAUTHORIZED!"},
+                                            status_code=StateCodes.HTTP_401_UNAUTHORIZED), None
+                    # set flash message
+                    if 'flash' not in request.session:
+                        request.session['flash'] = ''
+                    if request.session['flash'] == "":
+                        request.session['flash'] = _(
+                            "you are not authenticated,please login!")
+                    _auth_url = getattr(application, f"{auth_type}_auth_url")
+                    if _auth_url:
+                        _auth_url = add_redirect_param(
+                            _auth_url, str(request.url))
+                        return RedirectResponse(_auth_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
+                    else:
+                        return RedirectResponse('/', status_code=StateCodes.HTTP_303_SEE_OTHER), None
                 elif user and user.is_authenticated:
-                    _log.debug(_('Failed Auth on type:%s at url:%s  [User:%s]') % (auth_type,str(request.url),str(user)))
-                    return ret,user
-                return  ret,user
-        setattr(puppetController,AUTH_KEY,allargs['auth'])         
-        setattr(puppetController,"__name__",targetController.__name__)  
-        
-         
-        
-        setattr(puppetController,"__version__",version)  
-        
-        setattr(puppetController,"__appdir__",abs_path)  
+                    # user is right,but it's not authenticated this resource.
+                    _log.debug(_('Failed Auth on type:%s at url:%s  [User:%s]') % (
+                        auth_type, str(request.url), str(user)))
+                    return ret, user
+                return ret, user
+        setattr(puppetController, AUTH_KEY, allargs['auth'])
+        setattr(puppetController, "__name__", targetController.__name__)
 
-        
-        #for generate url_for function
+        setattr(puppetController, "__version__", version)
+
+        setattr(puppetController, "__appdir__", abs_path)
+
+        # for generate url_for function
         url_path = path
-        controller_path_name = get_snaked_name(get_controller_name(targetController.__name__))
-        _view_url_path:str = url_path.replace("{controller}",controller_path_name).replace("{version}",version)  
-        
+        controller_path_name = get_snaked_name(
+            get_controller_name(targetController.__name__))
+        _view_url_path: str = url_path.replace(
+            "{controller}", controller_path_name).replace("{version}", version)
+
         controller_current_view_path = abs_path + '/views/' + controller_path_name
         if version:
             controller_current_view_path += '/' + version
-        setattr(puppetController,"__view_url__",_view_url_path) 
+        setattr(puppetController, "__view_url__", _view_url_path)
         if 'default' in allargs:
-            default_method=allargs['default'] 
-            setattr(targetController,DEFAULT_KEY,default_method)
+            default_method = allargs['default']
+            setattr(targetController, DEFAULT_KEY, default_method)
             del allargs['default']
         else:
-            setattr(targetController,DEFAULT_KEY,'')
-        #add app dir sub views to StaticFiles
-        controller_current_view_path=controller_current_view_path.lower()
-        if not controller_current_view_path in application.apps[app_name]['view_dirs']: #ensure  load it once
-            application.apps[app_name]['view_dirs'][controller_current_view_path] = _view_url_path.lower() 
-           
- 
-        return puppetController 
-    return _wapper #: @puppetController 
+            setattr(targetController, DEFAULT_KEY, '')
+        # add app dir sub views to StaticFiles
+        controller_current_view_path = controller_current_view_path.lower()
+        # ensure  load it once
+        if not controller_current_view_path in application.apps[app_name]['view_dirs']:
+            application.apps[app_name]['view_dirs'][controller_current_view_path] = _view_url_path.lower(
+            )
+
+        return puppetController
+    return _wapper  # : @puppetController
 
 
 def get_wrapped_endpoint(func):
     ret = func
-    while hasattr(ret,'__wrapped__'):
-        ret = getattr(ret,'__wrapped__')
+    while hasattr(ret, '__wrapped__'):
+        ret = getattr(ret, '__wrapped__')
     return ret
+
+
 def _register_controllers():
     global __is_debug
-    controller_count=0
+    controller_count = 0
     for app_name in application.apps:
-        for hash,dict_obj in application.apps[app_name]['routes'].items():
-            controller_count+=1
+        for hash, dict_obj in application.apps[app_name]['routes'].items():
+            controller_count += 1
             if dict_obj['label'] == 'new':
-                if __is_debug:  
+                if __is_debug:
                     _log.info(hash+" mountting...")
-                app_router = register_controllers_to_app(application, dict_obj['obj'])
-                
+                app_router = register_controllers_to_app(
+                    application, dict_obj['obj'])
+
                 application.apps[app_name]['router'] = app_router
                 dict_obj['label'] = 'mounted'
 
-             
                 for r in app_router.routes:
-                    funcname = str(r.endpoint).split('<function ')[1].split(" at ")[0] 
+                    funcname = str(r.endpoint).split(
+                        '<function ')[1].split(" at ")[0]
                     end_point_abs = get_wrapped_endpoint(r.endpoint)
-                    auth_type = getattr(end_point_abs,AUTH_KEY) if hasattr(end_point_abs,AUTH_KEY) else 'None'
-                    doc_map =  get_docs(r.description) if hasattr(r,'description') else {}
-                    if hasattr(r,'methods'):
+                    auth_type = getattr(end_point_abs, AUTH_KEY) if hasattr(
+                        end_point_abs, AUTH_KEY) else 'None'
+                    doc_map = get_docs(r.description) if hasattr(
+                        r, 'description') else {}
+                    if hasattr(r, 'methods'):
                         methods = r.methods
                     else:
                         methods = r.name
-                    if __is_debug:  
-                        _log.info((str(methods),r.path,funcname) )
-                    if not 'route_map' in application.apps[app_name]: 
-                        application.apps[app_name]['route_map']={}
-                    application.apps[app_name]['route_map'][funcname] = {'path':r.path,'methods':methods,'doc':doc_map,'auth':auth_type,"endpoint":r.endpoint}
-    
-    if not  (controller_count)>0:
+                    if __is_debug:
+                        _log.info((str(methods), r.path, funcname))
+                    if not 'route_map' in application.apps[app_name]:
+                        application.apps[app_name]['route_map'] = {}
+                    application.apps[app_name]['route_map'][funcname] = {
+                        'path': r.path, 'methods': methods, 'doc': doc_map, 'auth': auth_type, "endpoint": r.endpoint}
+
+    if not (controller_count) > 0:
         raise RuntimeError(_("not found any controller class"))
-    
+
     _log.info(_("static files mouting..."))
-    midware.init(app=application,debug=__is_debug)
+    midware.init(app=application, debug=__is_debug)
+
 
 def check_db_migrate():
     db_cfg = config.get("database")
-    if not db_cfg:return
-    if __is_debug :
+    if not db_cfg:
+        return
+    if __is_debug:
         _log.info(_("checking database migrations...."))
     try:
-            
-        alembic_ini = db_cfg.get("alembic_ini",'./configs/alembic.ini')
+
+        alembic_ini = db_cfg.get("alembic_ini", './configs/alembic.ini')
         uri = db_cfg.get("uri")
         if uri:
-            database.check_migration(application.data_engine,uri,alembic_ini)
+            database.check_migration(application.data_engine, uri, alembic_ini)
     except database.InitDbError as e:
         raise
     except Exception as e:
         _log.disabled = False
         _log.error(e.args)
+
+    _log.info(_("check database migrations finished."))
 def check_init_auth(db_cfg):
     # Initializing the authentication system
     auth_type = config.get("auth", None)
@@ -443,42 +489,44 @@ def check_init_auth(db_cfg):
         auth_type = auth_type.get("type")
         if auth_type:
             # Get the adapter type from the configuration
-            __type_casbin_adapter = config.get("auth").get("casbin_adapter", "file")
-            _casbin_adapter_class = auth.get_adapter_module(__type_casbin_adapter)
+            __type_casbin_adapter = config.get(
+                "auth").get("casbin_adapter", "file")
+            _casbin_adapter_class = auth.get_adapter_module(
+                __type_casbin_adapter)
             _adapter_uri = config.get("auth").get("adapter_uri")
             if not _adapter_uri:
                 _adapter_uri = db_cfg.get('uri')
             # Raise an error if the adapter is not supported
             if not _casbin_adapter_class:
-                raise RuntimeError(_("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
-    return auth_type,_adapter_uri,_casbin_adapter_class
+                raise RuntimeError(
+                    _("Not support %s ,Adapter config error in auth.casbin_adapter") % __type_casbin_adapter)
+    return auth_type, _adapter_uri, _casbin_adapter_class
+
+
 def generate_mvc_app():
     global __is_debug
-     
-    application.title = _project_name 
-    
+
+    application.title = _project_name
+
     _log.info(_("loading irails apps..."))
-    loaded,unloaded=_load_apps(debug=__is_debug,application=application) 
+    loaded, unloaded = _load_apps(debug=__is_debug, application=application)
 
-    _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %(loaded,unloaded))  
+    _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %
+              (loaded, unloaded))
 
-    
-    
     _register_controllers()
 
-    
     _log.info(_("checking database configure..."))
     db_cfg = check_init_database()
 
-    auth_type,_adapter_uri,_casbin_adapter_class=check_init_auth(db_cfg)
+    auth_type, _adapter_uri, _casbin_adapter_class = check_init_auth(db_cfg)
     if __is_debug:
         # Check for database migrations
         check_db_migrate()
     # Initialize the authentication system if the adapter class and URI are present
-    from .log import set_logger
-    set_logger(_log,check_level=True)
+     
     _log.info(_("init casbin auth system..."))
-    application.casbin_auth = __init_auth(application, auth_type, _casbin_adapter_class, _adapter_uri)
+    application.casbin_auth = __init_auth(
+        application, auth_type, _casbin_adapter_class, _adapter_uri)
     _log.info(_("load irails apps finished."))
     return application
- 

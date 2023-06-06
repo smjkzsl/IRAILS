@@ -190,3 +190,9 @@ def singleton(cls):
             instances[cls] = cls(*args,**kwargs)
         return instances[cls]
     return get_instance
+
+def add_redirect_param(url: str, redirect_url: str,key='redirect') -> str:
+    if "?" in url:
+        return url + f"&{key}=" + redirect_url
+    else:
+        return url + f"?{key}=" + redirect_url

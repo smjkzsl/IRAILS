@@ -2,6 +2,7 @@
 from irails import route, api, Request, Response, BaseController, application
 from fastapi.openapi.utils import get_openapi
 from fastapi.openapi import docs
+from irails._i18n import _
 
 application.openapi_url = '/system_admin/admin/swagger'
 application.docs_url = '/system_admin/admin/docs'
@@ -16,35 +17,39 @@ class AdminController(BaseController):
         :title 控制面板
         :nav true
         '''
-        return self.vue_sfc_app()
+        return self.vue_sfc_app(title="Admin")
+
     @api.get("/pages_list")
     def pages_list(self):
+        '''
+        :nav false
+        '''
         import os
         appinfo = application.apps[self.__app_name__]
-        app_dir = self.__appdir__ #'E:\\codedemo\\IRAILS\\apps\\system_admin'
-         
-        view_dir = os.path.normpath(app_dir+'/views/'+ '/'.join(self.__view_url__.split("/")[2:]))#'/system_admin/admin'
+        app_dir = self.__appdir__  # 'E:\\codedemo\\IRAILS\\apps\\system_admin'
+
+        view_dir = os.path.normpath(
+            app_dir+'/views/' + '/'.join(self.__view_url__.split("/")[2:]))  # '/system_admin/admin'
 
         # {
         #     '.':
         #         ['a.vue','b.vue'],
-        #     'system': 
-        #         ['cc.vue','dd.vue'], 
+        #     'system':
+        #         ['cc.vue','dd.vue'],
         # }
 
-        views_path = os.path.join(view_dir,'pages')
-        all_files={}
+        views_path = os.path.join(view_dir, 'pages')
+        all_files = {}
         for root, dirs, files in os.walk(views_path):
             for file in files:
-                name,ext = os.path.splitext(file)
-                _dirs = os.path.relpath(root,views_path)
+                name, ext = os.path.splitext(file)
+                _dirs = os.path.relpath(root, views_path)
                 _dir_name = _dirs
                 if not _dir_name in all_files:
                     all_files[_dir_name] = []
-                if ext=='.vue':
+                if ext == '.vue':
                     all_files[_dir_name].append(file)
-                 
-                
+
                     # all_files[name] = {'dir_name':_dirs,'file_path': f'pages/{_dirs}{file}'}
         return all_files
 
