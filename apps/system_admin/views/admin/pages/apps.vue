@@ -24,7 +24,7 @@
         <el-table-column label="Author" prop="author" width="150" />
         <el-table-column label="License" prop="license" width="100" />
         <el-table-column label="Title" prop="title" />
-        <el-table-column label="Category" prop="category" width="80"/>
+        <el-table-column label="Category" prop="category" width="120"/>
         <el-table-column label="Description" prop="description" width="350" />
       </el-table>
     </el-container>

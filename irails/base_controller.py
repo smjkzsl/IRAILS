@@ -149,14 +149,14 @@ class BaseController:
     def _verity_error(self,msg="User authentication failed!"):
         """return Response for show Verity failed infomation"""
         pass
-    def vue_sfc_app(self,path="./public/vue_home.html", main_vue="main.vue"):
+    def vue_sfc_app(self,path="./public/vue_home.html", main_vue="main.vue",title=""):
         """
         return a view based vue3 used ElementPlus and use vue3_sfc_loader
         """
         from jinja2 import Template
         from .view import get_view_configure
         view_config = get_view_configure()
-        context = {'main':main_vue}
+        context = {'main':main_vue,'title':title}
         if not os.path.isabs(path):
             path = os.path.abspath(os.path.join(ROOT_PATH,path))
         if os.path.exists(path):

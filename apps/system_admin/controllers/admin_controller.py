@@ -25,15 +25,27 @@ class AdminController(BaseController):
          
         view_dir = os.path.normpath(app_dir+'/views/'+ '/'.join(self.__view_url__.split("/")[2:]))#'/system_admin/admin'
 
+        # {
+        #     '.':
+        #         ['a.vue','b.vue'],
+        #     'system': 
+        #         ['cc.vue','dd.vue'], 
+        # }
 
         views_path = os.path.join(view_dir,'pages')
         all_files={}
         for root, dirs, files in os.walk(views_path):
             for file in files:
                 name,ext = os.path.splitext(file)
-                 
+                _dirs = os.path.relpath(root,views_path)
+                _dir_name = _dirs
+                if not _dir_name in all_files:
+                    all_files[_dir_name] = []
                 if ext=='.vue':
-                    all_files[name] = f'pages/{file}'
+                    all_files[_dir_name].append(file)
+                 
+                
+                    # all_files[name] = {'dir_name':_dirs,'file_path': f'pages/{_dirs}{file}'}
         return all_files
 
     @api.get('/docs', auth='public', include_in_schema=False)

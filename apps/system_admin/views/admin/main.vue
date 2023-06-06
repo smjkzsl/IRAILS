@@ -11,7 +11,7 @@
         </el-scrollbar>
       </el-aside>
 
-      <el-container>
+      <el-container class="el-main">
         
           <router-view></router-view>
          
@@ -52,32 +52,39 @@ body {
 
 .layout-container-demo .el-header {
   position: relative;
-  border-bottom: 2px solid #EEE;
+  border-bottom: 1px solid #EEE;
 }
 .layout-container-demo .el-footer {
   position: relative;
   bottom: 0px;
-  
+  text-align: center;
 }
 
 .layout-container-demo .el-aside {
  
   position: relative  ;
-   
+  height: calc(100vh - 120px); 
   bottom: 0px;
-  max-height: 500px;
+  border-right: 1px solid #EEE;
 }
-
+.el-aside ul,.el-menu{
+  border-right: none !important;
+}
  
 
 .layout-container-demo .el-main {
   padding: 0;
   position: relative;
+  height: calc(100vh - 120px); 
   left: 0px;
   top: 0px;
   bottom: 0;
   width: auto;
   max-width: calc(100% - 200px);
-
+  
+}
+.layout-container-demo .el-footer{
+  height: 60px;
+  border-top: 1px solid #EEE;
 }
 </style>

@@ -1,15 +1,15 @@
  
 
 <template>
-  <el-menu class="el-menu" :default-openeds="['1']">
-    <el-sub-menu class="el-menu" index="1">
+  <el-menu class="el-menu" unique-opened :default-openeds="['.']" >
+    <el-sub-menu v-for="route in routes"  :key="route.path" class="el-menu" :index="route.path"  >
       <template #title>
         <el-icon>
           <setting />
-        </el-icon>系统管理
+        </el-icon>{{ route.label }}
       </template>
-      <router-link v-for="route in routes" :key="route.path" :to="route.path">
-        <el-menu-item :index="route.path">{{ route.name }}</el-menu-item>
+      <router-link v-for="menu in route.children"  :key="menu.path" :to="menu.path">
+        <el-menu-item :index="menu.path">{{ menu.label }}</el-menu-item>
       </router-link>
     </el-sub-menu>
   </el-menu>
@@ -48,27 +48,46 @@ export default {
     async getPages() {
       let data = await system.getPagesList()
       console.log(data)
+      // # {
+      //   #     '.':
+      //   #         ['a.vue','b.vue'],
+      //   #     'system': 
+      //   #         ['cc.vue','dd.vue'], 
+      //   # }
       let _routes = []
-      for (var item in data) {
-        let _name = item
-        let url = data[_name]
-        const menuItem = {
-          name: _name,
-          path: '/' + _name,
-          // icon: route.meta.icon,
-          label: _name,
-          // 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
-          component: () => import(url),
-        };
-        router.addRoute(menuItem)
-        router.replace(router.currentRoute.value.fullPath)
-
-
-
+      for (var _dir in data) {
+         
+        let dir_name = _dir=='.'?'系统':_dir
+        let menus = { 
+            path: '/'+dir_name ,
+            // icon: route.meta.icon,
+            label: dir_name, 
+            children: []
+            //component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
+          };
+           
+        for(var _i in data[_dir]){
+          let _file = data[_dir][_i]
+          let url = `pages/${_dir}/${_file}` // data[_name]['file_path']
+          let _path = `${_dir}/${_file}`
+          const menuItem = {
+            name: _file,
+            path: '/' + _path,
+            // icon: route.meta.icon,
+            label: _file.split(".")[0], 
+            component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
+          };
+           
+          menus.children = menus.children.concat(menuItem)
+          
+        }
+        _routes = _routes.concat(menus)
+        router.addRoute(menus)
+        // router.replace(router.currentRoute.value.fullPath) 
       }
 
-      this.routes = router.getRoutes()
-      console.log(router.getRoutes())
+      this.routes = _routes
+      console.log('ROUTERS',router.getRoutes())
     },
   },
   setup() {
@@ -84,4 +103,10 @@ export default {
   }
 }
 </script>
+<style scoped>
+.el-sub-menu a{
+  border-bottom: none;
+  text-decoration: none;
+}
+</style>
  
