@@ -356,6 +356,7 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
 
         access_token = jwt.encode(
             auth_user_obj, self.secret_key, self.algorithm)
+        
         auth_user_obj.update({"token": access_token})
         request.session[_session_name] = auth_user_obj
         return access_token

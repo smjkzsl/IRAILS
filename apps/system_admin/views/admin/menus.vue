@@ -48,12 +48,15 @@ export default {
     async getPages() {
       let data = await system.getPagesList()
       console.log(data)
-      // # {
-      //   #     '.':
-      //   #         ['a.vue','b.vue'],
-      //   #     'system': 
-      //   #         ['cc.vue','dd.vue'], 
-      //   # }
+      var compare=function(a,b){
+        if(a.file=='home.vue'){
+          return -1
+        }
+        return 0
+      }
+      for (var _dir in data){
+        data[_dir].sort(compare)
+      }
       let _routes = []
       for (var _dir in data) {
          
@@ -65,16 +68,19 @@ export default {
             children: []
             //component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
           };
-           
+        let isHome=false   
+         
         for(var _i in data[_dir]){
-          let _file = data[_dir][_i]
+
+          let _file = data[_dir][_i].file
+          isHome = _file=='home.vue'
           let url = `pages/${_dir}/${_file}` // data[_name]['file_path']
           let _path = `${_dir}/${_file}`
           const menuItem = {
             name: _file,
-            path: '/' + _path,
+            path: '/' + (isHome?'':_path),
             // icon: route.meta.icon,
-            label: _file.split(".")[0], 
+            label: data[_dir][_i].title, 
             component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
           };
            
@@ -83,9 +89,9 @@ export default {
         }
         _routes = _routes.concat(menus)
         router.addRoute(menus)
-        // router.replace(router.currentRoute.value.fullPath) 
+        
       }
-
+      router.replace('/') 
       this.routes = _routes
       console.log('ROUTERS',router.getRoutes())
     },

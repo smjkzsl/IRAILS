@@ -65,6 +65,9 @@ class BaseController:
  
     @property
     def _(self):
+        if hasattr(self,"__cached_i18n__"):
+            return getattr(self,'__cached_i18n__').gettext
+        
         m = getattr(self,'__appdir__') 
         languages = None
         if 'lang' in self._session:
@@ -76,6 +79,7 @@ class BaseController:
                 if languages:
                     languages = [languages[0]]
         t = load_app_translations(module_dir=m,lan=languages)
+        setattr(self,'__cached_i18n__',t)
         return t.gettext
     @property
     def log(self)->Logger:

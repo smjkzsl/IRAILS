@@ -24,3 +24,12 @@ msgstr "布鲁斯"
 
 msgid "id"
 msgstr "标识"
+
+msgid "home.vue"
+msgstr "总览"
+
+msgid "apps.vue"
+msgstr "应用"
+
+msgid "db_config.vue"
+msgstr "配置"

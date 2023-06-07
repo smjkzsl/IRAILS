@@ -14,4 +14,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
+msgid "bruce"
+msgstr "布鲁斯"
 
+msgid "id"
+msgstr "标识"
+
+msgid "home.vue"
+msgstr "面板"
+
+msgid "apps.vue"
+msgstr "应用"
