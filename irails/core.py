@@ -431,7 +431,7 @@ def _register_controllers():
                     _log.info(hash+" mountting...")
                 app_router = register_controllers_to_app(
                     application, dict_obj['obj'])
-
+                
                 application.apps[app_name]['router'] = app_router
                 dict_obj['label'] = 'mounted'
 

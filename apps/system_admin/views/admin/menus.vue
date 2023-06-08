@@ -114,5 +114,8 @@ export default {
   border-bottom: none;
   text-decoration: none;
 }
+.el-menu-item{
+  padding-left: 70px !important;
+}
 </style>
  

@@ -90,3 +90,14 @@ class AdminController(BaseController):
         '''
         apps = application.app_list()
         return apps
+
+    @api.post("/uninstall")
+    def uninstall(self):
+        app_name = self['app_name']
+        if app_name:
+            for route in application.apps[app_name]['router'].routes:
+                application.routes.remove(route)
+            del application.apps[app_name]['router'].routes[:]
+             
+            del application.apps[app_name]
+            return 'OK'

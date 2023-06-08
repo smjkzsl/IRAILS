@@ -31,5 +31,5 @@ msgstr "总览"
 msgid "apps.vue"
 msgstr "应用"
 
-msgid "db_config.vue"
+msgid "configs.vue"
 msgstr "配置"

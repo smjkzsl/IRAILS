@@ -26,6 +26,12 @@
         <el-table-column label="Title" prop="title" />
         <el-table-column label="Category" prop="category" width="120"/>
         <el-table-column label="Description" prop="description" width="350" />
+        <el-table-column fixed="right" label="Operations" width="140">
+          <template #default="scope">
+            <el-button link type="primary" size="small" @click="uninstall(scope.$index,scope.row)">Uninstall</el-button>
+            <el-button link type="primary" size="small">Install</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-container>
     <!-- 在 #fallback 插槽中显示 “正在加载中” -->
@@ -37,13 +43,35 @@
 <script>
 const { ElTable, ElTableColumn, ref } = Vue
 import { system } from 'api/api.js'
+import { ElMessageBox,ElMessage } from 'element-plus'
 
 export default {
   components: {
     ElTable, ElTableColumn
   },
   methods: {
-    // 获取应用列表数据的方法
+    async uninstall(index,row){
+      ElMessageBox.confirm(`Are you sure to uninstall ${row.app_name}?`,'警告',{
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Cancel',
+      type: 'warning',
+    })
+        .then(() => {
+          console.log(row.app_name)
+           
+          this.uninstall_app(row.app_name)
+          this.getData()
+        })
+        .catch(() => {
+          // catch error
+        })
+
+      
+    },
+    async uninstall_app(app_name){
+      let ret = await system.uninstall_app(app_name) 
+      ElMessage(ret)
+    },
     async getData() {
 
       const res = await system.getAppList();
