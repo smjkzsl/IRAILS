@@ -8,7 +8,7 @@ from .config import config,ROOT_PATH
 from .log import _log
 import os,uuid
 from hashlib import md5
-from typing import Dict
+from typing import Dict, Type
 from logging import Logger
 import inspect
 import datetime
@@ -112,15 +112,21 @@ class BaseController:
         """
             return the request param by name
         """
-        return self.get_param(key) 
-    def get_param(self,key):
+        return self.params(key) 
+    def params(self,key,defalut=None,value_type:Type=str):
+        v = defalut
         if key in self._form:
-            return self._form[key]
+            v = self._form[key]
         if key in self._json:
-            return self._json[key]
+            v = self._json[key]
         if key in self._query:
-            return self._query[key]
-        return None 
+            v = self._query[key]
+        if value_type:
+            v=value_type(v)
+        elif defalut:
+            value_type = type(defalut)
+            v=value_type(v)
+        return v
      
     @property
     def session(self)->Dict:

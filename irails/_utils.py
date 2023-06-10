@@ -3,6 +3,9 @@ from datetime import datetime, date
 from json import JSONEncoder
 import re
 import os
+from typing import Any
+from .log import _log
+
 snake_case_re = re.compile("(?<!^)(?=[A-Z][a-z])")
 controller_re = re.compile("([\\w]+)Controller")
 
@@ -196,3 +199,70 @@ def add_redirect_param(url: str, redirect_url: str,key='redirect') -> str:
         return url + f"&{key}=" + redirect_url
     else:
         return url + f"?{key}=" + redirect_url
+    
+def update_manifest(manifest_path,section:str,value:Any,append:bool=False):
+    import yaml
+    try:
+        changed = False
+        with open(manifest_path, "r") as f:
+            data = yaml.load(f, Loader=yaml.FullLoader) 
+
+        if not section in data: 
+           
+           data[section] = value
+           changed = True
+        else:
+            cfg = data[section]
+            if append:
+                if isinstance(data[section],list): 
+                    if not value in data[section]:  
+                        data[section]=data[section]+[value] 
+                        changed = True
+                else:
+                    data[section] = data[section] + str(value)
+                    changed = True
+            elif cfg != value:
+                data[section] = value
+                changed = True
+         
+        if changed:
+            with open(manifest_path, "w") as f:
+                yaml.dump(data, f) 
+
+        return changed
+    
+    except Exception as e:
+        _log.error(f'Error raised {e.args}')
+        _log.error(f"Now please open {manifest_path} to modify {section}")
+        if append:
+            _log.error(f"append value {value}!")
+        return False
+def enable_app(app_name,is_enable=True):
+        import yaml
+        try:
+            file = './configs/general.yaml'
+ 
+            with open(file, "r") as f:
+                data = yaml.load(f, Loader=yaml.FullLoader)
+ 
+            arr_enabled = data['app']['enabled'] #none is enable all
+            if not arr_enabled and is_enable:
+                arr_enabled = [app_name] 
+            else:
+                if isinstance(arr_enabled,list) and is_enable:
+                    arr_enabled.append(app_name) 
+                elif isinstance(arr_enabled,list) and not is_enable:
+                    if app_name in arr_enabled:
+                        arr_enabled.remove(app_name)
+                
+            new_enabled = list(set(arr_enabled))
+
+            data['app']['enabled'] = new_enabled
+            with open(file, "w") as f:
+                yaml.dump(data, f)
+            _log.info(f"configs/general.yaml app.enabled has been added {app_name}!")
+            return True
+        except Exception as e:
+            _log.error(f'an error raised {e.args}')
+            _log.error(f"now please open configs/general.yaml to modify app.enabled to add {app_name}!")
+            return

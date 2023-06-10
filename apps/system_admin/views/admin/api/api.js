@@ -6,8 +6,19 @@
                 'Content-Type': 'application/json'
             }
         }
-        const opts = {...defaultOptions, ...options }
 
+        const opts = {...defaultOptions, ...options }
+        if (opts['method'] == 'GET' && opts['body']) {
+            const queryString = Object.entries(opts['body']).map(([key, value]) =>
+                `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+            opts.body = null
+            if (url.indexOf('?') > 0) {
+                url = url + queryString
+            } else {
+                url = `${url}?${queryString}`
+            }
+
+        }
         try {
             const response = await fetch(url, opts)
             const data = await response.json()
@@ -33,20 +44,26 @@
                 let data = await request(`${this.path}/${url}`, options)
                 return data
             },
-            async getAppList() {
-                let data = await this.request('app_list')
+            async getAppList(t) {
+
+                let data = await this.request('app_list', { body: { 't': t } })
                 return data
             },
             async getPagesList() {
-                let data = await request(`${this.path}/pages_list`)
+
+                let data = await this.request(`pages_list`)
                 return data
             },
             async uninstall_app(app_name) {
-
                 let body = { 'app_name': app_name }
                 let ret = await this.request('uninstall', { method: "POST", body: JSON.stringify(body) })
                 return ret
-            }
+            },
+            async install_app(app_name) {
+                let body = { 'app_name': app_name }
+                let ret = await this.request('install', { method: "POST", body: JSON.stringify(body) })
+                return ret
+            },
         }
     }
     module.exports = api

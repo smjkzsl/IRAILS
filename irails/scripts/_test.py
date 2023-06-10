@@ -59,8 +59,8 @@ def do_test_app(app_dir, print_out=None):
     sys.path.remove(app_package_dir)
 
 def get_all_enabled_apps():
-    from irails._loader import _load_apps
-    apps = _load_apps(do_load=False)
+    from irails._loader import collect_apps
+    apps = collect_apps(do_load=False)
     return apps
 def do_test_project(print_out=None): 
      
@@ -69,7 +69,7 @@ def do_test_project(print_out=None):
          
         apps = get_all_enabled_apps() 
         for app in apps:
-            dirs = app.split('.')
+            dirs = app['package'].split('.')
             if len(dirs)==2:
                 app_dir = os.path.join(curdir,dirs[0],dirs[1])
                 do_test_app(app_dir=app_dir, print_out=print_out)

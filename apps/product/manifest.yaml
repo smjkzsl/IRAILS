@@ -1,0 +1,14 @@
+author: product
+category: test
+depends: []
+description: product
+license: MIT
+name: product
+packages:
+- controllers
+- models
+- services
+plugins: []
+slots: true
+title: product
+version: '1.0'

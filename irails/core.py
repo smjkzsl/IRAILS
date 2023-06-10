@@ -14,7 +14,7 @@ from .log import _log
 from . import midware
 from . import auth
 from . import database
-from ._loader import _load_apps
+from ._loader import collect_apps
 from ._utils import get_controller_name, get_snaked_name, copy_attr, singleton, add_redirect_param
 from ._i18n import _
 
@@ -275,6 +275,9 @@ def api_router(path: str = "", version: str = "", **allargs):
         if not app_name in application.apps:
             application.apps[app_name] = {'routes': {}, 'view_dirs': {}}
 
+        if not 'app_dir' in application.apps[app_name]:
+            application.apps[app_name]['app_dir'] = abs_path
+
         if not _controller_hash in application.apps[app_name]['routes']:
             application.apps[app_name]['routes'][_controller_hash] = {
                 'label': 'new', 'obj': _controllerBase}
@@ -391,7 +394,9 @@ def api_router(path: str = "", version: str = "", **allargs):
             get_controller_name(targetController.__name__))
         _view_url_path: str = url_path.replace(
             "{controller}", controller_path_name).replace("{version}", version)
-
+        if not _view_url_path:
+            _view_url_path = f"/{controller_path_name}"
+            
         controller_current_view_path = abs_path + '/views/' + controller_path_name
         if version:
             controller_current_view_path += '/' + version
@@ -423,6 +428,7 @@ def get_wrapped_endpoint(func):
 def _register_controllers():
     global __is_debug
     controller_count = 0
+    is_startup = True
     for app_name in application.apps:
         for hash, dict_obj in application.apps[app_name]['routes'].items():
             controller_count += 1
@@ -453,12 +459,16 @@ def _register_controllers():
                         application.apps[app_name]['route_map'] = {}
                     application.apps[app_name]['route_map'][funcname] = {
                         'path': r.path, 'methods': methods, 'doc': doc_map, 'auth': auth_type, "endpoint": r.endpoint}
+            elif dict_obj['label'] != 'new':
+                is_startup = False
 
     if not (controller_count) > 0:
         raise RuntimeError(_("not found any controller class"))
 
     _log.info(_("static files mouting..."))
-    midware.init(app=application, debug=__is_debug)
+
+    if is_startup:
+        midware.init(app=application, debug=__is_debug)
 
 
 def check_db_migrate():
@@ -509,7 +519,7 @@ def generate_mvc_app():
     application.title = _project_name
 
     _log.info(_("loading irails apps..."))
-    loaded, unloaded = _load_apps(debug=__is_debug, application=application)
+    loaded, unloaded = collect_apps(debug=__is_debug, application=application)
 
     _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %
               (loaded, unloaded))

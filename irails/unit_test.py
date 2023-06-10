@@ -29,7 +29,7 @@ class ServiceTest(_BaseUnitTest):
     def __init__(self,*args,**kwargv) -> None:
         super().__init__(*args,**kwargv)
         from .config import config
-        from ._loader import _load_apps
+        from ._loader import collect_apps
         from irails.database import Service,engine,Session,init_database
         from irails.database import check_migration
         from irails.core import check_init_auth

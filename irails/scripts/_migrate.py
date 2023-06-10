@@ -2,7 +2,7 @@ import argparse
 import os, sys
 import uvicorn
 from irails.config import IS_IN_irails
-from irails._loader import _load_apps
+from irails._loader import collect_apps
  
 from irails.config import config
 
@@ -31,7 +31,7 @@ def main():
     db_cfg = config.get("database")
     db_uri = db_cfg.get("uri")
     alembic_ini = db_cfg.get('alembic_ini')
-    _load_apps()
+    collect_apps()
     engine = init_database(db_uri,debug=True,cfg = db_cfg)
     if engine:
         check_migration(engine=engine,uri= db_uri,alembic_ini= alembic_ini,upgrade=is_up)

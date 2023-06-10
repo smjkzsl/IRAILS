@@ -2,7 +2,7 @@ import argparse
 import sys
 import os
 from jinja2 import Template
-from irails._utils import get_snaked_name, to_camel_case, get_plural_name,ensure_line
+from irails._utils import get_snaked_name, to_camel_case, get_plural_name,ensure_line,update_manifest
 import typing
 
 from irails.config import is_in_app, is_in_irails
@@ -39,6 +39,7 @@ def get_app_name():
 
 
 def generate(args):
+    ret = False
     app_name = get_app_name()
     if not args.name:
         print(f'controller name is empty,exit!')
@@ -53,16 +54,18 @@ def generate(args):
                "app_name": app_name,
                }
     columns = []
-    if not len(args.name) > 0:
-        args.name.append("id")
+    # if not len(args.name) > 0:
+    #     args.name.append("id")
     columns = args.name
     context["columns"] = columns
     dest_file = os.path.join(cur_dir, "models", model_path_name+'.py')
     src_tpl = "model.jinja"
+    manifest_path = os.path.join(cur_dir,'manifest.yaml')
+
     if render_tpl(src_tpl=src_tpl, dest_file=dest_file, context=context): #model file
         __init_file = os.path.join(cur_dir,'models','__init__.py')
         ensure_line(__init_file,f"from .{model_path_name} import *")
-
+        update_manifest(manifest_path=manifest_path,section='packages',value='models',append=True)
         service_path_name = model_path_name+'_service'
         dest_file = os.path.join(cur_dir, "services", service_path_name+'.py')
         context['service_name'] = f"{model_name}Service"
@@ -70,13 +73,15 @@ def generate(args):
         if render_tpl(src_tpl="service.jinja", dest_file=dest_file, context=context):#service file
             __init_file = os.path.join(cur_dir,'services','__init__.py')
             ensure_line(__init_file,f"from .{service_path_name} import *")
-
+            update_manifest(manifest_path=manifest_path,section='packages',value='services',append=True)
             dest_file = os.path.join(
                 cur_dir, "tests", f"test_{service_path_name}.py")
             if render_tpl(src_tpl="test_service.jinja", dest_file=dest_file, context=context):#test service file
                 print("Done!")
-                return True
-    return False
+                ret = True
+     
+
+    return ret
 
 
 def main():

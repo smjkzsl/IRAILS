@@ -59,7 +59,9 @@ class AdminController(BaseController):
         '''
         :title Api Docs
         '''
-        return docs.get_swagger_ui_html(oauth2_redirect_url="/system_admin/user/verity", openapi_url=application.openapi_url, title="API documentation")
+        return docs.get_swagger_ui_html(oauth2_redirect_url="/system_admin/user/verity",
+                                         openapi_url=application.openapi_url, 
+                                         title="API documentation")
 
     @api.get("/redoc", auth='public', include_in_schema=False)
     def redoc(self):
@@ -88,16 +90,65 @@ class AdminController(BaseController):
         '''
         :nav false
         '''
+        t = self.params('t','installed') 
         apps = application.app_list()
+        if t == 'installed': 
+            for item in apps:
+                item['is_installed'] = True
+        elif t:
+            from irails._loader import collect_apps 
+            all_apps = collect_apps(do_load=False,application=application) 
+            ret = []
+            for item in all_apps:
+                manifest = item['manifest']
+                manifest['app_name'] = item['package']
+                manifest['is_installed'] = item['package'] in application.apps
+                if manifest['is_installed']:
+                    for app in apps:
+                        if app['app_name'] == item['package']:
+                            manifest['routes'] = app['routes']
+                if t=='all':
+                    ret.append(manifest)
+                elif t=='uninstalled' and not manifest['is_installed']:
+                    ret.append(manifest)
+            apps = ret
         return apps
 
     @api.post("/uninstall")
     def uninstall(self):
         app_name = self['app_name']
         if app_name:
-            for route in application.apps[app_name]['router'].routes:
-                application.routes.remove(route)
-            del application.apps[app_name]['router'].routes[:]
-             
-            del application.apps[app_name]
-            return 'OK'
+            from irails._utils import  enable_app
+            from irails._loader import _unload_app 
+            if enable_app(app_name,False): 
+                if _unload_app(application=application,app_name=app_name):
+                    return 'OK'
+        return 'Failed'
+        
+    @api.post("/install")
+    def install(self):
+        app_name = self.params('app_name')
+        if app_name:
+            from irails._loader import _load_app,collect_apps 
+            from irails._utils import enable_app
+            from irails.core import _register_controllers,check_db_migrate
+            from irails.midware import mount_app_statics
+            from irails.config import debug
+            import os
+            all_apps = collect_apps(do_load=False,application=application) 
+            for app in all_apps:
+                if app['package']==app_name:
+                    app_dir = app['app_dir']
+                    if not os.path.isabs(app_dir):
+                        app_dir = os.path.abspath(app_dir)
+                    app_dir = os.path.dirname(app_dir)
+                    n=_load_app(app_dir,app_name,app['manifest'])
+
+                    if n and app_name in application.apps:
+                        application.apps[app_name]['manifest'] = app['manifest']
+                        _register_controllers()
+                        mount_app_statics(application,app_name,debug)
+                        check_db_migrate()
+                        enable_app(app_name)
+                        return 'OK'
+        return 'Failed'

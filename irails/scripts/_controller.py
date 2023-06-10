@@ -2,7 +2,7 @@ import argparse
 import sys,os,re
 from typing import Any
 from jinja2 import Template
-from irails._utils import is_valid_filename,get_controller_name,get_snaked_name,to_camel_case,ensure_line
+from irails._utils import is_valid_filename,get_controller_name,get_snaked_name,to_camel_case,ensure_line,update_manifest
 from  irails.config import is_in_irails,is_in_app
 
 class Generator():
@@ -109,6 +109,9 @@ class Generator():
             controller_file = os.path.join(_current_dir,'controllers',f"{controler_path_name}_controller.py")
             __init_file = os.path.join(_current_dir,'controllers','__init__.py')
             ensure_line(__init_file,f"from . import {controler_path_name}_controller")
+
+            manifest_path = os.path.join(_current_dir,'manifest.yaml')
+            update_manifest(manifest_path=manifest_path,section = 'packages',value = 'controllers',append=True)
             # __init_file = os.path.join(_current_dir,'models','__init__.py')
             # ensure_line(__init_file,f"from . import {controler_path_name}_model")
             # __init_file = os.path.join(_current_dir,'services','__init__.py')

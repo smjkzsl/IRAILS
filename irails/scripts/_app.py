@@ -2,7 +2,7 @@ import argparse
 import sys,os
 from typing import Any
 from jinja2 import Template
-from irails._utils import is_valid_filename,get_controller_name,get_snaked_name
+from irails._utils import is_valid_filename,get_controller_name,get_snaked_name,update_manifest,enable_app
 from  irails.config import IS_IN_irails
 
 class Generator():
@@ -16,32 +16,7 @@ class Generator():
         '''
         pass
      
-    def add_enabled_to_app(self,app_name):
-        import yaml
-        try:
-            file = './configs/general.yaml'
- 
-            with open(file, "r") as f:
-                data = yaml.load(f, Loader=yaml.FullLoader)
- 
-            enabled = data['app']['enabled']
-            if not enabled:
-                return True
-                enabled = [app_name]
-            else:
-                if isinstance(enabled,list):
-                    enabled.append(app_name) 
-            new_enabled = list(set(enabled))
-
-            data['app']['enabled'] = new_enabled
-            with open(file, "w") as f:
-                yaml.dump(data, f)
-            print(f"configs/general.yaml app.enabled has been added {app_name}!")
-            return True
-        except Exception as e:
-            print(f'an error raised {e.args}')
-            print(f"now please open configs/general.yaml to modify app.enabled to add {app_name}!")
-            return
+    
         
     def set_root_controller_to_config(self,app_dir,app_name):
         import yaml
@@ -165,17 +140,22 @@ class HomeController(BaseController):
                 _current_dir = os.path.join(store_dir,dir)
                 print(f"creating {_current_dir}")
                 os.makedirs(_current_dir,exist_ok=True)
-                 
+            
+            manifest_path = os.path.join(store_dir,'manifest.yaml')
+            manifest_tpl_file = os.path.dirname(__file__)+"/tpls/app/manifest.jinja"
+            self.do_copy(manifest_tpl_file,manifest_path,True,context=context)   
+             
             # _init_file = os.path.normpath(os.path.join(store_dir,'__init__.py'))
             # with open(_init_file,'w') as f: #root path of app's dir
             #     f.write(f"from .controllers import *")
             
             # print(f"create {_init_file}")
 
-            self.add_enabled_to_app(app_name)
+            enable_app(app_name)
             if self.set_root_controller_to_config(self.args.dir,app_name):
                 self.add_home_controller(self.args.dir,app_name)
                 self.add_home_view(self.args.dir,app_name)
+                update_manifest(manifest_path=manifest_path,section = 'packages',value= 'controllers',append=True)
             cnt += 1
         if cnt:
             print(f"now ,you can cd to {self.args.dir}/{app_name} and run `irails controller \"controller's name`\" to create controllers")

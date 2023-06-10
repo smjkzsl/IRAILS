@@ -1,9 +1,10 @@
 app:
   appdir:
   - apps
-  enabled: null
+  enabled:
+  - system_admin
+  - app
   root: apps.root
-
 cors:
   allow_credentials: true
   allow_headers:
@@ -16,14 +17,17 @@ debug: true
 errors:
   error_404_page: '{ROOT.public_dir}/error_404.html'
   error_500_page: '{ROOT.public_dir}/error_500.html'
+i18n:
+  lang:
+  - zh
+  url_lang_key: lang
 log:
+  datefmt: '%Y-%M-%d %H:%M:%S'
   file: ''
   level: DEBUG
-  name: iRails
   msgfmt: '%(asctime)s %(name)s:%(levelname)s:%(message)s'
-  datefmt: '%Y-%M-%d %H:%M:%S'
+  name: iRails
 public_dir: ./public
-
 view:
   jinja2:
     block_end_string: '%}'
@@ -34,6 +38,3 @@ view:
     variable_start_string: ${
   static_format:
   - html
-i18n:
-  lang: ['zh']
-  url_lang_key: 'lang'

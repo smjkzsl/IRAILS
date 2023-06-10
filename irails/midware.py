@@ -75,29 +75,37 @@ class MvcStaticFiles(StaticFiles):
 
             )
 
-
+def mount_app_statics(app,app_name,debug=False):
+    __roots = {}
+    for _dir in app.apps[app_name]['view_dirs']: 
+        _url: str = app.apps[app_name]['view_dirs'][_dir]
+        if not _url.startswith('/'):
+            _url = '/'+_url
+        _dir = os.path.normpath(_dir)
+        if os.path.exists(_dir):
+            if _url == '/':
+                __roots[_dir] = _url
+            else:
+                if not _url.endswith("/"):
+                    _url += "/"
+                _url = _url.lower()
+                if debug:
+                    _log.info(f"StaticDir:{_dir} mounted: {_url}")
+                app.mount(_url, MvcStaticFiles(directory=_dir), name=_dir)
+        else:
+            _log.warn(f"StaticDir:{_dir} do not exists!")
+    return __roots
 def mount_statics(app, debug=False):
     __roots = {}
+    root_app = ""
     for app_name in app.apps:
-
-        for _dir in app.apps[app_name]['view_dirs']:
-
-            _url: str = app.apps[app_name]['view_dirs'][_dir]
-            if not _url.startswith('/'):
-                _url = '/'+_url
-            _dir = os.path.normpath(_dir)
-            if os.path.exists(_dir):
-                if _url == '/':
-                    __roots[_dir] = _url
-                else:
-                    if not _url.endswith("/"):
-                        _url += "/"
-                    _url = _url.lower()
-                    if debug:
-                        _log.info(f"StaticDir:{_dir} mounted: {_url}")
-                    app.mount(_url, MvcStaticFiles(directory=_dir), name=_dir)
-            else:
-                _log.warn(f"StaticDir:{_dir} do not exists!")
+        
+        app__roots = mount_app_statics(app,app_name,debug)
+        if not __roots and app__roots:
+            __roots = app__roots
+            root_app = app_name
+        elif root_app and app__roots :
+            raise RuntimeError("Mount statics error,Duplicate definition of ROOT(`/`) path,`{root_app}` already defined")
     # mount public resources
     public_dir = config.get("public_dir")
     public_dir = os.path.abspath(os.path.join(ROOT_PATH, public_dir))
