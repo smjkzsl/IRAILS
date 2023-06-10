@@ -5,12 +5,22 @@
       <headers />
     </el-header>
     <el-container>
-      <el-aside width="200px">
-        <el-scrollbar>
-          <menus />
-        </el-scrollbar>
+      
+      
+      
+       
+      <el-aside ref="aside" :width="asideWidth"> 
+        <el-row class="aside-header">
+          <el-icon  @click="toggleLeft()"> 
+            <Fold  v-if="!isCollapse"/><Expand v-if="isCollapse"/> 
+          </el-icon>
+        </el-row>
+        <el-row>
+          <menus style="width:100%;" :isCollapse="isCollapse" /> 
+        </el-row> 
       </el-aside>
-
+      
+    
       <el-container class="el-main">
         
           <router-view></router-view>
@@ -18,7 +28,7 @@
       </el-container>
     </el-container>
     <el-container>
-      <el-footer>Footer</el-footer>
+      <el-footer>Copyright 2023 ©  bruce chou</el-footer>
     </el-container>
 
 
@@ -26,7 +36,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref,relative,nextTick } from 'vue'
 
 import { Menu as IconMenu, Message, Setting } from 'element_icon'
 
@@ -37,8 +47,20 @@ export default {
   components: {
     IconMenu, Message, Setting, menus, headers
   },
+  methods:{
+    async toggleLeft(){
+      debugger
+      this.isCollapse=!this.isCollapse
+      await nextTick()
+      this.asideWidth=this.isCollapse?"100px":'200px'
+    },
+  },
   setup() {
+    // const state = relative({aside:ref('aside')})
+    let asideWidth = ref("200px")
+    const isCollapse = ref(false)
 
+    return {isCollapse,asideWidth}
   },
 }
 
@@ -60,10 +82,28 @@ body {
   text-align: center;
 }
 
+.layout-container-demo .aside-header{
+  position: relative;
+  align-items: flex-end;
+  flex-direction: column;
+  height: 38px;
+  top:0px;
+  width: 100%;
+  cursor:pointer;
+  padding: 10px;
+  font-size: 1.2em;
+  border-bottom: 1px dashed #EEE;
+}
+.layout-container-demo .aside-header i:hover{
+  color:rgb(102, 130, 231);
+  
+}
 .layout-container-demo .el-aside {
- 
+  
+  text-align: right;
   position: relative  ;
   height: calc(100vh - 120px); 
+  top: 0px;
   bottom: 0px;
   border-right: 1px solid #EEE;
 }
@@ -80,7 +120,7 @@ body {
   top: 0px;
   bottom: 0;
   width: auto;
-  max-width: calc(100% - 200px);
+  /* max-width: calc(100% - 200px); */
   
 }
 .layout-container-demo .el-footer{

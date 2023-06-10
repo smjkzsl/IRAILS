@@ -1,15 +1,18 @@
  
 
 <template>
-  <el-menu class="el-menu" unique-opened :default-openeds="['.']" >
+  <el-menu :collapse="isCollapse" class="el-menu" unique-opened :default-openeds="['.']" >
     <el-sub-menu v-for="route in routes"  :key="route.path" class="el-menu" :index="route.path"  >
       <template #title>
-        <el-icon>
-          <setting />
-        </el-icon>{{ route.label }}
+        <component :is="route.icon" style="margin-right:5px; width: 1.5em; height: 1.5em; color:#123456"></component>
+        {{ route.label }}
       </template>
       <router-link v-for="menu in route.children"  :key="menu.path" :to="menu.path">
-        <el-menu-item :index="menu.path">{{ menu.label }}</el-menu-item>
+        
+        <el-menu-item :index="menu.path">
+          <component :is="menu.icon" style="margin-right:5px; width: 1.5em; height: 1.5em; color:#123456"></component>
+          {{ menu.label }}
+        </el-menu-item>
       </router-link>
     </el-sub-menu>
   </el-menu>
@@ -37,6 +40,9 @@ export default {
   components: {
     IconMenu, Message, Setting
   },
+  props:{
+    isCollapse:Boolean
+  },
   created() {
     console.log('menus created')
   },
@@ -58,12 +64,14 @@ export default {
         data[_dir].sort(compare)
       }
       let _routes = []
+      let is_first = true
       for (var _dir in data) {
-         
+        let _icon = is_first?'Setting':'Folder'
+        is_first = false
         let dir_name = _dir=='.'?'系统':_dir
         let menus = { 
             path: '/'+dir_name ,
-            // icon: route.meta.icon,
+            icon: _icon,
             label: dir_name, 
             children: []
             //component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
@@ -71,7 +79,7 @@ export default {
         let isHome=false   
          
         for(var _i in data[_dir]){
-
+          let icon = data[_dir][_i].icon ? data[_dir][_i].icon : 'Document'
           let _file = data[_dir][_i].file
           isHome = _file=='home.vue'
           let url = `pages/${_dir}/${_file}` // data[_name]['file_path']
@@ -79,7 +87,7 @@ export default {
           const menuItem = {
             name: _file,
             path: '/' + (isHome?'':_path),
-            // icon: route.meta.icon,
+            icon: icon,
             label: data[_dir][_i].title, 
             component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
           };
@@ -96,11 +104,11 @@ export default {
       console.log('ROUTERS',router.getRoutes())
     },
   },
-  setup() {
-
+  setup(props) {
+    console.log('menus.vue has props',props)
     const routes = ref(router.options.routes)
     return {
-      routes
+      routes,props
     }
 
   },
@@ -110,6 +118,7 @@ export default {
 }
 </script>
 <style scoped>
+ 
 .el-sub-menu a{
   border-bottom: none;
   text-decoration: none;
