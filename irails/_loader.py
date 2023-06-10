@@ -70,14 +70,21 @@ def load_module(module_name: str, module_path: str):
      
     return None
 
+# issue.
 # def _reload_app(app_name,manifest):
 #     _modules = manifest['packages']
 #     for m in _modules:
 #         module_name = f"irails.apps.{app_name}.{m}"
-#         module = importlib.reload()
+#         module = importlib.reload(sys.modules[module_name])
 
 
 def _unload_app(application, app_name):
+    '''
+    This operation will only temporarily disable  `app_name` , 
+    it will not be actually removed from Python due to the mechanism of Python. 
+    After disabling it, you must restart irails to ensure database synchronization. 
+    After restarting, it can be reinstalled.
+    '''
     if app_name in application.apps: 
         _modules = application.apps[app_name]['manifest']['packages']
         for route in application.apps[app_name]['router'].routes:
@@ -103,24 +110,7 @@ def _unload_app(application, app_name):
         return True
     else:
         return False
-# class CustomLoader(importlib.abc.Loader):
-#     def create_module(self, spec):
-#         return None
-
-#     def exec_module(self, module):
-#         pass
-
-# class CustomFinder(importlib.abc.MetaPathFinder):
-#     def find_spec(self, fullname, path, target=None):
-#         # 当前的例子只允许 irails.apps.* 来导入
-#         if fullname.startswith("irails.apps."):
-#             app_name = fullname.split('.')[2]
-#             for _dir in app_dirs:
-#                 file_path = f'{_dir}/{app_name}/__init__.py'
-#                 if os.path.exists(file_path):
-#                     spec = importlib.util.spec_from_file_location(fullname, file_path, loader=CustomLoader())
-#                     return spec
-#         return None
+ 
     
 loaded=[]
 import irails

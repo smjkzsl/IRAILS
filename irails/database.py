@@ -474,6 +474,21 @@ def check_migration(engine:Engine,uri,alembic_ini,upgrade=None):
         reversions_dir =  os.path.join(script_location,"versions")
         if not os.path.exists(reversions_dir):
             os.makedirs(reversions_dir,exist_ok=True)
+        #ensure not have some versions on db
+        _tb = 'alembic_version'
+        _migration_files = os.listdir(reversions_dir)
+        has_migration = False
+        if len(_migration_files)>0:
+            for f in _migration_files:
+                if f.endswith('.py'):
+                    has_migration = True
+                    break
+        if not has_migration:
+            try:
+                with engine.begin() as conn:
+                    conn.execute(text(f"delete from {_tb}"))
+            except:
+                pass
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as e:

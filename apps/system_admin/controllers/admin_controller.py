@@ -120,8 +120,10 @@ class AdminController(BaseController):
         if app_name:
             from irails._utils import  enable_app
             from irails._loader import _unload_app 
+            from irails.core import check_db_migrate
             if enable_app(app_name,False): 
                 if _unload_app(application=application,app_name=app_name):
+                    check_db_migrate()
                     return 'OK'
         return 'Failed'
         
