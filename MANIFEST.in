@@ -1,2 +1,3 @@
 recursive-include irails/scripts/tpls *
 recursive-include irails/casbin_adapters *
+recursive-include irails/apps *
