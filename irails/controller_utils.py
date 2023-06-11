@@ -200,9 +200,10 @@ def _update_generic_parameters_signature(generic_dict: Dict, method: Callable):
     
     return_val = generic_dict[sig.return_annotation] if typing_inspect.is_typevar(
         sig.return_annotation) else sig.return_annotation
-
-    setattr(method, "__signature__", sig.replace(parameters=new_params, return_annotation=return_val))
-
+    try:
+        setattr(method, "__signature__", sig.replace(parameters=new_params, return_annotation=return_val))
+    except Exception as e:
+        pass
 
 def _update_generic_args(generic_dict: Dict, kwargs) -> Dict:
     """

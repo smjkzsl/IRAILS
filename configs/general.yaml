@@ -2,8 +2,9 @@ app:
   appdir:
   - apps
   enabled:
-  - system_admin
   - app
+  - product
+  - system_admin
   root: apps.root
 cors:
   allow_credentials: true

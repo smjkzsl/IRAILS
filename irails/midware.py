@@ -66,7 +66,7 @@ class MvcStaticFiles(StaticFiles):
             txt = tmp.render(context)
             return Response(txt)
         else:
-
+            scope['root_path'] = scope['root_path'] + scope['path']
             return super().file_response(
                 full_path,
                 stat_result,

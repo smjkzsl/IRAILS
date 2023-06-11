@@ -93,16 +93,16 @@ class AdminController(BaseController):
         t = self.params('t','installed') 
         apps = application.app_list()
         if t == 'installed': 
-            for item in apps:
-                item['is_installed'] = True
+            pass
         elif t:
             from irails._loader import collect_apps 
             all_apps = collect_apps(do_load=False,application=application) 
             ret = []
             for item in all_apps:
                 manifest = item['manifest']
-                manifest['app_name'] = item['package']
-                manifest['is_installed'] = item['package'] in application.apps
+                app_name = item['package']
+                manifest['app_name'] = app_name
+                manifest['is_installed'] = app_name in application.apps and application.apps[app_name]['is_installed']
                 if manifest['is_installed']:
                     for app in apps:
                         if app['app_name'] == item['package']:
@@ -111,6 +111,7 @@ class AdminController(BaseController):
                     ret.append(manifest)
                 elif t=='uninstalled' and not manifest['is_installed']:
                     ret.append(manifest)
+            
             apps = ret
         return apps
 
@@ -144,7 +145,7 @@ class AdminController(BaseController):
                     if not os.path.isabs(app_dir):
                         app_dir = os.path.abspath(app_dir)
                     app_dir = os.path.dirname(app_dir)
-                    n=_load_app(app_dir,app_name,app['manifest'])
+                    n=_load_app(app_dir,app_name,app['manifest'],application)
 
                     if n and app_name in application.apps:
                         application.apps[app_name]['manifest'] = app['manifest']

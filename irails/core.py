@@ -115,10 +115,15 @@ class MvcApp(FastAPI):
     def data_engine(self, value):
         self._data_engine = value
 
-    def app_list(self, group_by_controller=False) -> List:
+    def app_list(self, group_by_controller=False,is_installed = None) -> List:
         import copy
         apps = []
         for app_name in self.apps:
+            app_is_installed = self.apps[app_name]['is_installed']
+            if not is_installed is None:
+                if is_installed==True:
+                    if not app_is_installed:
+                        continue
             manifest = copy.copy(self.apps[app_name]['manifest'])
             route_map = copy.copy(self.apps[app_name]['route_map'])
             for item in route_map:
@@ -137,7 +142,7 @@ class MvcApp(FastAPI):
                     pass
                 else:
                     funcs.append(_item)
-            manifest.update({'app_name': app_name, 'routes': funcs})
+            manifest.update({'is_installed':app_is_installed,'app_name': app_name, 'routes': funcs})
 
             apps.append(manifest)
         return apps
@@ -281,7 +286,8 @@ def api_router(path: str = "", version: str = "", **allargs):
         if not _controller_hash in application.apps[app_name]['routes']:
             application.apps[app_name]['routes'][_controller_hash] = {
                 'label': 'new', 'obj': _controllerBase}
-
+        application.apps[app_name]['is_installed'] = True
+        
         class puppetController(targetController, _controllerBase):
             '''puppet class inherited by the User defined controller class '''
 
@@ -457,6 +463,7 @@ def _register_controllers():
                         _log.info((str(methods), r.path, funcname))
                     if not 'route_map' in application.apps[app_name]:
                         application.apps[app_name]['route_map'] = {}
+                    application.apps[app_name]['is_installed'] = True
                     application.apps[app_name]['route_map'][funcname] = {
                         'path': r.path, 'methods': methods, 'doc': doc_map, 'auth': auth_type, "endpoint": r.endpoint}
             elif dict_obj['label'] != 'new':
