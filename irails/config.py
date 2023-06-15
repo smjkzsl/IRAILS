@@ -63,10 +63,10 @@ def _extract_name(string):
 class YamlConfig:
     _raw_config: Dict = {}
 
-    def __init__(self, filename: str = "", config: Dict = {}):
+    def __init__(self, filename: str = "", config: Dict = {},merge_by_group=False):
         self.filename = filename
         self.config = config
-        self.load()
+        self.load(merge_by_group)
 
     def __getitem__(self, key: str):
         return self.get(key)
@@ -77,13 +77,13 @@ class YamlConfig:
     def reload(self) -> bool:
         return self.load()
 
-    def load(self) -> bool:
+    def load(self,merge_by_group=False) -> bool:
         if os.path.isfile(self.filename):
             with open(self.filename, "r") as f:
                 self.config = yaml.safe_load(f)
                 YamlConfig._raw_config = self.config
         elif os.path.isdir(self.filename):
-            self.config = self._merge_yaml_files(self.filename)
+            self.config = self._merge_yaml_files(self.filename,merge_by_group)
             YamlConfig._raw_config = self.config
         elif self.config:
             return True
@@ -129,17 +129,25 @@ class YamlConfig:
                 dict1[key] = dict2[key]
         return dict1
 
-    def _merge_yaml_files(self, dir_path: str) -> Dict:
+    def _merge_yaml_files(self, dir_path: str,merge_by_group=False) -> Dict:
         merged_config = {}
         for file_name in os.listdir(dir_path):
             file_path = os.path.join(dir_path, file_name)
             if os.path.isfile(file_path) and file_name.endswith(".yaml"):
-                file_config = self._load_yaml_file(file_path)
+                if merge_by_group:
+                    _key = file_name.split(".")[0]
+                    file_config = {_key:self._load_yaml_file(file_path)}
+                else:
+                    file_config = self._load_yaml_file(file_path)
                 if isinstance(file_config, dict):
                     merged_config = self._merge_dicts(
                         merged_config, file_config)
             elif os.path.isdir(file_path):
-                dir_config = self._merge_yaml_files(file_path)
+                if merge_by_group:
+                    _key = os.path.basename(file_path)
+                    dir_config = {_key:self._merge_yaml_files(file_path)}
+                else:
+                    dir_config = self._merge_yaml_files(file_path)
                 merged_config = self._merge_dicts(merged_config, dir_config)
         return merged_config
 

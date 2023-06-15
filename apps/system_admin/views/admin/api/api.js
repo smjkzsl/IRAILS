@@ -64,6 +64,11 @@
                 let ret = await this.request('install', { method: "POST", body: JSON.stringify(body) })
                 return ret
             },
+            async get_configs(cfg_domain) {
+
+                let body = { 'domain': cfg_domain || "" }
+                return await this.request('get_configs', { method: "GET", body: (body) })
+            }
         }
     }
     module.exports = api

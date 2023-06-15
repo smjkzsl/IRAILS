@@ -33,3 +33,6 @@ msgstr "应用"
 
 msgid "configs.vue"
 msgstr "配置"
+
+msgid "general"
+msgstr "常规设置"

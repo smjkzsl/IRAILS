@@ -43,8 +43,11 @@ class AdminController(BaseController):
         for root, dirs, files in os.walk(views_path):
             for file in files:
                 name, ext = os.path.splitext(file)
+                if name.startswith("_") :
+                    continue
                 _dirs = os.path.relpath(root, views_path)
                 _dir_name = _dirs
+                 
                 if not _dir_name in all_files:
                     all_files[_dir_name] = []
                 if ext == '.vue':
@@ -114,7 +117,14 @@ class AdminController(BaseController):
             
             apps = ret
         return apps
-
+    def get_all_app_names(self)->'list':
+        from irails._loader import collect_apps 
+        all_apps = collect_apps(do_load=False,application=application) 
+        ret = []
+        for app in all_apps:
+            ret.append(app['package'])
+        return ret
+    
     @api.post("/uninstall")
     def uninstall(self):
         app_name = self['app_name']
@@ -155,3 +165,17 @@ class AdminController(BaseController):
                         enable_app(app_name)
                         return 'OK'
         return 'Failed'
+    
+    @api.get("/get_configs")
+    def get_configs(self):
+        """
+        :nav false
+        """
+        from irails.config import YamlConfig,ROOT_PATH
+        import os
+         
+        domain = self.params('domain')
+        if not domain:
+            configs = YamlConfig(os.path.join(ROOT_PATH, "configs"),merge_by_group=True)
+            configs.config['general']['app']['all_apps'] = self.get_all_app_names()
+            return configs.config

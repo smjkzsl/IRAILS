@@ -1,76 +1,61 @@
+ 
 <template>
-    <div class="demo-collapse">
-      <el-collapse   @change="handleChange">
-        <el-collapse-item title="Consistency" name="1">
-          <div>
-            Consistent with real life: in line with the process and logic of real
-            life, and comply with languages and habits that the users are used to;
-          </div>
-          <div>
-            Consistent within interface: all elements should be consistent, such
-            as: design style, icons and texts, position of elements, etc.
-          </div>
-        </el-collapse-item>
-        <el-collapse-item title="Feedback" name="2">
-          <div>
-            Operation feedback: enable the users to clearly perceive their
-            operations by style updates and interactive effects;
-          </div>
-          <div>
-            Visual feedback: reflect current state by updating or rearranging
-            elements of the page.
-          </div>
-        </el-collapse-item>
-        <el-collapse-item title="Efficiency" name="3">
-          <div>
-            Simplify the process: keep operating process simple and intuitive;
-          </div>
-          <div>
-            Definite and clear: enunciate your intentions clearly so that the
-            users can quickly understand and make decisions;
-          </div>
-          <div>
-            Easy to identify: the interface should be straightforward, which helps
-            the users to identify and frees them from memorizing and recalling.
-          </div>
-        </el-collapse-item>
-        <el-collapse-item title="Controllability" name="4">
-          <div>
-            Decision making: giving advices about operations is acceptable, but do
-            not make decisions for the users;
-          </div>
-          <div>
-            Controlled consequences: users should be granted the freedom to
-            operate, including canceling, aborting or terminating current
-            operation.
-          </div>
-        </el-collapse-item>
-      </el-collapse>
-    </div>
-  </template>
+  <div>
+    <el-collapse accordion class="demo-collapse" v-model="activeNames">
+      <config-section v-for="(value, key) in configs" :key="key" :section-key="key" :section-data="value" />
+    </el-collapse>
+  </div>
+</template>
   
-  <script>
-  import { ref } from 'vue'
-  
-  export default {
-    setup(){
-        const activeNames = ref(['1'])
-        return {
-            activeNames
-        }
+<script>
+import { ref, defineComponent } from 'vue'
+import { system } from 'api/api.js'
+import   ConfigSection  from "./_component_configs.vue";
+
+debugger
+
+export default {
+  components: { ConfigSection },
+  setup() {
+    const activeNames = ref(['1'])
+    const configs = ref({ general: { app: { apps: [] } }, database: {}, authencation: {} })
+    return {
+      activeNames, configs
+    }
+  },
+  mounted() {
+    this.getConfigs()
+  },
+  methods: {
+    async getConfigs() {
+      const configs = await system.get_configs()
+
+      this.configs = configs
     },
-    methods:{
-        handleChange(val) {
-            console.log(val)
-        }
+    handleChange(val) {
+      console.log(val)
     }
   }
-  
-  
-  </script>
-<style scoped>
-.demo-collapse{
-    padding: 15px;
+}
+
+
+</script>
+<style>
+.demo-collapse {
+  padding: 15px;
+  margin: 15PX;
+}
+
+.demo-collapse .el-card {
+  width: 100%;
+}
+
+.demo-collapse .el-select {
+  width: 100%;
+}
+
+.demo-collapse .el-collapse-item__wrap {
+  margin-bottom: 20px;
 }
 </style>
   
