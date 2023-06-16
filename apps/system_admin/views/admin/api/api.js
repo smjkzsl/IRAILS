@@ -68,7 +68,12 @@
 
                 let body = { 'domain': cfg_domain || "" }
                 return await this.request('get_configs', { method: "GET", body: (body) })
-            }
+            },
+            async save_configs(domain, data) {
+                const body = { 'domain': domain, 'data': data }
+                return await this.request("save_configs", { method: "POST", body: JSON.stringify(body) })
+            },
+
         }
     }
     module.exports = api

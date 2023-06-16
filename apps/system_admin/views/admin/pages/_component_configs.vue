@@ -1,10 +1,13 @@
 <template>
-    <el-collapse-item :title="sectionKey">
-        <el-form>
+    <el-collapse-item v-if="!subItem" :title="capitalizeFirstLetter(sectionKey)">
+        <el-form :ref="sectionKey" v-model="sectionData">
+            <div class="form-tool-bar">
+                <el-button @click="submit(sectionKey)" type="primary">保存</el-button>
+            </div>
             <template v-for="(value, key) in sectionData">
-                <el-form-item :label="key">
+                <el-form-item :label="key" v-if="typeof value != 'object'">
                     <template v-if="Array.isArray(value)">
-                        <el-select v-model="sectionData[key]" multiple>
+                        <el-select v-model="sectionData[key]" multiple filterable allow-create :placeholder="key">
                             <el-option v-for="(option, optionIndex) in value" :key="optionIndex" :label="option"
                                 :value="option"></el-option>
                         </el-select>
@@ -12,24 +15,72 @@
                     <template v-else-if="typeof value === 'boolean'">
                         <el-checkbox v-model="sectionData[key]"></el-checkbox>
                     </template>
-                    <template v-else-if="typeof value === 'object'"> 
-                        <config-section :section-key="key" :section-data="value" /> 
-                    </template>
+
                     <template v-else>
                         <el-input v-model="sectionData[key]"></el-input>
                     </template>
                 </el-form-item>
+                <el-card v-if="typeof value === 'object'">
+                    <template #header>
+                        <div class="card-header">
+                            <span>{{ key }}</span>
+
+                        </div>
+                    </template>
+                    <config-section :section-key="key" :section-data="value" :sub-item="true" />
+                </el-card>
             </template>
         </el-form>
     </el-collapse-item>
+
+    <template v-if="subItem" v-for="(value, key) in sectionData">
+        <el-form-item :label="key">
+            <template v-if="Array.isArray(value)">
+                <el-select v-model="sectionData[key]" multiple filterable allow-create>
+                    <el-option v-for="(option, optionIndex) in value" :key="optionIndex" :placeholder="key" :label="option"
+                        :value="option"></el-option>
+                </el-select>
+            </template>
+            <template v-else-if="typeof value === 'boolean'">
+                <el-checkbox v-model="sectionData[key]"></el-checkbox>
+            </template>
+            <!-- <template v-else-if="typeof value === 'object'"> 
+                <config-section :section-key="key" :section-data="value" :sub-item="true" /> 
+            </template> -->
+            <template v-else>
+                <el-input v-model="sectionData[key]"></el-input>
+            </template>
+        </el-form-item>
+    </template>
 </template>
   
 <script>
+
+import {defineEmits } from 'vue'
+
 export default {
     name: "ConfigSection",
-
-    props: ["sectionData", "sectionKey"],
+    emits:['on_save'],
+    props: ["sectionData", "sectionKey", "subItem"],
+    setup(){
+         
+    },
+    methods: {
+        capitalizeFirstLetter(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        },
+        submit(key){  
+            this.$emit('on_save',{'key':key,'data':this.sectionData[key]})
+             
+        }
+    }
 };
 
 </script>
-  
+<style>
+.form-tool-bar{
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 5px;
+}
+</style>

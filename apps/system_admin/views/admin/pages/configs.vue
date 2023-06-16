@@ -1,8 +1,8 @@
  
 <template>
   <div>
-    <el-collapse accordion class="demo-collapse" v-model="activeNames">
-      <config-section v-for="(value, key) in configs" :key="key" :section-key="key" :section-data="value" />
+    <el-collapse   class="demo-collapse" v-model="activeNames">
+      <config-section @on_save="on_save_form" v-for="(value, key) in configs" :key="key" :sub-item="false" :section-key="key" :section-data="value" />
     </el-collapse>
   </div>
 </template>
@@ -12,8 +12,8 @@ import { ref, defineComponent } from 'vue'
 import { system } from 'api/api.js'
 import   ConfigSection  from "./_component_configs.vue";
 
-debugger
-
+ 
+ 
 export default {
   components: { ConfigSection },
   setup() {
@@ -34,6 +34,9 @@ export default {
     },
     handleChange(val) {
       console.log(val)
+    },
+    on_save_form(param){
+      console.log(param.key,param.data)
     }
   }
 }
@@ -47,7 +50,8 @@ export default {
 }
 
 .demo-collapse .el-card {
-  width: 100%;
+  width: auto;
+  margin-bottom: 4px;
 }
 
 .demo-collapse .el-select {
@@ -56,6 +60,15 @@ export default {
 
 .demo-collapse .el-collapse-item__wrap {
   margin-bottom: 20px;
+}
+.demo-collapse .el-input__wrapper{
+  padding: 1px 1px 1px 1px;
+  width: 100%;
+}
+.demo-collapse .el-input__inner{
+  width: 100%;
+  border:none;
+
 }
 </style>
   

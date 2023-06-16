@@ -179,3 +179,13 @@ class AdminController(BaseController):
             configs = YamlConfig(os.path.join(ROOT_PATH, "configs"),merge_by_group=True)
             configs.config['general']['app']['all_apps'] = self.get_all_app_names()
             return configs.config
+
+    @api.post("/save_configs")
+    def save_configs(self):
+        import yaml
+        domain = self.params("domain")
+        data = self.params("data")
+        if domain and data:
+            return 'OK'
+        else:
+            return 'Empty'
