@@ -68,6 +68,7 @@ class BaseController:
             'msg':msg,
             'data':data
         }
+    
     @property
     def _(self):
         if hasattr(self,"__cached_i18n__"):
@@ -86,9 +87,11 @@ class BaseController:
         t = load_app_translations(module_dir=m,lan=languages)
         setattr(self,'__cached_i18n__',t)
         return t.gettext
+    
     @property
     def log(self)->Logger:
         return _log
+    
     @property 
     def cookies(self)->Dict[str,str]: 
         """
@@ -100,9 +103,11 @@ class BaseController:
     def request(self)->Request :
         """currenty request object"""
         return self._request
+    
     @property
     def flash(self):
         return self._request.session['flash']
+    
     @flash.setter
     def flash(self,value):
         """
@@ -110,15 +115,18 @@ class BaseController:
         """
         self._request.state.keep_flash = True
         self._request['session']['flash'] = value
+
     @property
     def response(self)->Response :
         return self._response
+    
     def __getitem__(self,key):
         """
             return the request param by name
         """
         return self.params(key) 
-    def params(self,key,defalut=None,value_type:Type=str):
+    
+    def params(self,key,defalut=None):
         v = defalut
         if key in self._form:
             v = self._form[key]
@@ -126,11 +134,9 @@ class BaseController:
             v = self._json[key]
         if key in self._query:
             v = self._query[key]
-        if value_type:
-            v=value_type(v)
-        elif defalut:
-            value_type = type(defalut)
-            v=value_type(v)
+         
+        elif defalut: 
+            v=v
         return v
      
     @property

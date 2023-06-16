@@ -194,7 +194,7 @@ class AdminController(BaseController):
         data = self.params("data")
         if domain and data:
             file_path = os.path.join(ROOT_PATH,"configs",domain+".yaml")
-            if write_data_to_yaml(file_path,data,True):
+            if write_data_to_yaml(file_path,{domain: data},True):
                 return 'OK'
             else:
                 return "Failed"

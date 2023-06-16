@@ -37,6 +37,7 @@ export default {
       console.log(val)
     },
     async on_save_form(param){
+      debugger
       const ret = await system.save_configs(param.key,param.data)
       ElMessage(ret)
     }

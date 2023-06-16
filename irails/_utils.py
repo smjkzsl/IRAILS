@@ -238,7 +238,7 @@ def update_manifest(manifest_path,section:str,value:Any,append:bool=False):
             _log.error(f"append value {value}!")
         return False
     
-def write_data_to_yaml(file_path,data:dict,overwrite=False):
+def write_data_to_yaml(file_path,data,overwrite=False):
     """
     """
     import yaml
@@ -251,7 +251,7 @@ def write_data_to_yaml(file_path,data:dict,overwrite=False):
     if to_write:
         try:
             with open(file_path,'w') as f:
-                yaml.dump(data,f,default_flow_style=True)
+                yaml.dump(data,f)
             return True
         except Exception as e:
             _log.error(e.args)

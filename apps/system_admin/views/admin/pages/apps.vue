@@ -3,9 +3,9 @@
   <div class="app-lists">
     <div class="headers">
       <el-text class="mx-1" type="primary">Filter:</el-text>
-      <el-radio-group v-model="states" @change="filter_change" > 
-        <el-radio-button label="installed"/>
-        <el-radio-button label="uninstalled"/>
+      <el-radio-group v-model="states" @change="filter_change">
+        <el-radio-button label="installed" />
+        <el-radio-button label="uninstalled" />
         <el-radio-button label="all" />
       </el-radio-group>
     </div>
@@ -14,13 +14,20 @@
       <el-container>
 
         <el-table :data="applist" :border="parentBorder" style="width: 100%">
-          <el-table-column  type="expand"  >
+          <el-table-column type="expand">
             <template #default="props">
-              <div m="2" >
-                <h3>Routes<el-text v-if="!props.row.is_installed">(Not Installed)</el-text></h3>
+              <div m="2">
+                <h3>Routes (count {{ props.row.routes.length }})<el-text v-if="!props.row.is_installed">(Not Installed)</el-text></h3>
                 <el-table v-if="props.row.is_installed" :data="props.row.routes" :border="childBorder">
                   <el-table-column label="Controller" prop="function" :formatter="get_controller" width="150" />
-                  <el-table-column label="Path" prop="path" width="450" />
+                  <el-table-column label="Path" prop="path" width="450">
+                    <template #default="scope">
+                      <el-link   v-if="scope.row.methods.indexOf('GET')>-1" target="_blank" :href="scope.row.path"  >
+                        {{ scope.row.path }} <el-icon class="el-icon--right"><icon-view /></el-icon>
+                      </el-link>
+                      <span v-else-if="scope.row.methods.indexOf('GET')==-1">{{ scope.row.path }}</span>
+                    </template>
+                  </el-table-column>
                   <el-table-column label="Methods" prop="methods" width="110" />
                   <el-table-column label="Title" prop="doc.title" />
                   <el-table-column label="Nav" prop="doc.nav" width="80" />
@@ -41,7 +48,7 @@
               <el-button link type="primary" size="small" v-if="scope.row.is_installed"
                 @click="uninstall(scope.$index, scope.row)">Uninstall</el-button>
               <el-button link type="primary" v-if="!scope.row.is_installed" size="small"
-              @click="install(scope.$index, scope.row)">Install</el-button>
+                @click="install(scope.$index, scope.row)">Install</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -54,23 +61,24 @@
   </div>
 </template>
 <script>
-import { ElTable, ElTableColumn, ref ,toRaw} from 'vue'
+import { ElTable, ElTableColumn, ref, toRaw } from 'vue'
 import { system } from 'api/api.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { Edit, View as IconView } from 'element_icon'
 
 export default {
   components: {
-    ElTable, ElTableColumn
+    ElTable, ElTableColumn ,IconView
   },
   methods: {
-    filter_change(value){
-       
-      this.states=value
+    filter_change(value) {
+
+      this.states = value
       this.getData()
     },
-    async install(index,row){
-       
-       
+    async install(index, row) {
+
+
       ElMessageBox.confirm(`Are you sure to install "${row.app_name}"?`, '安装', {
         confirmButtonText: 'OK',
         cancelButtonText: 'Cancel',
@@ -95,11 +103,11 @@ export default {
           this.uninstall_app(row.app_name)
           this.getData()
         })
-        
+
 
 
     },
-    async install_app(app_name){
+    async install_app(app_name) {
       let ret = await system.install_app(app_name)
       ElMessage(ret)
       this.getData()
@@ -109,7 +117,7 @@ export default {
       ElMessage(ret)
     },
     async getData() {
-       
+
       const t = this.states || 'installed'
       const res = await system.getAppList(t);
       console.log(res);
@@ -157,10 +165,12 @@ export default {
   font-style: italic;
   border-bottom: 1px solid #AAA;
 }
-.app-lists .headers{
-  padding:10px;
+
+.app-lists .headers {
+  padding: 10px;
 }
-.mx-1{
+
+.mx-1 {
   margin-right: 15px;
 }
 </style>

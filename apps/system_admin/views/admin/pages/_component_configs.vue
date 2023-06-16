@@ -1,8 +1,12 @@
 <template>
-    <el-collapse-item v-if="!subItem && !isEmpty(sectionData)" :title="capitalizeFirstLetter(sectionKey)">
+    <el-collapse-item v-if="!subItem && !isEmpty(sectionData)" >
+        <template #title>
+            {{capitalizeFirstLetter(sectionKey)}}
+             <el-icon><Postcard /></el-icon>
+        </template>
         <el-form :ref="sectionKey" v-model="sectionData" v-if="!isEmpty(sectionData)">
             <div class="form-tool-bar">
-                <el-button @click="submit(sectionKey)" type="primary">保存</el-button>
+                <el-button @click="submit(sectionKey,sectionData)" type="primary">保存<el-icon><Check /></el-icon></el-button>
             </div>
             <template v-for="(value, key) in sectionData">
                 <el-form-item :label="key" v-if="typeof value != 'object'">
@@ -65,6 +69,7 @@
 <script>
 
 import { defineEmits } from 'vue'
+import { Grid ,Postcard,Check} from 'element_icon'
 
 export default {
     name: "ConfigSection",
@@ -83,18 +88,21 @@ export default {
             }
             return Object.keys(obj).length === 0;
         },
-        submit(key) {
-            this.$emit('on_save', { 'key': key, 'data': this.sectionData[key] })
+        submit(key,data) {
+            this.$emit('on_save', { 'key': key, 'data': data })
 
         }
     }
 };
 
 </script>
-<style>
+<style scoped>
 .form-tool-bar {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 5px;
+}
+.el-button{
+    display: inline-flex;
 }
 </style>

@@ -1,41 +1,46 @@
-app:
-  appdir:
-  - apps
-  enabled:
-  - app
-  - product
-  - system_admin
-  root: apps.root
-cors:
-  allow_credentials: true
-  allow_headers:
-  - '*'
-  allow_methods:
-  - '*'
-  allow_origins:
-  - '*'
-debug: true
-errors:
-  error_404_page: '{ROOT.public_dir}/error_404.html'
-  error_500_page: '{ROOT.public_dir}/error_500.html'
-i18n:
-  lang:
-  - zh
-  url_lang_key: lang
-log:
-  datefmt: '%Y-%M-%d %H:%M:%S'
-  file: ''
-  level: DEBUG
-  msgfmt: '%(asctime)s %(name)s:%(levelname)s:%(message)s'
-  name: iRails
-public_dir: ./public
-view:
-  jinja2:
-    block_end_string: '%}'
-    block_start_string: '{%'
-    comment_end_string: '#}'
-    comment_start_string: '{#'
-    variable_end_string: '}'
-    variable_start_string: ${
-  static_format:
-  - html
+general:
+  app:
+    all_apps:
+    - app
+    - product
+    - system_admin
+    appdir:
+    - apps
+    enabled:
+    - app
+    - product
+    - system_admin
+    root: apps.root
+  cors:
+    allow_credentials: true
+    allow_headers:
+    - '*'
+    allow_methods:
+    - '*'
+    allow_origins:
+    - '*'
+  debug: true
+  errors:
+    error_404_page: '{ROOT.public_dir}/error_404.html'
+    error_500_page: '{ROOT.public_dir}/error_500.html'
+  i18n:
+    lang:
+    - zh
+    url_lang_key: lang
+  log:
+    datefmt: '%Y-%M-%d %H:%M:%S'
+    file: ''
+    level: DEBUG
+    msgfmt: '%(asctime)s %(name)s:%(levelname)s:%(message)s'
+    name: iRails
+  public_dir: ./public
+  view:
+    jinja2:
+      block_end_string: '%}'
+      block_start_string: '{%'
+      comment_end_string: '#}'
+      comment_start_string: '{#'
+      variable_end_string: '}'
+      variable_start_string: ${
+    static_format:
+    - html
