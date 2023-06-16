@@ -8,7 +8,8 @@
 </template>
   
 <script>
-import { ref, defineComponent } from 'vue'
+import { ref, defineComponent  } from 'vue'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import { system } from 'api/api.js'
 import   ConfigSection  from "./_component_configs.vue";
 
@@ -35,8 +36,9 @@ export default {
     handleChange(val) {
       console.log(val)
     },
-    on_save_form(param){
-      console.log(param.key,param.data)
+    async on_save_form(param){
+      const ret = await system.save_configs(param.key,param.data)
+      ElMessage(ret)
     }
   }
 }
@@ -48,12 +50,38 @@ export default {
   padding: 15px;
   margin: 15PX;
 }
-
+.demo-collapse .el-collapse-item.is-active{
+  border: 1px solid #409EFF;
+    border-radius: 10px;
+}
+.demo-collapse .el-collapse-item.is-active .el-collapse-item__header{
+  border-color: #79bbff;
+  border:1px solid #79bbff;
+  border-radius: 10px;
+}
+.demo-collapse .el-collapse-item__content {
+    padding-bottom: 25px; 
+    padding-left:30px;
+    padding-right:30px; 
+}
+.demo-collapse .el-collapse-item__header{
+  font-weight: bold;
+  padding-left: 15px;
+}
 .demo-collapse .el-card {
   width: auto;
   margin-bottom: 4px;
 }
-
+.demo-collapse .el-form-item{
+  margin-bottom: 3px;
+}
+.demo-collapse .el-form-item__label{
+  width:140px;
+}
+.demo-collapse .el-card__header{
+  padding: 5px;
+  font-style: italic;
+}
 .demo-collapse .el-select {
   width: 100%;
 }

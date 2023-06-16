@@ -237,6 +237,27 @@ def update_manifest(manifest_path,section:str,value:Any,append:bool=False):
         if append:
             _log.error(f"append value {value}!")
         return False
+    
+def write_data_to_yaml(file_path,data:dict,overwrite=False):
+    """
+    """
+    import yaml
+    to_write=False
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        if overwrite:
+            to_write=True
+    else:
+        to_write=True
+    if to_write:
+        try:
+            with open(file_path,'w') as f:
+                yaml.dump(data,f,default_flow_style=True)
+            return True
+        except Exception as e:
+            _log.error(e.args)
+            return False
+    return to_write
+
 def enable_app(app_name,is_enable=True):
         import yaml
         try:

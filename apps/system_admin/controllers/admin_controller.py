@@ -175,17 +175,28 @@ class AdminController(BaseController):
         import os
          
         domain = self.params('domain')
+        
+        configs = YamlConfig(os.path.join(ROOT_PATH, "configs"),merge_by_group=True)
+        configs.config['general']['app']['all_apps'] = self.get_all_app_names()
         if not domain:
-            configs = YamlConfig(os.path.join(ROOT_PATH, "configs"),merge_by_group=True)
-            configs.config['general']['app']['all_apps'] = self.get_all_app_names()
             return configs.config
+        elif domain in configs.config:
+            return configs.config[domain]
+        else:
+            return {}
 
     @api.post("/save_configs")
     def save_configs(self):
-        import yaml
+        from irails._utils import write_data_to_yaml
+        from irails.config import ROOT_PATH
+        import os
         domain = self.params("domain")
         data = self.params("data")
         if domain and data:
-            return 'OK'
+            file_path = os.path.join(ROOT_PATH,"configs",domain+".yaml")
+            if write_data_to_yaml(file_path,data,True):
+                return 'OK'
+            else:
+                return "Failed"
         else:
             return 'Empty'

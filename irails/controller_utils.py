@@ -348,7 +348,9 @@ def _route_method(path: str, method, *args, **mwargs):
                 result = await func(*args, **kwargs)
             else:
                 result =  func(*args,**kwargs)
+                
             if isinstance(result,tuple):result = result[0]
+
             if response and isinstance(result,Response): 
                 result.raw_headers.extend(response.raw_headers)
             if isinstance(result,Response):

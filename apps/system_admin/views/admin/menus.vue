@@ -68,7 +68,7 @@ export default {
       for (var _dir in data) {
         let _icon = is_first?'Setting':'Folder'
         is_first = false
-        let dir_name = _dir=='.'?'系统':_dir
+        let dir_name = _dir=='.'?'项目设置':_dir
         let menus = { 
             path: '/'+dir_name ,
             icon: _icon,

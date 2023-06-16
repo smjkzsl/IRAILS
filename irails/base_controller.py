@@ -62,7 +62,12 @@ def url_for(url:str="",**kws):
     return url_path.lower() + url.strip()
 
 class BaseController:
- 
+    def json(self,data,msg="OK",status=200):
+        return {
+            'status':status,
+            'msg':msg,
+            'data':data
+        }
     @property
     def _(self):
         if hasattr(self,"__cached_i18n__"):
