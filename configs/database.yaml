@@ -1,22 +1,12 @@
 database:
-  dbhost: 'localhost'
-  dbname: 'data/db/irails_admin.db'
-  dbuser: 'sa'
-  dbpassword: '123456'
-  dbencode: 'latin-1'
-  dbdecode: 'gbk'
-  table_prefix: 'irails_'
-  # MySQL
-  # mysql+pymysql://username:password@host:port/database_name 
-  # PostgreSQL
-  # postgresql+psycopg2://username:password@host:port/database_name 
-  # SQLite
-  # sqlite:///absolute/path/to/db/file.db 3times of '/'
-  # Mssql
-  # mssql+pymssql://username:password@hostname:port/database_name 
-  uri: sqlite:///{dbname}    #empty to disable database connection
-  # uri: 'mongodb+srv://dbbruce:smjk123@atlascluster.siz4vrp.mongodb.net/?retryWrites=true&w=majority'
-  # uri: 'mssql+pymssql://{dbuser}:{dbpassword}@{dbhost}/{dbname}'
-  alembic_ini: 'configs/alembic.ini' #empty or none will disable auto migrate
+  alembic_ini: configs/alembic.ini
+  dbdecode: gbk
+  dbencode: latin-1
   dbfirst: false
-  maptables: [] #['item','ba_cls_info']
+  dbhost: localhost
+  dbname: data/db/irails_admin.db
+  dbpassword: '123456'
+  dbuser: sa
+  maptables: []
+  table_prefix: irails_
+  uri: sqlite:///{dbname}

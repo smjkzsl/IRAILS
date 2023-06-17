@@ -36,10 +36,26 @@ export default {
     handleChange(val) {
       console.log(val)
     },
-    async on_save_form(param){
-      debugger
+    async save_configs(param){
       const ret = await system.save_configs(param.key,param.data)
-      ElMessage(ret)
+      if(ret=='OK'){
+        ElMessage(ret+'! The change will be applied upon restarting the application.')
+      }else{
+        ElMessage(ret  )
+      }
+      
+    },
+    async on_save_form(param){
+      ElMessageBox.confirm(`Are you sure to change config "${param.key}"?<br/>`, '更改配置', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      })
+        .then(() => {
+           this.save_configs(param)
+        })
+
+      
     }
   }
 }
@@ -54,6 +70,12 @@ export default {
 .demo-collapse .el-collapse-item.is-active{
   border: 1px solid #409EFF;
     border-radius: 10px;
+}
+.demo-collapse .el-collapse-item.is-active .el-button{
+  display: flex;
+}
+.demo-collapse .el-collapse-item .el-button{
+  display: none;
 }
 .demo-collapse .el-collapse-item.is-active .el-collapse-item__header{
   border-color: #79bbff;
@@ -72,6 +94,16 @@ export default {
 .demo-collapse .el-card {
   width: auto;
   margin-bottom: 4px;
+  margin-top: 4px;
+}
+.demo-collapse .el-collapse-item__content>.el-form>.el-form-item{
+  border:1px solid #EEE;
+  border-radius: 4px;
+  margin:4px 4px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
+}
+.demo-collapse .el-form-item__content>.el-card{
+  width:100%;
 }
 .demo-collapse .el-form-item{
   margin-bottom: 3px;
