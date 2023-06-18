@@ -115,13 +115,13 @@ class MvcApp(FastAPI):
     def data_engine(self, value):
         self._data_engine = value
 
-    def app_list(self, group_by_controller=False,is_installed = None) -> List:
+    def app_list(self, group_by_controller=False, is_installed=None) -> List:
         import copy
         apps = []
         for app_name in self.apps:
             app_is_installed = self.apps[app_name]['is_installed']
             if not is_installed is None:
-                if is_installed==True:
+                if is_installed == True:
                     if not app_is_installed:
                         continue
             manifest = copy.copy(self.apps[app_name]['manifest'])
@@ -142,7 +142,8 @@ class MvcApp(FastAPI):
                     pass
                 else:
                     funcs.append(_item)
-            manifest.update({'is_installed':app_is_installed,'app_name': app_name, 'routes': funcs})
+            manifest.update({'is_installed': app_is_installed,
+                            'app_name': app_name, 'routes': funcs})
 
             apps.append(manifest)
         return apps
@@ -287,7 +288,7 @@ def api_router(path: str = "", version: str = "", **allargs):
             application.apps[app_name]['routes'][_controller_hash] = {
                 'label': 'new', 'obj': _controllerBase}
         application.apps[app_name]['is_installed'] = True
-        
+
         class puppetController(targetController, _controllerBase):
             '''puppet class inherited by the User defined controller class '''
 
@@ -339,16 +340,24 @@ def api_router(path: str = "", version: str = "", **allargs):
             @classmethod
             async def _auth__(cls, request: Request, response: Response, **kwargs):
                 '''called by .controller_util.py->route_method'''
-                auth_type = kwargs['auth_type']
-
-                if auth_type.lower() == 'none' or not hasattr(application, 'casbin_auth') or application.casbin_auth is None:
-                    return True, None
-
-                kwargs['session'] = request.session
+                auth_type = kwargs['auth_type'] 
+                if auth_type.lower() == 'none' or \
+                    not hasattr(application, 'casbin_auth') or \
+                        application.casbin_auth is None: # project not need it or not config auth item
+                    return True, None                
+                
+                kwargs['session'] = request.session 
+                #recive and check user right or generate a anoymous user
                 ret, user = await application.casbin_auth.authenticate(request, **kwargs)
+                def set_flash(msg):
+                    if 'flash' not in request.session:
+                        request.session['flash'] = ''
+                    if request.session['flash'] == "":
+                        request.session['flash'] = msg
+
                 if user == auth.AUTH_EXPIRED:
-                    request.session['flash'] = _(
-                        "your authencation has been expired!")
+                    set_flash(_(
+                        "your authencation has been expired!"))
                     user = False
 
                 if user and user.is_authenticated:  # continue singture
@@ -361,39 +370,51 @@ def api_router(path: str = "", version: str = "", **allargs):
 
                 accept_header = request.headers.get("Accept")
 
+                
+                _redirect_url = ""  # if this has value, will redirect if in mvc mode
                 if not ret and not user or not user.is_authenticated:
                     # not login user redirect to login page if has redirect page(is general page)
                     # if is json mode it's just return json message.
+                    # getattr(application, f"{auth_type}_auth_url")
+                    _auth_url = application.public_auth_url
+                    if _auth_url:
+                        # set flash message
+                        set_flash(_("you are not authenticated,please login!"))
+                        _redirect_url = add_redirect_param(
+                            _auth_url, str(request.url))
+                elif user and user.is_authenticated:
+                    # user is right,but it's not authenticated this resource.
+                    msg = _('Failed Auth url:%s  [User:%s]') % (
+                        str(request.url), str(user))
+                    _log.debug(msg)
+
+                    # getattr(application, f"{auth_type}_auth_url")
+                    _auth_url = application.user_auth_url
+                    if _auth_url:
+                        set_flash(msg)
+                        _redirect_url = add_redirect_param(
+                            _auth_url, str(request.url))
+
+                if _redirect_url:
+                    if accept_header == "application/json":
+                        return JSONResponse(content={"message": "401 UNAUTHORIZED!"},
+                                            status_code=StateCodes.HTTP_401_UNAUTHORIZED), None
+                    else:
+                        return RedirectResponse(_redirect_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
+                else:
 
                     if accept_header == "application/json":
                         return JSONResponse(content={"message": "401 UNAUTHORIZED!"},
                                             status_code=StateCodes.HTTP_401_UNAUTHORIZED), None
-                    # set flash message
-                    if 'flash' not in request.session:
-                        request.session['flash'] = ''
-                    if request.session['flash'] == "":
-                        request.session['flash'] = _(
-                            "you are not authenticated,please login!")
-                    _auth_url = getattr(application, f"{auth_type}_auth_url")
-                    if _auth_url:
-                        _auth_url = add_redirect_param(
-                            _auth_url, str(request.url))
-                        return RedirectResponse(_auth_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
-                    else:
-                        return RedirectResponse('/', status_code=StateCodes.HTTP_303_SEE_OTHER), None
-                elif user and user.is_authenticated:
-                    # user is right,but it's not authenticated this resource.
-                    _log.debug(_('Failed Auth on type:%s at url:%s  [User:%s]') % (
-                        auth_type, str(request.url), str(user)))
-                    return ret, user
-                return ret, user
+
+                    return RedirectResponse(request.headers.get("Referer") or '/',
+                                            status_code=StateCodes.HTTP_303_SEE_OTHER), None
+                return ret, user  # will never do here
+                # end of _auth_
         setattr(puppetController, AUTH_KEY, allargs['auth'])
         setattr(puppetController, "__name__", targetController.__name__)
-
         setattr(puppetController, "__version__", version)
-
         setattr(puppetController, "__appdir__", abs_path)
-
         # for generate url_for function
         url_path = path
         controller_path_name = get_snaked_name(
@@ -402,7 +423,7 @@ def api_router(path: str = "", version: str = "", **allargs):
             "{controller}", controller_path_name).replace("{version}", version)
         if not _view_url_path:
             _view_url_path = f"/{controller_path_name}"
-            
+
         controller_current_view_path = abs_path + '/views/' + controller_path_name
         if version:
             controller_current_view_path += '/' + version
@@ -443,7 +464,7 @@ def _register_controllers():
                     _log.info(hash+" mountting...")
                 app_router = register_controllers_to_app(
                     application, dict_obj['obj'])
-                
+
                 application.apps[app_name]['router'] = app_router
                 dict_obj['label'] = 'mounted'
 
@@ -497,6 +518,8 @@ def check_db_migrate():
         _log.error(e.args)
 
     _log.info(_("check database migrations finished."))
+
+
 def check_init_auth(db_cfg):
     # Initializing the authentication system
     auth_type = config.get("auth", None)
@@ -541,7 +564,7 @@ def generate_mvc_app():
         # Check for database migrations
         check_db_migrate()
     # Initialize the authentication system if the adapter class and URI are present
-     
+
     _log.info(_("init casbin auth system..."))
     application.casbin_auth = __init_auth(
         application, auth_type, _casbin_adapter_class, _adapter_uri)

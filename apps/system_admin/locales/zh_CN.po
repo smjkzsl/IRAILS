@@ -34,5 +34,17 @@ msgstr "应用"
 msgid "configs.vue"
 msgstr "配置"
 
+msgid "models.vue"
+msgstr "模型管理"
+
+msgid "user.vue"
+msgstr "用户"
+
+msgid "role.vue"
+msgstr "角色"
+
+msgid "user_right.vue"
+msgstr "权限"
+
 msgid "general"
 msgstr "系统管理"

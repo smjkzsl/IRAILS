@@ -69,6 +69,7 @@ export default {
         let _icon = is_first?'Setting':'Folder'
         is_first = false
         let dir_name = _dir=='.'?'项目设置':_dir
+        dir_name = dir_name=='general'?'通用管理':dir_name
         let menus = { 
             path: '/'+dir_name ,
             icon: _icon,

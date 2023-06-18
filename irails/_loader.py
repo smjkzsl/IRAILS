@@ -134,6 +134,8 @@ def _load_app(abs_app_dir,app_name, manifest: dict,application=None):
         irails.apps.__path__.append(abs_app_dir)
 
     _modules = manifest['packages']  # ['controllers','services','models']
+    # load_app_translations(os.path.join(abs_app_dir,app_name,'locales' ))
+
     cnt = 0
     for m in _modules:
         module_name = f"irails.apps.{app_name}.{m}"

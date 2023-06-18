@@ -49,7 +49,7 @@ export default {
   },
   methods:{
     async toggleLeft(){
-      debugger
+       
       this.isCollapse=!this.isCollapse
       await nextTick()
       this.asideWidth=this.isCollapse?"100px":'200px'
@@ -84,8 +84,9 @@ body {
 
 .layout-container-demo .aside-header{
   position: relative;
-  align-items: flex-end;
-  flex-direction: column;
+   
+  justify-content: end;
+    align-items: end;
   height: 38px;
   top:0px;
   width: 100%;
