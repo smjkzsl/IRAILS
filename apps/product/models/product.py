@@ -9,3 +9,5 @@ class Product(database.Base):
             
         
     id: Mapped[str] = mapped_column(primary_key=True)
+
+    name: Mapped[str] = mapped_column(String(50),comment="name of product")

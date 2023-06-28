@@ -2,6 +2,7 @@ from irails.core import application
     
 from . import admin_controller
 from . import user_controller
+from . import model_manager_controller
 
 @application.on_event("startup")
 def startup(): 

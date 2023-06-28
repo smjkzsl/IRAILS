@@ -84,7 +84,7 @@ export default {
           let _file = data[_dir][_i].file
           isHome = _file=='home.vue'
           let url = `pages/${_dir}/${_file}` // data[_name]['file_path']
-          let _path = `${_dir}/${_file}`
+          let _path = `${_dir}/${_file}`.replace(".vue","")
           const menuItem = {
             name: _file,
             path: '/' + (isHome?'':_path),

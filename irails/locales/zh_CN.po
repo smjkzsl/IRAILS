@@ -195,3 +195,5 @@ msgstr "%s 引发了无法找到模板错误: `%s`"
 msgid "Tempate %s raised Exception %s"
 msgstr "模板错误:%s 引发 (%s)"
 
+msgid "please check URL of your input!"
+msgstr "请检查您输入的URL！"

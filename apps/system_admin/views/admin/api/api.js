@@ -38,6 +38,13 @@
                 return await request(`${this.path}/current_user`)
             }
         },
+        model: {
+            path: 'system_admin/model_manager',
+            async getModelMeta(model_name) {
+                model_name = model_name || ""
+                return await request(`${this.path}/model_meta/${model_name}`)
+            }
+        },
         system: {
             path: '/system_admin/admin',
             async request(url, options) {

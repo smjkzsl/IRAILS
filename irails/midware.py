@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import Scope
 from .view import _View, env_configs, static_format
 from .config import config, ROOT_PATH
-
+from ._i18n import _
 from fastapi.middleware import Middleware
 from starlette.middleware import Middleware as StarletteMiddleware
 from starlette.types import Receive, Scope, Send
@@ -180,19 +180,20 @@ def init(app: FastAPI, debug: bool = False):
     @app.exception_handler(StarletteHTTPException)
     async def custom_http_exception_handler(request, e: StarletteHTTPException):
         e_no = 404
+        e_info=""
         if e.args and isinstance(e.args, tuple):
             e_no = e.args[0]
             if debug:
-                e_info = e.args[1]
-        else:
-            e_info = e.args
+                e_info = str(e.args[1])
+        elif e.args:
+            e_info = str(e.args)
         ret = error_page(e_no, request=request, e=e)
         if ret:
             return ret
         else:
             content = "<h1>404 Not Found(URL Exception)</h1>"
-            content += '<h3>please check url</h3>'
-            if debug:
+            content += '<h3>'+_('please check URL of your input!')+'</h3>'
+            if debug and e_info:
                 content += '<p>' + str(e_info) + '</p>'
             return HTMLResponse(content=content, status_code=404)
 

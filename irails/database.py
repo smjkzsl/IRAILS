@@ -64,8 +64,11 @@ if cfg:
         page_size=20
     is_deleted_field = cfg.get("is_deleted_field",'is_deleted')
     i18n_json_data_field = cfg.get("i18n_json_data_field",'i18n_json_data')
- 
-class Base( DeclarativeBase ):
+
+
+
+            
+class Base(DeclarativeBase):
     __abstract__ = True 
     def __init_subclass__(cls,*args,**kwargs) -> None: 
 
@@ -174,7 +177,33 @@ class InitDbError(Exception):
     pass
 
 
-
+def get_meta(model_name:str="")->Dict[str,List]:
+    
+    def get_subclasses(_cls:Type):
+        ret = {}
+        for subclass in _cls.__subclasses__():
+            metas = inspect(subclass)
+             
+            ret[ subclass.__name__] = {'module':subclass.__module__,'columns': metas.columns}
+        return ret
+    
+    ret = get_subclasses(Base)
+    _maped = {}
+    for item,infos in ret.items(): 
+        columns = infos['columns']
+        cols = []
+        for col in columns._all_columns:
+            cols.append({col.name : str(col.type),'comment':col.comment,'description':col.description,
+                         'nullable':col.nullable,'primary_key':col.primary_key,
+                         'default': str(col.default) if col.default else None,
+                         'autoincrement':col.autoincrement})
+        if model_name:
+            if item==model_name:    
+                _maped[item] = {"columns": cols,'module':infos['module']}
+        else:
+            _maped[item] = {"columns": cols,'module':infos['module']}
+    return _maped
+     
  
 class _serviceMeta(type):
     def __new__(cls, name, bases, attrs):
