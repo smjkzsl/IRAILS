@@ -11,6 +11,9 @@ const vue3_loader_options = {
 
     async getFile(url) {
 
+        if (!url.endsWith(".js") && !url.endsWith(".vue")) {
+            url += ".js"
+        }
         const res = await fetch(url);
         if (!res.ok)
             throw Object.assign(new Error(url + ' ' + res.statusText), { res });

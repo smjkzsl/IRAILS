@@ -38,11 +38,21 @@
                 return await request(`${this.path}/current_user`)
             }
         },
-        model: {
-            path: 'system_admin/model_manager',
+        modelManager: {
+            path: '/system_admin/model_manager',
             async getModelMeta(model_name) {
                 model_name = model_name || ""
-                return await request(`${this.path}/model_meta/${model_name}`)
+                return await request(`${this.path}/model_meta?model_name=${model_name}`)
+            },
+            async fetchModelData(module_name, model_name, currentPage, pageSize) {
+                currentPage = currentPage || 1
+                pageSize = pageSize || ""
+                const data = await request(`${this.path}/model_data?module=${module_name}&model=${model_name}&page_size=${pageSize}&page_num=${currentPage}`)
+                if (data.status == 200) {
+                    return data.data
+                } else {
+                    return []
+                }
             }
         },
         system: {

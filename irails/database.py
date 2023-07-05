@@ -1,6 +1,6 @@
 import configparser
 import re,os,sys
-from typing import Any, Dict, List, Tuple, Type, Union, overload
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, overload
 from contextlib import contextmanager
 from sqlalchemy import (Boolean, DateTime, Integer, 
                         String, Text, 
@@ -176,33 +176,79 @@ class Schemes():
 class InitDbError(Exception):
     pass
 
-
-def get_meta(model_name:str="")->Dict[str,List]:
+def get_model(model_name:str,module_name:str="")->Base:
+    module = None
+    model:Base = None
+    if module_name:
+        module =  sys.modules[module_name] if module_name in sys.modules else None
+        model = getattr(module,model_name)
+    else:
+        if module_name in globals():
+            module = globals()[module_name]
+            model = getattr(module,model_name)
+    if model  :
+        return model
+    else:
+        return None
     
-    def get_subclasses(_cls:Type):
+    
+def get_meta(model_name: str = "") -> Dict[str, List]:
+    from sqlalchemy.orm import RelationshipProperty
+    def get_subclasses(_cls: Type['Base']) -> Dict[str, List]:
         ret = {}
         for subclass in _cls.__subclasses__():
             metas = inspect(subclass)
-             
-            ret[ subclass.__name__] = {'module':subclass.__module__,'columns': metas.columns}
+            _columns = [attr for attr in metas.attrs if not isinstance(attr, RelationshipProperty)]
+            _relationships = {}
+            for attr in metas.attrs:
+                if isinstance(attr, RelationshipProperty):
+                    relationship = {
+                        'type': attr.mapper.class_.__module__ + '.' + attr.mapper.class_.__name__,
+                        'uselist': attr.uselist,
+                        'backref': attr.backref
+                    }
+                    _relationships[attr.key] = relationship
+            ret[subclass.__module__ + "." + subclass.__name__] = {
+                'module': subclass.__module__,
+                'columns': _columns,
+                'relationships': _relationships
+            }
         return ret
     
     ret = get_subclasses(Base)
     _maped = {}
-    for item,infos in ret.items(): 
+    for item, infos in ret.items(): 
         columns = infos['columns']
+        relationships = infos['relationships']
         cols = []
-        for col in columns._all_columns:
-            cols.append({col.name : str(col.type),'comment':col.comment,'description':col.description,
-                         'nullable':col.nullable,'primary_key':col.primary_key,
-                         'default': str(col.default) if col.default else None,
-                         'autoincrement':col.autoincrement})
+        for _col in columns:
+            col = _col.columns[0] if _col.columns else None
+            if not col is None:
+                cols.append({
+                    'key': col.key,
+                    'type': str(col.type),
+                    'comment': col.comment,
+                    'description': col.description,
+                    'nullable': col.nullable,
+                    'primary_key': col.primary_key,
+                    'default': str(col.default) if col.default else None,
+                    'autoincrement': col.autoincrement
+                })
         if model_name:
-            if item==model_name:    
-                _maped[item] = {"columns": cols,'module':infos['module']}
+            if item == model_name:    
+                _maped[item] = {
+                    'columns': cols,
+                    'relationships': relationships,
+                    'module': infos['module']
+                }
         else:
-            _maped[item] = {"columns": cols,'module':infos['module']}
+            _maped[item] = {
+                'columns': cols,
+                'relationships': relationships,
+                'module': infos['module']
+            }
     return _maped
+
      
  
 class _serviceMeta(type):
@@ -213,28 +259,39 @@ class _serviceMeta(type):
          
         return obj
 class ListPager:
-    def __init__(self,query:Query,size:int=None ) -> None: 
+    def __init__(self,query:Query,size:int=None,num:int=1,order_by:Optional[Tuple]=None) -> None: 
         self.query = query
         if size:
             self.page_size = size
         else:
             self.page_size = page_size 
-    def order(self,*args):
-        query = self.query.order_by(*args)     
-        return ListPager(query=query,size=self.page_size)
+        self.page_num = num
+        self.order_by = order_by
+    def page_size(self,size:int=None):
+        self.page_size = size
+        return self
     
+    def order(self,*args)->'ListPager':
+        self.query = self.query.order_by(*args)     
+        return self
+    def page(self,page_num=1)->'ListPager':
+        self.page_num = page_num
+        return self
+        #return self.query.limit(self.page_size).offset(self.page_size*(page_num-1))
+
     def count_all(self)->int:
         return self.query.count()
     
     def page_count(self)->int:
+        if not self.page_size>0:
+            return 0
         import math
-        return math.ceil(self.count_all()/self.page_size)
+        return math.ceil(self.count_all()/self.page_size) 
     
-    def page(self,page_num=1)->Query:
-        return self.query.limit(self.page_size).offset(self.page_size*(page_num-1))
-    
-    def get(self,page_num=1)->List[Base]:
-        return self.query.limit(self.page_size).offset(self.page_size*(page_num-1)).all()
+    def records(self,page_size=None,page_num=None)->List[Base]:
+        page_num = page_num or self.page_num or 1
+        page_size = page_size or self.page_size  
+        return self.query.limit(page_size).offset(page_size*(page_num-1)).all()
     
 class Service(metaclass=_serviceMeta):
     __all_generated = {}
@@ -266,9 +323,14 @@ class Service(metaclass=_serviceMeta):
     @classmethod
     def pager(self,model:Base,*args,**kwargs)->ListPager:
         """get query object with auto passed is_deleted rows"""
+        pg_size = page_size
+        if 'page_size' in kwargs:
+            pg_size = kwargs.get('page_size')
+            del kwargs['page_size']
 
         query = self.query(model,*args,**kwargs)
-        return ListPager(query=query)
+        return ListPager(query=query,size=pg_size)
+    
     @classmethod
     def exists(self,model:Base,field_name:str,value:Any)->bool:
         session = self.session()

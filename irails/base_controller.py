@@ -127,16 +127,17 @@ class BaseController:
         return self.params(key) 
     
     def params(self,key,defalut=None):
-        v = defalut
+        v = None
         if key in self._form:
             v = self._form[key]
         if key in self._json:
             v = self._json[key]
         if key in self._query:
             v = self._query[key]
+
+        if not v:
+            v= defalut
          
-        elif defalut: 
-            v=v
         return v
      
     @property
