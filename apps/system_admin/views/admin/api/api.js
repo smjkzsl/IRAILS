@@ -62,7 +62,7 @@
                 return data
             },
             async getAppList(t) {
-
+                t = t || ""
                 let data = await this.request('app_list', { body: { 't': t } })
                 return data
             },

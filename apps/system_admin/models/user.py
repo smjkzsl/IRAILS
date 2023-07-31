@@ -16,7 +16,7 @@ class User(database.Base):
     fullname: Mapped[str] = mapped_column(String(50))
 
     domain:Mapped[str] = mapped_column(String(50),nullable=True, comment="user domain")
-    password = Column(String(50),comment="Password",nullable=False)
+    password = Column(String(50),comment="Password",nullable=False,info={'manager':False})
     age: Mapped[str] = mapped_column(Integer())
     roles:List['Role'] = []
 
@@ -24,6 +24,11 @@ class User(database.Base):
     salt = Column(String(50),comment="salt")
     remark = Column(String(255),comment="description")
 
+    filter_columns_in_manager = ['salt','password']
+    @classmethod
+    def _general_columns(self):
+        return super()._general_columns()
+    
     @classmethod
     def before_insert(self,mapper, connection, target:'User'):
         # 在对象将要被插入到数据库之前触发

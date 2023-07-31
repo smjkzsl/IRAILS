@@ -1,7 +1,9 @@
 import configparser
-import re,os,sys
+from datetime import datetime, date
+import re,os,sys,json
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, overload
 from contextlib import contextmanager
+from sqlalchemy.util._collections import OrderedDict
 from sqlalchemy import (Boolean, DateTime, Integer, 
                         String, Text, 
                         create_engine,
@@ -17,12 +19,12 @@ from sqlalchemy import (Boolean, DateTime, Integer,
                         event,text,TextClause,Table,
                         inspect)
 import sqlalchemy
-from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query 
+from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query ,attributes
 from sqlalchemy.ext.automap import automap_base 
 from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from alembic import command
 from alembic.config import Config 
-from ._utils import camelize_classname,pluralize_collection 
+from ._utils import camelize_classname,pluralize_collection ,iJSONEncoder
 from .log import _log
 from ._i18n import _,set_module_i18n
 from .config import config,ROOT_PATH
@@ -70,6 +72,8 @@ if cfg:
             
 class Base(DeclarativeBase):
     __abstract__ = True 
+    '''not show in model manager columns names'''
+    filter_columns_in_manager = []
     def __init_subclass__(cls,*args,**kwargs) -> None: 
 
         #auto set table_prefix
@@ -96,6 +100,14 @@ class Base(DeclarativeBase):
                     setattr(func,"attched_event",True)
         if not hasattr(cls,'__system__') or not getattr(cls,"__system__") is True:
             set_module_i18n(cls,cls.__module__)
+    
+    @classmethod
+    def _general_columns(self)->Tuple[Column]:
+        """return general columns """
+        metas = inspect(self)
+        ret = tuple(col for colname,col in metas.columns.items() if col.key not in self.filter_columns_in_manager)
+        return ret
+    
         
 class Schemes():
     __all = {}
@@ -194,11 +206,16 @@ def get_model(model_name:str,module_name:str="")->Base:
     
 def get_meta(model_name: str = "") -> Dict[str, List]:
     from sqlalchemy.orm import RelationshipProperty
-    def get_subclasses(_cls: Type['Base']) -> Dict[str, List]:
+    def get_subclasses_meta(_cls: Type['Base']) -> Dict[str, List]:
         ret = {}
         for subclass in _cls.__subclasses__():
             metas = inspect(subclass)
-            _columns = [attr for attr in metas.attrs if not isinstance(attr, RelationshipProperty)]
+            # _general_columns = subclass._general_columns()
+            _real_columns = [attr for attr in metas.attrs if not isinstance(attr, RelationshipProperty)]
+             
+            if subclass.filter_columns_in_manager:
+                _real_columns = [col for col in _real_columns if col.key not in subclass.filter_columns_in_manager]   
+            
             _relationships = {}
             for attr in metas.attrs:
                 if isinstance(attr, RelationshipProperty):
@@ -210,12 +227,13 @@ def get_meta(model_name: str = "") -> Dict[str, List]:
                     _relationships[attr.key] = relationship
             ret[subclass.__module__ + "." + subclass.__name__] = {
                 'module': subclass.__module__,
-                'columns': _columns,
+                'columns': _real_columns,
+                # '_general_columns':_general_columns,
                 'relationships': _relationships
             }
         return ret
     
-    ret = get_subclasses(Base)
+    ret = get_subclasses_meta(Base)
     _maped = {}
     for item, infos in ret.items(): 
         columns = infos['columns']
@@ -232,7 +250,8 @@ def get_meta(model_name: str = "") -> Dict[str, List]:
                     'nullable': col.nullable,
                     'primary_key': col.primary_key,
                     'default': str(col.default) if col.default else None,
-                    'autoincrement': col.autoincrement
+                    'autoincrement': col.autoincrement,
+                    'info':col.info,
                 })
         if model_name:
             if item == model_name:    
@@ -258,6 +277,31 @@ class _serviceMeta(type):
             set_module_i18n(obj=obj,module_name=attrs['__module__'])
          
         return obj
+# class AlchemyEncoder(json.JSONEncoder):
+
+#     def default(self, obj):
+#         if isinstance(obj.__class__, Base):
+#             # an SQLAlchemy class
+#             fields = {}
+#             for field in [x for x in dir(obj) if not x.startswith('_') and x != 'metadata']:
+#                 data = obj.__getattribute__(field)
+#                 try:
+#                     json.dumps(data ) # this will fail on non-encodable values, like other classes
+#                     fields[field] = data
+#                 except TypeError:
+#                     fields[field] = None
+#             # a json-encodable dict
+#             return fields
+#         elif isinstance(obj, (datetime, date)):
+#             return obj.isoformat()
+#         return json.JSONEncoder.default(self, obj)
+def to_json(records:List[Base])->str:
+    """
+    """
+    list_of_res = [row._asdict() for row in records]
+    return json.dumps(list_of_res)
+
+
 class ListPager:
     def __init__(self,query:Query,size:int=None,num:int=1,order_by:Optional[Tuple]=None) -> None: 
         self.query = query
@@ -291,7 +335,9 @@ class ListPager:
     def records(self,page_size=None,page_num=None)->List[Base]:
         page_num = page_num or self.page_num or 1
         page_size = page_size or self.page_size  
-        return self.query.limit(page_size).offset(page_size*(page_num-1)).all()
+        ret = self.query.limit(page_size).offset(page_size*(page_num-1)).all()
+        results = [row._asdict() for row in ret]
+        return results
     
 class Service(metaclass=_serviceMeta):
     __all_generated = {}
@@ -359,6 +405,11 @@ class Service(metaclass=_serviceMeta):
         kwargs = self.__check_is_deleted_param(model,**kwargs)
         query = session.query(model).filter(*args).filter_by(**kwargs)
         return query
+    
+    @classmethod
+    def query_columns(self,*columns):
+        session = self.session()
+        return session.query(*columns)
     
     @classmethod
     def select(self,model:Base,*where,**kwargs)->List[Base]:

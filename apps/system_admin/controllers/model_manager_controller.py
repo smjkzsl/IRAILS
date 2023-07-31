@@ -29,7 +29,7 @@ class ModelManagerController(BaseController):
         page_num = int( self.params('page_num',1) )
         order_name = self.params('order')
         params = self.params("params")
-        query_params = {'page_size':page_size}
+        query_params = {}
         if params:
             query_params.update(json.loads(params))
         is_deleted = self.params(database.is_deleted_field)
@@ -38,7 +38,11 @@ class ModelManagerController(BaseController):
 
         model = self._get_request_model()
         if model:
-            pager = database.Service.pager(model,**query_params)
+            columns = model._general_columns()
+            query = database.Service.query_columns(*columns)
+            query = query.filter_by(**query_params)
+            pager = database.ListPager(query,page_size)
+            # pager = database.Service.pager(model,*columns, **query_params)
             if order_name:
                 _order_list = order_name.split(',') 
                 _p_order = tuple(_o for _o in _order_list) 
@@ -105,6 +109,8 @@ class ModelManagerController(BaseController):
                 try:
                     data = json.loads(data)
                     for field in data:
+                        if 'id'==field :
+                            continue
                         if hasattr(record,field):
                             setattr(record,field,data[field])
                         else:
