@@ -36,6 +36,8 @@
 </template>
 
 <script>
+ 
+
 import { ref,relative,nextTick } from 'vue'
 
 import { Menu as IconMenu, Message, Setting } from 'element_icon'

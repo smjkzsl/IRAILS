@@ -1,6 +1,6 @@
 from irails.unit_test import *
-from system_admin.services import UserService
-from system_admin.models.user import User,Role
+from services import UserService
+from irails.apps.system_admin.models.user import User,Role
 from irails._i18n import _
 
 class TestUserService(ServiceTest):

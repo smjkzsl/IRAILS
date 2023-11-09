@@ -34,8 +34,14 @@ def do_test_file(app_dir,file_name,print_out=None):
     name,ext = os.path.splitext(os.path.basename(file_name))
 
     app_package = os.path.basename(app_dir)    
+    app_package_dir = os.path.dirname(app_dir)
+    if not app_package_dir in sys.path:
+        sys.path.insert(0,app_package_dir)
+        
     module = load_module(f"{app_package}.tests.{name}",file_name)
+
     
+
     if module:
         
         set_module_i18n(module,f"{app_package}.tests.{name}")
@@ -44,19 +50,17 @@ def do_test_file(app_dir,file_name,print_out=None):
         if print_out:
             kwargs['buffer']=print_out
         unittest.main(**kwargs)
-
+     
 def do_test_app(app_dir, print_out=None):
     
     test_files = _get_tests(app_dir)
     
-    app_package_dir = os.path.dirname(app_dir)
-    if not app_package_dir in sys.path:
-        sys.path.insert(0,app_package_dir)
+    
     for name in test_files:
         print(f"Starting test {test_files[name]}")
         do_test_file(app_dir, test_files[name])
     
-    sys.path.remove(app_package_dir)
+    
 
 def get_all_enabled_apps():
     from irails._loader import collect_apps

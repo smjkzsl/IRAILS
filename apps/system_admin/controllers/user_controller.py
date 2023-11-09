@@ -20,26 +20,28 @@ class UserController(BaseController):
         del user.token
         del user.payload
         return user
-    @api.get("/login",auth="none" )
+    @api.http("/login",methods=['POST','GET'] ,auth="none" )
     def login(self):
         """:title 登陆"""  
-        redirect = self.params('redirect') if self.params('redirect') else '/' 
-        return self.view() 
-    @api.post("/verity_user",auth="none")
-    async def verity_user(self):  
-        username = self['username']
-        password = self['password']
-        redirect = self['redirect']
-        if username and password:
-            service = UserService()
-            user = service.verity(username=username,password=password)
-            if user:
-                userobj = await application.new_user(user=user)
-                 
-                return self._verity_successed(user = userobj,redirect= redirect)
-            else:
-                return self._verity_error() 
-        return self._verity_error()
+
+        if self.request.method=='GET':
+            redirect = self.params('redirect') if self.params('redirect') else '/' 
+            return self.view() 
+    
+        else:
+            username = self['username']
+            password = self['password']
+            redirect = self['redirect']
+            if username and password:
+                service = UserService()
+                user = service.verity(username=username,password=password)
+                if user:
+                    userobj =  application.new_user(user=user)
+                    
+                    return self._verity_successed(user = userobj,redirect= redirect)
+                else:
+                    return self._verity_error() 
+            return self._verity_error()
     
     @api.get("/logout")
     def logout(self):

@@ -104,8 +104,11 @@ class Base(DeclarativeBase):
     @classmethod
     def _general_columns(self)->Tuple[Column]:
         """return general columns """
+        if hasattr(self,'__general_columns__'):
+            return self.__general_columns__
         metas = inspect(self)
         ret = tuple(col for colname,col in metas.columns.items() if col.key not in self.filter_columns_in_manager)
+        setattr(self,'__general_columns__',ret)
         return ret
     
         

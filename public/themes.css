@@ -1,0 +1,9 @@
+ // 修改主题色
+ $--color-primary: #409EFF;
+ $--color-success: #67C23A;
+ $--color-warning: #E6A23C;
+ $--color-danger: #F56C6C;
+ $--color-info: #909399;
+ // 修改文字颜色
+ $--text-color: #303133;
+ $--text-color-secondary: #606266;

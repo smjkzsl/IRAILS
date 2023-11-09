@@ -38,14 +38,14 @@ class MvcApp(FastAPI):
         # set variable in MvcRouter
         api.init(self)
 
-    async def new_user(self, user: Union[database.Base, str]) -> auth.DomainUser:
+    def new_user(self, user: Union[database.Base, str]) -> auth.DomainUser:
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
         if isinstance(user, str):
             return self.auth_user_class(username=user)
         elif isinstance(user, database.Base):
             userobj: auth.DomainUser = self.auth_user_class(user.username)
-            await copy_attr(user, userobj, False)
+            copy_attr(user, userobj, False)
             userobj.set_roles(user.roles)
             return userobj
 
