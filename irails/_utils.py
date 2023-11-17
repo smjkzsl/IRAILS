@@ -195,6 +195,9 @@ def singleton(cls):
     return get_instance
 
 def add_redirect_param(url: str, redirect_url: str,key='redirect') -> str:
+    from urllib.parse import quote
+    if redirect_url:
+        redirect_url = quote(redirect_url)
     if "?" in url:
         return url + f"&{key}=" + redirect_url
     else:

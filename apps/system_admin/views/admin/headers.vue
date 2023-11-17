@@ -9,10 +9,8 @@
 
 
         <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item>View</el-dropdown-item>
-            <el-dropdown-item>Add</el-dropdown-item>
-            <el-dropdown-item>Delete</el-dropdown-item>
+          <el-dropdown-menu> 
+            <el-dropdown-item @click="exit_login">Exit</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -27,6 +25,13 @@ import { user } from './api/api.js'
 export default {
   components: {
     ElDropdown, ElIcon, ElDropdownMenu, ElDropdownItem
+  },
+  methods:{
+    async exit_login(){
+      console.log("exit_login")
+      await user.exit_login()
+      window.location.href = "/"
+    }
   },
   created() {
     console.log('headers created')

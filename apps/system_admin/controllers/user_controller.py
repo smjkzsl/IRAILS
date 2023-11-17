@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*- 
 from irails import route,api,Request,Response,BaseController,application 
 from irails.apps.system_admin.services import UserService
+from urllib.parse import quote
 
 @application.on_event("startup")
 def startup(): 
@@ -26,6 +27,7 @@ class UserController(BaseController):
 
         if self.request.method=='GET':
             redirect = self.params('redirect') if self.params('redirect') else '/' 
+            redirect = quote(redirect)
             return self.view() 
     
         else:

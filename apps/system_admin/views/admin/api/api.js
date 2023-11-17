@@ -36,6 +36,9 @@
             async getCurrentUser() {
 
                 return await request(`${this.path}/current_user`)
+            },
+            async exit_login(){
+                return await request(`${this.path}/logout`)
             }
         },
         modelManager: {

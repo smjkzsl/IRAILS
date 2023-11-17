@@ -2,6 +2,7 @@
 import os
 import inspect
 from typing import Dict, List, Union
+from urllib.parse import quote
 from fastapi import (FastAPI,
                      Request,
                      Response,
@@ -207,6 +208,8 @@ class MvcApp(FastAPI):
 
 application = MvcApp(docs_url=None, redoc_url=None)
 
+application.root_path_in_servers = config.get("root_path_in_servers",None)
+ 
 
 def check_init_database():
     db_cfg = config.get("database")
@@ -456,6 +459,7 @@ def _register_controllers():
     global __is_debug
     controller_count = 0
     is_startup = True
+    
     for app_name in application.apps:
         for hash, dict_obj in application.apps[app_name]['routes'].items():
             controller_count += 1
