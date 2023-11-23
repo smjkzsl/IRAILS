@@ -6,6 +6,7 @@ from hashlib import md5
 from typing import Dict
 import os.path
 import re
+ 
 
 def is_cli_mode():
     executeble = sys.argv[0]
@@ -17,17 +18,12 @@ def is_in_app(directory):
     """
     check exists controllers , views dir in :directory
     """
+    manifest = os.path.join(directory,'manifest.yaml')
 
-    controller_dir = os.path.join(directory, 'controllers')
-    views_dir = os.path.join(directory, 'views')
-    if not os.path.exists(controller_dir):
-        #print(f"can't location `controller` dir")
-        return False
-    if not os.path.exists(views_dir):
-        #print(f"can't location `views` dir")
-        return False
- 
-    return True
+    # controller_dir = os.path.join(directory, 'controllers')
+    # views_dir = os.path.join(directory, 'views')
+    return os.path.exists(manifest)
+    
 
 
 def is_in_irails(directory):

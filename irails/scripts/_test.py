@@ -2,7 +2,7 @@ import argparse
 import importlib
 import unittest
 import os,sys
-from irails.config import is_in_app,is_in_irails,config
+from irails.config import is_in_app,is_in_irails,config,ROOT_PATH
 from irails._i18n import set_module_i18n
 curdir = os.path.abspath(os.curdir)
 
@@ -25,6 +25,7 @@ def _get_tests(_root_path):
     return all_files
 
 def do_test_file(app_dir,file_name,print_out=None):
+    os.chdir(ROOT_PATH)
     if not os.path.isabs(file_name):
         test_files = _get_tests(app_dir)
         if file_name in test_files:
@@ -40,7 +41,7 @@ def do_test_file(app_dir,file_name,print_out=None):
         
     module = load_module(f"{app_package}.tests.{name}",file_name)
 
-    
+   
 
     if module:
         

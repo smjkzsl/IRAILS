@@ -45,31 +45,13 @@ class DomainUser(BaseUser):
         :domain Tenant
         '''
         self.username = username
-        self._roles = roles
-        self._domain = domain or default_domain
-        self._lang = "zh"
-        self._timezone = 'Asia/Shanghai'
+        self.roles = roles
+        self.domain = domain or default_domain
+        self.lang = "zh"
+        self.timezone = 'Asia/Shanghai'
+        self.id=""
         super().__init__()
-
-    @property
-    def roles(self):
-        return self._roles
-
-    def set_roles(self, value: List):
-        names = []
-        for row in value:
-            names.append(row.name)
-        self._roles = names
-
-    @property
-    def domain(self):
-        return self._domain
-
-    @domain.setter
-    def domain(self, value):
-        if not value:
-            value = default_domain
-        self._domain = value
+ 
 
     @property
     def is_authenticated(self) -> bool:
@@ -82,10 +64,10 @@ class DomainUser(BaseUser):
     @property
     def identity(self) -> str:
         identity = self.username
-        if self._roles:
-            group = self._roles
-            if self._domain:
-                group = self._domain+"." + ','.join(group)
+        if self.roles:
+            group = self.roles
+            if self.domain:
+                group = self.domain+"." + ','.join(group)
             identity += '@'+group
         return identity
 
@@ -233,7 +215,7 @@ class AuthenticationBackend_(AuthenticationBackend):
         return _casbin_auth
 
     def _auth(self,request:Request,user:BaseUser)->bool:
-        raise NotImplementedError()
+        return _casbin_auth._auth(request=request,user=user)
 
 class BasicAuth(AuthenticationBackend_):
 
@@ -316,6 +298,8 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
         if user_name or token or payload:
             if payload and token:
                 jwtuser = from_payload(payload)
+                if payload['id']:
+                    jwtuser.id = payload['id']
                 request.scope['user'] = jwtuser
 
         if auth_type.lower() == 'public':
@@ -350,6 +334,7 @@ class JWTAuthenticationBackend(AuthenticationBackend_):
         auth_user_obj = {
             "exp": expire,
             "username": user.username,
+            "id":user.id,
             "group": user.roles,
             "domain": user.domain
         }

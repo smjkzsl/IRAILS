@@ -30,8 +30,8 @@ class UserService(Service):
     def list_user_apikeys(self,user_id:str)->List[str]:
         try:
             records = Service.list(ApiKey,user_id=user_id)
-            rets = [r['key'] for r in records]
-            return rets
+             
+            return records
         except:
             return []
 

@@ -73,8 +73,14 @@ class MvcApp(FastAPI):
             return self.auth_user_class(username=user)
         elif isinstance(user, database.Base):
             userobj: auth.DomainUser = self.auth_user_class(user.username)
-            copy_attr(user, userobj, False)
-            userobj.set_roles(user.roles)
+            # copy_attr(user, userobj, False)
+            for key  in dir(user):
+                value = getattr(user,key)
+                if not key.startswith("__") and hasattr(userobj, key):
+                    if key=='roles' and isinstance(value,list):
+                        userobj.roles = [row.name for row in value]
+                    else:
+                        setattr(userobj, key, value)
             return userobj
 
     @property
@@ -548,7 +554,7 @@ def check_db_migrate():
         alembic_ini = db_cfg.get("alembic_ini", './configs/alembic.ini')
         uri = db_cfg.get("uri")
         if uri:
-            database.check_migration(application.data_engine, uri, alembic_ini)
+            database.check_migration(application.data_engine, str(application.data_engine.url), alembic_ini)
     except database.InitDbError as e:
         raise
     except Exception as e:

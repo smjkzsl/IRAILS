@@ -1,6 +1,6 @@
 from typing import Any, Dict, Union
 from irails.unit_test import *
-from irails import application,database
+from irails import application
 from fastapi import status 
 
 class TestUserRole(ControllerTest):
@@ -8,12 +8,13 @@ class TestUserRole(ControllerTest):
         super().__init__(*args, **kwargv)
         # database.Service.execute('delete from casbin_rule')
 
-
+        self.headers={}
         self._token:str = ""    
             #p, admin, domain1, data1, read 
         application.policy('admin','system','/system_admin/admin/*', '(GET)|(POST)', authorize=True) 
         application.policy('admin','system','/system_admin/user/*', '(GET)|(POST)', authorize=True)  
         application.policy('user','system','/system_admin/user/*', '(GET)|(POST)', authorize=True)  
+        application.policy('kefu','system','/system_admin/user/api_keys', '(GET)|(POST)', authorize=True)  
         application.policy('kefu','system','/chatgpt', '(GET)|(POST)', authorize=True)  
         #g, alice, admin, domain1 
         application.grouping('bruce','user','system', authorize=True)
@@ -25,23 +26,22 @@ class TestUserRole(ControllerTest):
             accept = 'application/json'
         else:
             accept = '*/*'
-        headers = {'Accept':accept,
-                   'Authorization': f"Bearer {self._token}"}
+        headers = dict(self.headers, Accept = accept )
+        if self._token:
+            headers.update({'Authorization': f"Bearer {self._token}"})
+         
         response =  self.client.request(method=method,url=path,headers=headers,data=data)
         if ret_json:
             return response.json()
         else:
             return response
-    def __get_verity(self,username,password):
-        data = {'username':username,'password':password}
-        result = self._request("/system_admin/user/login",method="POST",data=data)
-        
-        return result
+     
         
     def user_login(self,username='root',password=""):
         if not password:
             password=username
-        result = self.__get_verity(username,password)
+        data = {'username':username,'password':password}
+        result = self._request("/system_admin/user/login",method="POST",data=data)
         self.assertEqual(result['status'],'success')
         self.assertTrue(result['token'])
         self._token = result['token']
@@ -79,9 +79,14 @@ class TestUserRole(ControllerTest):
     def access_by_apikey(self):
         self.user_login(username='alice')
         apikeys = self._request('/system_admin/user/api_keys')
-     
+        self.assertGreater(len(apikeys),0)
+        apikey = apikeys[0]['key']
+        self._token = ""
         self.client.cookies.clear()
-
+        self.headers.update({"api_key":apikey})
+        result = self._request(path='/chatgpt',ret_json=False)
+        self.assertEqual(result.status_code,200)
+        
     def runTest(self):
         a=self._request(path="/xml",ret_json=False)
         self.assertEqual(a.status_code,status.HTTP_401_UNAUTHORIZED)
@@ -89,3 +94,4 @@ class TestUserRole(ControllerTest):
         self.access_right_user_root()
         self.access_deny()
         self.access_kefu_user()
+        self.access_by_apikey()

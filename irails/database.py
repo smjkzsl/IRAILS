@@ -73,6 +73,9 @@ if cfg:
 class Base(DeclarativeBase):
     __abstract__ = True 
     __allow_unmapped__ = True
+    __table_args__ = {'keep_existing': True}
+
+     
     '''not show in model manager columns names'''
     filter_columns_in_manager = []
     def __init_subclass__(cls,*args,**kwargs) -> None: 
@@ -85,7 +88,7 @@ class Base(DeclarativeBase):
         else:
             _tbname = table_prefix + get_plural_name(cls.__name__)        
             setattr(cls,'__tablename__',_tbname)
-
+        
         super().__init_subclass__(*args,**kwargs)
         for e in EVENTS:
             if hasattr(cls,e) and callable(getattr(cls,e)):
@@ -136,6 +139,7 @@ class Schemes():
         m2m_table = Table(m2m_table_name, Base.metadata,
             Column(f'{tb1_naked_name}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True  ),
             Column(f'{tb2_naked_name}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True) 
+           , keep_existing=True 
         ) 
         setattr(Tb1,f"{tb2}",relationship(Tb2.__name__, secondary=m2m_table, back_populates=f"{tb1}",passive_deletes=False  ))
         setattr(Tb2,f"{tb1}",relationship(Tb1.__name__, secondary=m2m_table, back_populates=f"{tb2}",passive_deletes=False ))
@@ -152,10 +156,8 @@ class Schemes():
         child_tbname = get_singularize_name(child_tablename.replace(table_prefix,""))
         parent_tbname = get_singularize_name(parent_tablename.replace(table_prefix,""))
         field_name_of_children = get_plural_name(child_tbname)
-
         setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tablename}.id')))
         setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{field_name_of_children}'))
-        
         setattr(ParentTable, field_name_of_children, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade=cascade))
         return ChildTable, ParentTable
 
@@ -166,7 +168,8 @@ class Schemes():
         please use irails.service to query ,it will auto add the 'is_deleted' flag
         """
         for Tb in tables:
-            setattr(Tb,is_deleted_field,Column(Boolean, default=False))
+            if not hasattr(Tb,is_deleted_field):
+                setattr(Tb,is_deleted_field,Column(Boolean, default=False))
     @classmethod
     def I18NABLE(self,*tables):
         #i18n_json_data={
@@ -182,14 +185,17 @@ class Schemes():
         # 
         # }
         for tb in tables:
-            setattr(tb,i18n_json_data_field,Column(Text,server_default='{}',info={'json':True}))
+            if not hasattr(tb,i18n_json_data_field):
+                setattr(tb,i18n_json_data_field,Column(Text,server_default='{}',info={'json':True}))
 
     @classmethod
     def TIMESTAMPS(self,*tables):
         '''add timestamp(update_at,create_at) field on :tables'''
         for tb in tables:
-            tb.update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-            tb.create_at = Column(DateTime(timezone=True), server_default=func.now())        
+            if not hasattr(tb,'update_at'):
+                tb.update_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+            if not hasattr(tb,'create_at'):
+                tb.create_at = Column(DateTime(timezone=True), server_default=func.now())        
 class InitDbError(Exception):
     pass
 
