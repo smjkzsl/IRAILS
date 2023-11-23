@@ -33,6 +33,13 @@ class UserController(BaseController):
         del user.token
         del user.payload
         return user
+    
+    @api.get("/api_keys")
+    def api_keys(self):
+        user = self.request.user
+        apikeys = UserService.list_user_apikeys(user.id)
+        return apikeys
+    
     @api.http("/login",methods=['POST','GET'] ,auth="none" )
     def login(self):
         """:title 登陆"""  

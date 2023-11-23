@@ -76,6 +76,12 @@ class TestUserRole(ControllerTest):
         result = self._request(path='/chatgpt',ret_json=False)
         self.assertEqual(result.status_code,200)
 
+    def access_by_apikey(self):
+        self.user_login(username='alice')
+        apikeys = self._request('/system_admin/user/api_keys')
+     
+        self.client.cookies.clear()
+
     def runTest(self):
         a=self._request(path="/xml",ret_json=False)
         self.assertEqual(a.status_code,status.HTTP_401_UNAUTHORIZED)
