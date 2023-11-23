@@ -157,10 +157,10 @@ def _load_app(abs_app_dir,app_name, manifest: dict,application=None):
 
                 
                 # module =   importlib.import_module(module_name) 
-            if module:
-                cnt += 1
-                if not module_name in loaded:
-                    loaded.append(module_name)
+                if module:
+                    cnt += 1
+                    if not module_name in loaded:
+                        loaded.append(module_name)
         except ImportError as e:
             if m:  # =='controllers':
                 _log.error(_("load app %s failed") % module_name)

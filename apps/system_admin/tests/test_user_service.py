@@ -1,6 +1,10 @@
 from irails.unit_test import *
 from services import UserService
-from irails.apps.system_admin.models.user import User,Role
+import uuid
+try:
+   from irails.apps.system_admin.models.user import User,Role,ApiKey
+except:
+    from system_admin.models.user import User,Role,ApiKey
 from irails._i18n import _
 
 class TestUserService(ServiceTest):
@@ -9,6 +13,7 @@ class TestUserService(ServiceTest):
             # 删除实例
          service.real_delete(User)
          service.real_delete(Role)
+         service.real_delete(ApiKey)
             # 创建用户实例并添加到数据库
          user = User()
          user.username = "bruce"
@@ -38,4 +43,9 @@ class TestUserService(ServiceTest):
          service.add(role_kefu)
          alice_user = service.query(User,username='alice').one()
          alice_user.roles.append(role_kefu)
+         service.flush()
+
+         key = uuid.uuid1().hex
+         api = ApiKey(name="test",key=key)
+         alice_user.apikeys.append(api)
          service.flush()

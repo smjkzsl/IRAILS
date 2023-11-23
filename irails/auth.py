@@ -232,6 +232,8 @@ class AuthenticationBackend_(AuthenticationBackend):
     def casbin_auth(self) -> CasbinAuth:
         return _casbin_auth
 
+    def _auth(self,request:Request,user:BaseUser)->bool:
+        raise NotImplementedError()
 
 class BasicAuth(AuthenticationBackend_):
 

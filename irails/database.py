@@ -72,6 +72,7 @@ if cfg:
             
 class Base(DeclarativeBase):
     __abstract__ = True 
+    __allow_unmapped__ = True
     '''not show in model manager columns names'''
     filter_columns_in_manager = []
     def __init_subclass__(cls,*args,**kwargs) -> None: 
@@ -147,14 +148,15 @@ class Schemes():
         and :ParentTable hasmany :ChildTable
         '''
         child_tablename = ChildTable.__tablename__
-        parent_tablename = ParentTable.__tablename__
-        child_tbname = get_singularize_name(child_tablename)
-        parent_tbname = get_singularize_name(parent_tablename)
+        parent_tablename = ParentTable.__tablename__ 
+        child_tbname = get_singularize_name(child_tablename.replace(table_prefix,""))
+        parent_tbname = get_singularize_name(parent_tablename.replace(table_prefix,""))
+        field_name_of_children = get_plural_name(child_tbname)
 
-        setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tbname}.id')))
-        setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{child_tbname}'))
-
-        setattr(ParentTable, child_tbname, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade=cascade))
+        setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tablename}.id')))
+        setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{field_name_of_children}'))
+        
+        setattr(ParentTable, field_name_of_children, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade=cascade))
         return ChildTable, ParentTable
 
     @classmethod

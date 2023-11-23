@@ -20,6 +20,7 @@ class User(database.Base):
     age: Mapped[str] = mapped_column(Integer())
     roles:List['Role'] = []
 
+    apikeys:List['ApiKey'] = []
     
     salt = Column(String(50),comment="salt")
     remark = Column(String(255),comment="description")
@@ -72,6 +73,14 @@ class Role(database.Base):
     def on_change_name(target, value, oldvalue, initiator):
         print("Role:on_change_name" )
         return value 
+class ApiKey(database.Base):
+    __tablename__ = f"apikeys"
+    id = Column(Integer,primary_key=True)
+    name = Column(String(50),nullable=False)
+    key = Column(String(255),nullable=False,unique=True)
+    user:'User' = None
+
+database.Schemes.M2O(ApiKey,User)
 
 database.Schemes.M2M(User,Role)
 database.Schemes.TIMESTAMPS(User,Role)

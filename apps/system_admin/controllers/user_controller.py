@@ -8,6 +8,18 @@ def startup():
     application.public_auth_url = '/system_admin/user/login'
     application.user_auth_url = '/system_admin/user/login'
 
+@application.before_auth
+def auth_api_key(request:Request,**kwargs):
+    api_key = request.headers.get("api_key","")
+    if not api_key: 
+        return  None
+    
+    user = UserService.get_user_by_api_key(api_key)
+    userobj = None
+    if user: 
+        userobj =  application.new_user(user=user)
+    return  userobj
+
 @route("/{app}/{controller}",auth='user')
 class UserController(BaseController):
     @api.get("/current_user")

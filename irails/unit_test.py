@@ -21,7 +21,7 @@ class ControllerTest(_BaseUnitTest):
         if not hasattr(_BaseUnitTest,'application'):
             _BaseUnitTest.application = generate_mvc_app()
         from fastapi.testclient import TestClient 
-        self.client = TestClient(app=self.application)
+        self.client = TestClient(app=_BaseUnitTest.application)
         
     pass
 

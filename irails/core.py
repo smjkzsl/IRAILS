@@ -1,7 +1,7 @@
 
 import os
 import inspect
-from typing import Dict, List, Union
+from typing import Dict, List, Union,Callable
 from urllib.parse import quote
 from fastapi import (FastAPI,
                      Request,
@@ -35,10 +35,37 @@ class MvcApp(FastAPI):
         self.__apps_dirs = []
         self.__apps = {}
         self.auth_user_class: auth.DomainUser = None
+        self.__before_auth_func:List[Callable] = []
+        
         super().__init__(**kwargs)
         # set variable in MvcRouter
         api.init(self)
+    
+    def before_auth(self,func):
+        '''wrap a function to auth function'''
+        self.__before_auth_func.append(func)
 
+    async def _auth(self,request:Request,**kwargs)->(bool,auth.BaseUser):
+        '''
+         hook before auth, if one of `before_auth_func` is return success then never to call the lastest
+        '''
+        ret = False;user:auth.BaseUser = None
+        cur_func = None
+        for func in self.__before_auth_func:
+            cur_func = func
+            user = cur_func(request,**kwargs)
+            if  user:
+                ret = self.__casbin_auth._auth(request=request,user=user)
+                break
+            
+        if (not ret) and (not user or not user.is_authenticated):
+                    #recive and check user right or generate a anoymous user
+            ret, user = await self.casbin_auth.authenticate(request, **kwargs)
+        elif ret and not user:
+            _module_name = func.__module__
+            raise RuntimeError(_("guest user be must a anoymous user,check "+f"`before_auth` in `{_module_name}`"))
+        return ret ,user
+    
     def new_user(self, user: Union[database.Base, str]) -> auth.DomainUser:
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
@@ -343,6 +370,13 @@ def api_router(path: str = "", version: str = "", **allargs):
             @classmethod
             async def _auth__(cls, request: Request, response: Response, **kwargs):
                 '''called by .controller_util.py->route_method'''
+                def set_flash(msg):
+                    if 'flash' not in request.session:
+                        request.session['flash'] = ''
+                    if request.session['flash'] == "":
+                        request.session['flash'] = msg
+
+
                 auth_type = kwargs['auth_type'] 
                 if auth_type.lower() == 'none' or \
                     not hasattr(application, 'casbin_auth') or \
@@ -350,18 +384,15 @@ def api_router(path: str = "", version: str = "", **allargs):
                     return True, None                
                 
                 kwargs['session'] = request.session 
-                #recive and check user right or generate a anoymous user
-                ret, user = await application.casbin_auth.authenticate(request, **kwargs)
-                def set_flash(msg):
-                    if 'flash' not in request.session:
-                        request.session['flash'] = ''
-                    if request.session['flash'] == "":
-                        request.session['flash'] = msg
+                ret = False;user:auth.BaseUser = None
+
+                if application._auth:
+                    ret , user = await application._auth(request,**kwargs) 
 
                 if user == auth.AUTH_EXPIRED:
                     set_flash(_(
                         "your authencation has been expired!"))
-                    user = False
+                    user = None 
 
                 if user and user.is_authenticated:  # continue singture
                     if auto_refresh_token:
@@ -371,10 +402,13 @@ def api_router(path: str = "", version: str = "", **allargs):
                 if ret:  # auth successed
                     return ret, user
 
+                #--auth failed--
                 accept_header = request.headers.get("Accept")
 
                 
                 _redirect_url = ""  # if this has value, will redirect if in mvc mode
+                code = StateCodes.HTTP_401_UNAUTHORIZED
+                code_str = '401 UNAUTHORIZED'
                 if not ret and not user or not user.is_authenticated:
                     # not login user redirect to login page if has redirect page(is general page)
                     # if is json mode it's just return json message.
@@ -387,11 +421,11 @@ def api_router(path: str = "", version: str = "", **allargs):
                             _auth_url, str(request.url))
                 elif user and user.is_authenticated:
                     # user is right,but it's not authenticated this resource.
+                    code = StateCodes.HTTP_403_FORBIDDEN
+                    code_str = '403 FORBIDDEN'
                     msg = _('Failed Auth url:%s  [User:%s]') % (
                         str(request.url), str(user))
-                    _log.debug(msg)
-
-                    # getattr(application, f"{auth_type}_auth_url")
+                    _log.debug(msg) 
                     _auth_url = application.user_auth_url
                     if _auth_url:
                         set_flash(msg)
@@ -400,15 +434,15 @@ def api_router(path: str = "", version: str = "", **allargs):
 
                 if _redirect_url:
                     if accept_header == "application/json":
-                        return JSONResponse(content={"message": "401 UNAUTHORIZED!"},
-                                            status_code=StateCodes.HTTP_401_UNAUTHORIZED), None
+                        return JSONResponse(content={"message": code_str},
+                                            status_code=code), None
                     else:
                         return RedirectResponse(_redirect_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
                 else:
 
                     if accept_header == "application/json":
-                        return JSONResponse(content={"message": "401 UNAUTHORIZED!"},
-                                            status_code=StateCodes.HTTP_401_UNAUTHORIZED), None
+                        return JSONResponse(content={"message": code_str},
+                                            status_code=code), None
 
                     return RedirectResponse(request.headers.get("Referer") or '/',
                                             status_code=StateCodes.HTTP_303_SEE_OTHER), None

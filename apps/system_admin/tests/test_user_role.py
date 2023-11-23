@@ -1,6 +1,7 @@
 from typing import Any, Dict, Union
 from irails.unit_test import *
 from irails import application,database
+from fastapi import status 
 
 class TestUserRole(ControllerTest):
     def __init__(self, *args, **kwargv) -> None:
@@ -33,7 +34,7 @@ class TestUserRole(ControllerTest):
             return response
     def __get_verity(self,username,password):
         data = {'username':username,'password':password}
-        result = self._request("/system_admin/user/verity_user",method="POST",data=data)
+        result = self._request("/system_admin/user/login",method="POST",data=data)
         
         return result
         
@@ -56,16 +57,16 @@ class TestUserRole(ControllerTest):
     def access_deny(self):
         self.user_login(username='alice')
         result = self._request(path='/system_admin/admin/index',ret_json=False)
-        self.assertEqual(result.status_code,403)
+        self.assertEqual(result.status_code,status.HTTP_403_FORBIDDEN)
         result = self._request(path='/xml',ret_json=False)
-        self.assertEqual(result.status_code,403)
+        self.assertEqual(result.status_code,status.HTTP_403_FORBIDDEN)
         self.user_login(username='bruce')
         application.grouping('bruce','admin','system',authorize=False)
         result = self._request(path='/chatgpt',ret_json=False)
         
-        self.assertEqual(result.status_code,403)
+        self.assertEqual(result.status_code,status.HTTP_403_FORBIDDEN)
         result = self._request(path='/xml',ret_json=False)
-        self.assertEqual(result.status_code,403)
+        self.assertEqual(result.status_code,status.HTTP_403_FORBIDDEN)
         
     def access_kefu_user(self):
         self.user_login(username='alice')
@@ -76,6 +77,8 @@ class TestUserRole(ControllerTest):
         self.assertEqual(result.status_code,200)
 
     def runTest(self):
+        a=self._request(path="/xml",ret_json=False)
+        self.assertEqual(a.status_code,status.HTTP_401_UNAUTHORIZED)
         self.user_login()
         self.access_right_user_root()
         self.access_deny()
