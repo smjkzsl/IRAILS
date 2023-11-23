@@ -66,11 +66,15 @@ class MvcApp(FastAPI):
             raise RuntimeError(_("guest user be must a anoymous user,check "+f"`before_auth` in `{_module_name}`"))
         return ret ,user
     
-    def new_user(self, user: Union[database.Base, str]) -> auth.DomainUser:
+    def new_user(self, user: Union[database.Base, Dict]) -> auth.DomainUser:
+        '''
+        create new authencation user from givened data
+        '''
         if not self.auth_user_class:
             raise RuntimeError('application.auth_class is None')
-        if isinstance(user, str):
-            return self.auth_user_class(username=user)
+        if isinstance(user, dict):
+            userobj = self.auth_user_class(username=user['name'])
+            userobj.id = user.get('id','')
         elif isinstance(user, database.Base):
             userobj: auth.DomainUser = self.auth_user_class(user.username)
             # copy_attr(user, userobj, False)
@@ -81,7 +85,7 @@ class MvcApp(FastAPI):
                         userobj.roles = [row.name for row in value]
                     else:
                         setattr(userobj, key, value)
-            return userobj
+        return userobj
 
     @property
     def apps(self) -> Dict:
