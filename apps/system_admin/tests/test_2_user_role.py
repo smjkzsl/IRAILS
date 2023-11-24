@@ -53,6 +53,8 @@ class TestUserRole(ControllerTest):
         self.assertEqual(result.status_code,200)
         result = self._request(path='/xml',ret_json=False)
         self.assertEqual(result.status_code,200)
+        result = self._request(path='/chatgpt',ret_json=False)
+        self.assertEqual(result.status_code,200)
         
     def access_deny(self):
         self.user_login(username='alice')

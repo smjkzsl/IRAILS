@@ -1,10 +1,8 @@
 from irails.database import Service
 from sqlalchemy import select
 from typing import List
-try:
-   from irails.apps.system_admin.models.user import User,Role,ApiKey
-except:
-    from system_admin.models.user import User,Role,ApiKey
+from ..models.user import User,Role,ApiKey
+ 
 # from system_admin.models import User,Role,ApiKey
 
 class UserService(Service):

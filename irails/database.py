@@ -73,7 +73,7 @@ if cfg:
 class Base(DeclarativeBase):
     __abstract__ = True 
     __allow_unmapped__ = True
-    __table_args__ = {'keep_existing': True}
+    __table_args__ = {'extend_existing': True}
 
      
     '''not show in model manager columns names'''
@@ -117,7 +117,7 @@ class Base(DeclarativeBase):
     
         
 class Schemes():
-    __all = {}
+    _all_m2m_tables_ = {}
     @classmethod
     def M2M(self,Tb1:Base,Tb2:Base):
         '''
@@ -136,15 +136,16 @@ class Schemes():
         tb1_naked_name = get_singularize_name(Tb1.__tablename__.replace(table_prefix,""))
         tb2_naked_name = get_singularize_name(Tb2.__tablename__.replace(table_prefix,""))
         m2m_table_name = f"{table_prefix}{tb1_naked_name}_{tb2_naked_name}"
-        m2m_table = Table(m2m_table_name, Base.metadata,
-            Column(f'{tb1_naked_name}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True  ),
-            Column(f'{tb2_naked_name}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True) 
-           , keep_existing=True 
-        ) 
-        setattr(Tb1,f"{tb2}",relationship(Tb2.__name__, secondary=m2m_table, back_populates=f"{tb1}",passive_deletes=False  ))
-        setattr(Tb2,f"{tb1}",relationship(Tb1.__name__, secondary=m2m_table, back_populates=f"{tb2}",passive_deletes=False ))
-        self.__all[f"M2M{tb1}{tb2}"] = m2m_table
-        return m2m_table
+        if not f"M2M{tb1}{tb2}" in self._all_m2m_tables_:
+            m2m_table = Table(m2m_table_name, Base.metadata,
+                Column(f'{tb1_naked_name}_id', Integer, ForeignKey(f'{Tb1.__tablename__}.id'), primary_key=True  ),
+                Column(f'{tb2_naked_name}_id', Integer, ForeignKey(f'{Tb2.__tablename__}.id'), primary_key=True) 
+            , keep_existing=True 
+            ) 
+            setattr(Tb1,f"{tb2}",relationship(Tb2.__name__, secondary=m2m_table, back_populates=f"{tb1}",passive_deletes=False  ))
+            setattr(Tb2,f"{tb1}",relationship(Tb1.__name__, secondary=m2m_table, back_populates=f"{tb2}",passive_deletes=False ))
+            self._all_m2m_tables_[f"M2M{tb1}{tb2}"] = m2m_table
+        return self._all_m2m_tables_[f"M2M{tb1}{tb2}"]
     @classmethod
     def M2O(self, ChildTable: Base, ParentTable: Base,cascade='delete,all'):
         '''set 
@@ -156,9 +157,10 @@ class Schemes():
         child_tbname = get_singularize_name(child_tablename.replace(table_prefix,""))
         parent_tbname = get_singularize_name(parent_tablename.replace(table_prefix,""))
         field_name_of_children = get_plural_name(child_tbname)
-        setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tablename}.id')))
-        setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{field_name_of_children}'))
-        setattr(ParentTable, field_name_of_children, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade=cascade))
+        if not hasattr(ChildTable,f"{parent_tbname}_id"):
+            setattr(ChildTable, f"{parent_tbname}_id", Column(Integer, ForeignKey(f'{parent_tablename}.id')))
+            setattr(ChildTable, f"{parent_tbname}", relationship(ParentTable.__name__, back_populates=f'{field_name_of_children}'))
+            setattr(ParentTable, field_name_of_children, relationship(ChildTable.__name__, back_populates=f'{parent_tbname}', cascade=cascade))
         return ChildTable, ParentTable
 
     @classmethod

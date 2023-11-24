@@ -591,7 +591,7 @@ def check_init_auth(db_cfg):
     return auth_type, _adapter_uri, _casbin_adapter_class
 
 
-def generate_mvc_app():
+def generate_mvc_app(env="general"):
     global __is_debug
 
     application.title = _project_name

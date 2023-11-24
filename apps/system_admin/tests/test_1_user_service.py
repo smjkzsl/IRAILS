@@ -1,10 +1,8 @@
 from irails.unit_test import *
-from services import UserService
+from ..services import UserService
 import uuid
-try:
-   from irails.apps.system_admin.models.user import User,Role,ApiKey
-except:
-    from system_admin.models.user import User,Role,ApiKey
+from ..models.user import User,Role,ApiKey
+
 from irails._i18n import _
 
 class TestUserService(ServiceTest):

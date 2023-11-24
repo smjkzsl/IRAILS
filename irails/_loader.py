@@ -130,22 +130,27 @@ import irails
 def _load_app(abs_app_dir,app_name, manifest: dict,application=None):
     if not manifest:
         return 0
+    
+    #add python location to find package like 'irails.apps.app_name...'
     if not abs_app_dir in irails.apps.__path__:
         irails.apps.__path__.append(abs_app_dir)
 
-    _modules = manifest['packages']  # ['controllers','services','models']
-    # load_app_translations(os.path.join(abs_app_dir,app_name,'locales' ))
+    _modules = manifest['packages']  # eg. ['controllers','services','models']
+   
+   
 
     cnt = 0
     for m in _modules:
         module_name = f"irails.apps.{app_name}.{m}"
+         
         _log.info(_('Loading module:%s') % module_name)
         try: 
             if module_name in loaded or module_name in sys.modules:
                 pass
             else:
                 module_path = os.path.join(abs_app_dir,app_name,m,"__init__.py")
-                module = load_module(module_name=module_name,module_path=module_path)
+                module = importlib.import_module(module_name)
+                # module = load_module(module_name=module_name,module_path=module_path)
                 # just unload,try to reload 
                 if m=='controllers' and application and app_name in application.apps and application.apps[app_name]['is_installed']==False:
                     # sub_modules = list(module.__dict__.keys())
@@ -154,9 +159,7 @@ def _load_app(abs_app_dir,app_name, manifest: dict,application=None):
                     #         importlib.reload(getattr(module,sub_))
                         
                     module = importlib.reload(module)
-
-                
-                # module =   importlib.import_module(module_name) 
+ 
                 if module:
                     cnt += 1
                     if not module_name in loaded:

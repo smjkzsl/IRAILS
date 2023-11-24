@@ -1,8 +1,8 @@
 """( [('remove_table', Table('products', MetaData(), Column('id', VARCHAR(), table=_products_, primary_key=True, nullable=False), Column('name', VARCHAR(length=50), table=_products_, nullable=False), schema=))]_,)
 
-Revision ID: c7f5d7baff95
-Revises: 
-Create Date: 2023-11-23 20:26:02.558635
+Revision ID: c643de28398c
+Revises: 5de8ec8e733b
+Create Date: 2023-11-24 16:48:56.519316
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c7f5d7baff95'
-down_revision = None
+revision = 'c643de28398c'
+down_revision = '5de8ec8e733b'
 branch_labels = None
 depends_on = None
 
