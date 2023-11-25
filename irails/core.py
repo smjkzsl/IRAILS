@@ -47,7 +47,7 @@ class MvcApp(FastAPI):
 
     async def _auth(self,request:Request,**kwargs)->(bool,auth.BaseUser):
         '''
-         hook before auth, if one of `before_auth_func` is return success then never to call the lastest
+         hook before auth, if one of `before_auth` is return success then never to call the lastest
         '''
         ret = False;user:auth.BaseUser = None
         cur_func = None

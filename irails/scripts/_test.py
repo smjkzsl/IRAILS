@@ -2,9 +2,9 @@ import argparse
 import importlib
 from typing import List
 import unittest
-import os,sys,multiprocessing
+import os,sys
 import irails
-from irails.config import is_in_app,is_in_irails,config,ROOT_PATH
+from irails.config import is_in_app,is_in_irails ,ROOT_PATH
 from irails._i18n import set_module_i18n
 
 curdir = os.path.abspath(os.curdir)
@@ -22,35 +22,28 @@ def _get_tests(_root_path):
     return all_files
 
 def do_test_file(app_dir,file_name  )->unittest.result.TestResult:
+
     os.chdir(ROOT_PATH)
     app_package = os.path.basename(app_dir)    
-    app_package_dir = os.path.dirname(app_dir)
-    
+    app_package_dir = os.path.dirname(app_dir) 
     if not app_package_dir in irails.apps.__path__:
-        irails.apps.__path__.append(app_package_dir)   
-
+        irails.apps.__path__.append(app_package_dir)    
     if not os.path.isabs(file_name):
         test_files = _get_tests(app_dir)
         if file_name in test_files:
             file_name = test_files[file_name]
         else:
             raise FileNotFoundError(file_name)
-    name,ext = os.path.splitext(os.path.basename(file_name))
-
-    
+    name,ext = os.path.splitext(os.path.basename(file_name))  
     if not app_package_dir in sys.path:
-        sys.path.insert(0,app_package_dir)
-
-     
+        sys.path.insert(0,app_package_dir) 
     module_package=f"irails.apps.{app_package}.tests.{name}"
     sys.argv = [file_name]
     print(f"Starting test {file_name}")
-    cls = unittest.TestProgram(module=module_package,exit=False)
-
+    cls = unittest.TestProgram(module=module_package,exit=False) 
     test_results.append(cls.result) 
-    return cls.result
+    return cls.result 
 
-     
 def do_test_app(app_dir ): 
     
 
@@ -74,7 +67,7 @@ def do_test_project( ):
             dirs = app['package'].split('.')
             if len(dirs)==2:
                 app_dir = os.path.join(curdir,dirs[0],dirs[1])
-                do_test_app(app_dir=app_dir, print_out=print_out)
+                do_test_app(app_dir=app_dir )
          
     elif response.lower() == "n":
         print("User chose to cancel.")
