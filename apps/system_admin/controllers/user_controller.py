@@ -17,12 +17,12 @@ def auth_api_key(request:Request,**kwargs):
     user = UserService.get_user_by_api_key(api_key)
     userobj = None
     if user: 
-        userobj =  application.new_user(user=user)
+        userobj =  application.generate_auth_user(user=user)
     return  userobj
 
 @route("/{app}/{controller}",auth='user')
 class UserController(BaseController):
-    @api.get("/current_user")
+    @api.get("/current_user" )
     def current(self):
         '''
         :nav false
@@ -30,8 +30,10 @@ class UserController(BaseController):
         import copy
         user = copy.copy(self.request.user)
         assert not user is self.request.user
-        del user.token
-        del user.payload
+        if hasattr(user,'token'):
+            del user.token
+        if hasattr(user,'payload'):
+            del user.payload
         return user
     
     @api.get("/api_keys")
@@ -57,7 +59,7 @@ class UserController(BaseController):
                 service = UserService()
                 user = service.verity(username=username,password=password)
                 if user:
-                    userobj =  application.new_user(user=user)
+                    userobj =  application.generate_auth_user(user=user)
                     
                     return self._verity_successed(user = userobj,redirect= redirect)
                 else:

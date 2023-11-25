@@ -20,6 +20,7 @@ class TestUserRole(ControllerTest):
         application.grouping('bruce','user','system', authorize=True)
         application.grouping('root','admin','system', authorize=True)
         application.grouping('alice','kefu','system', authorize=True)
+        application.grouping('alice','user','system', authorize=True)
 
     def _request(self,path:str,method:str="GET",data=None,ret_json=True,request_json=True)->Union[Dict,Any]:
         if request_json:

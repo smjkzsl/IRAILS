@@ -39,7 +39,7 @@ class TestUserService(ServiceTest):
         
          role_kefu = Role(name="kefu")
          service.add(role_kefu)
-         alice_user = service.query(User,username='alice').one()
+         alice_user:User = service.query(User,username='alice').one()
          alice_user.roles.append(role_kefu)
          service.flush()
 

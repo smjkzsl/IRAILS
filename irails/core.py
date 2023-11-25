@@ -55,18 +55,22 @@ class MvcApp(FastAPI):
             cur_func = func
             user = cur_func(request,**kwargs)
             if  user:
-                ret = self.__casbin_auth._auth(request=request,user=user)
+                request.scope['user'] = user
+                if kwargs['auth_type'].lower()=='none':
+                    ret = True
+                else:
+                    ret = self.__casbin_auth._auth(request=request,user=user)
                 break
             
         if (not ret) and (not user or not user.is_authenticated):
-                    #recive and check user right or generate a anoymous user
+            #recive and check user right or generate a anoymous user
             ret, user = await self.casbin_auth.authenticate(request, **kwargs)
         elif ret and not user:
             _module_name = func.__module__
             raise RuntimeError(_("guest user be must a anoymous user,check "+f"`before_auth` in `{_module_name}`"))
         return ret ,user
     
-    def new_user(self, user: Union[database.Base, Dict]) -> auth.DomainUser:
+    def generate_auth_user(self, user: Union[database.Base, Dict]) -> auth.DomainUser:
         '''
         create new authencation user from givened data
         '''
@@ -385,16 +389,17 @@ def api_router(path: str = "", version: str = "", **allargs):
                         request.session['flash'] = ''
                     if request.session['flash'] == "":
                         request.session['flash'] = msg
-
+                ret = False;user:auth.BaseUser = None
 
                 auth_type = kwargs['auth_type'] 
-                if auth_type.lower() == 'none' or \
-                    not hasattr(application, 'casbin_auth') or \
+                # if auth_type.lower() == 'none':
+                #     ret = True
+                if  not hasattr(application, 'casbin_auth') or \
                         application.casbin_auth is None: # project not need it or not config auth item
                     return True, None                
                 
                 kwargs['session'] = request.session 
-                ret = False;user:auth.BaseUser = None
+                
 
                 if application._auth:
                     ret , user = await application._auth(request,**kwargs) 
