@@ -12,7 +12,7 @@ from typing import Dict, Type
 from logging import Logger
 import inspect
 import datetime
-from irails._i18n import load_app_translations,_
+from irails._i18n import  _
 
 __session_config = config.get('session') 
 _session_key = "session_id"
@@ -69,24 +69,24 @@ class BaseController:
             'data':data
         }
     
-    @property
-    def _(self):
-        if hasattr(self,"__cached_i18n__"):
-            return getattr(self,'__cached_i18n__').gettext
+    # @property
+    # def _(self):
+    #     if hasattr(self,"__cached_i18n__"):
+    #         return getattr(self,'__cached_i18n__').gettext
         
-        m = getattr(self,'__appdir__') 
-        languages = None
-        if 'lang' in self._session:
-            languages = self._session['lang']
-        else:
-            language_header = self._request.headers.get('accept-language')
-            if language_header:
-                languages = language_header.split(',')
-                if languages:
-                    languages = [languages[0]]
-        t = load_app_translations(module_dir=m,lan=languages)
-        setattr(self,'__cached_i18n__',t)
-        return t.gettext
+    #     m = getattr(self,'__appdir__') 
+    #     languages = None
+    #     if 'lang' in self._session:
+    #         languages = self._session['lang']
+    #     else:
+    #         language_header = self._request.headers.get('accept-language')
+    #         if language_header:
+    #             languages = language_header.split(',')
+    #             if languages:
+    #                 languages = [languages[0]]
+    #     t = load_app_translations(module_dir=m,lan=languages)
+    #     setattr(self,'__cached_i18n__',t)
+    #     return t.gettext
     
     @property
     def log(self)->Logger:
@@ -252,7 +252,7 @@ class BaseController:
         template_path = os.path.join(self.__appdir__,"views")
         viewobj = _View(self._request,self._response, tmpl_path=template_path) 
         viewobj._templates.env.globals["url_for"] = url_for 
-        viewobj._templates.env.globals["_"] = self._ 
+        viewobj._templates.env.globals["_"] =  _ 
         response_result = viewobj(view_path,context,**kwargs)
         return response_result
     

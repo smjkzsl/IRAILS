@@ -51,7 +51,7 @@ class AdminController(BaseController):
                 if not _dir_name in all_files:
                     all_files[_dir_name] = []
                 if ext == '.vue':
-                    title = self._(file)
+                    title = _(file)
                     all_files[_dir_name].append({'file':file,'title':title})
 
                     # all_files[name] = {'dir_name':_dirs,'file_path': f'pages/{_dirs}{file}'}

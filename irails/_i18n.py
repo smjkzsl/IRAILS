@@ -10,6 +10,7 @@ from typing import Callable
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
  
+translator:gettext.GNUTranslations = None
 
 def load_module(module_name:str,module_path:str):
     # if module_name in sys.modules:
@@ -60,6 +61,9 @@ if is_debug: #watch locale dir file change
     from watchdog.events import FileSystemEventHandler
     import time
     class PoFileHandler(FileSystemEventHandler):
+        '''
+        check if po file modified then delete loaded module's cached i18n 
+        '''
         def __init__(self,hash,handler:Callable ) -> None:
             self.hash = hash
             self.handler = handler
@@ -82,35 +86,40 @@ if is_debug: #watch locale dir file change
     def handler(hash,observer:Observer):
         if hash in __all_trans:
             del __all_trans[hash]
+            a = hash.split("@") 
+            module_name = a[0]
+            lan = a[1]
+            # load_app_translations(module_name,lan,False)
+             
          
         observer.stop()
         observer.unschedule_all()
 
-def set_module_i18n(obj, module_name ):
+# def set_module_i18n(obj, module_name ):
      
-    module = sys.modules[module_name]
-    module_package = module.__package__ 
+#     module = sys.modules[module_name]
+#     module_package = module.__package__ 
       
-    if module_package:
-        if module_package in sys.modules:
-            package_module = sys.modules[module_package]
+#     if module_package:
+#         if module_package in sys.modules:
+#             package_module = sys.modules[module_package]
         
-            service_package_path =  package_module.__path__[0]
-            app_dirs = service_package_path.split(os.sep)
-        else: #test  mode
-            app_dirs = module_package.split(".")
-            service_package_path = os.path.dirname(module.__file__)
-        if len(app_dirs)>=2:
-            app_dirs = app_dirs[-2:]
-            setattr(obj,"__app_package__",".".join(app_dirs))
-            app_dir = os.path.dirname(service_package_path)
-            # auto set the i18n locales to the `app_name/locales`
-            t = load_app_translations(app_dir)
-            # setattr(obj,"_",t) #modify object
-            setattr(module,'_',t.gettext)
+#             service_package_path =  package_module.__path__[0]
+#             app_dirs = service_package_path.split(os.sep)
+#         else: #test  mode
+#             app_dirs = module_package.split(".")
+#             service_package_path = os.path.dirname(module.__file__)
+#         if len(app_dirs)>=2:
+#             app_dirs = app_dirs[-2:]
+#             setattr(obj,"__app_package__",".".join(app_dirs))
+#             app_dir = os.path.dirname(service_package_path)
+#             # auto set the i18n locales to the `app_name/locales`
+#             t = load_app_translations(app_dir)
+#             # setattr(obj,"_",t) #modify object
+#             setattr(module,'_',t.gettext)
 
 
-def load_app_translations(module_dir,lan=None) -> gettext.GNUTranslations: 
+def load_app_translations(module_dir,lan=None,add_debug_watch:bool=True) -> gettext.GNUTranslations: 
     global __all_trans
     
     if  not lan:
@@ -123,7 +132,7 @@ def load_app_translations(module_dir,lan=None) -> gettext.GNUTranslations:
         if not isinstance(lan,list):
             lan=[lan]
     
-
+    #check cached
     key = f"{module_dir}@{lan}"
     if key in __all_trans:
         return __all_trans[key]
@@ -136,9 +145,11 @@ def load_app_translations(module_dir,lan=None) -> gettext.GNUTranslations:
     try:
         
         ret = gettext.translation("messages", locales_dir, languages=lan) 
-        # ret.install()
         
-        if is_debug:
+        if not translator is None:
+            translator.add_fallback(ret)
+
+        if is_debug and add_debug_watch:
             event_handler = PoFileHandler(key,handler=handler )
             observer = Observer()
             observer.schedule(event_handler=event_handler,path=locales_dir) 
@@ -202,13 +213,8 @@ def __init_load_i18n():
 
     gettext.find=__new_find #rewrite find method
     t = load_app_translations(_dir)
-    return  t.gettext
-_=__init_load_i18n()
+    return  t 
+translator = __init_load_i18n()
+_ = translator.gettext
 
-# import inspect
-# def get_importing_module():
-#     caller_frame = inspect.stack()[1]
-#     caller_module = inspect.getmodule(caller_frame[0])
-#     return caller_module.__name__
-# print(get_importing_module() + ' importing me')
  

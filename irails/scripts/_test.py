@@ -5,7 +5,7 @@ import unittest
 import os,sys
 import irails
 from irails.config import is_in_app,is_in_irails ,ROOT_PATH
-from irails._i18n import set_module_i18n
+ 
 
 curdir = os.path.abspath(os.curdir)
 

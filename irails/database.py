@@ -26,7 +26,7 @@ from alembic import command
 from alembic.config import Config 
 from ._utils import camelize_classname,pluralize_collection ,iJSONEncoder
 from .log import _log
-from ._i18n import _,set_module_i18n
+from ._i18n import _ #,set_module_i18n
 from .config import config,ROOT_PATH
 from ._utils import get_plural_name,get_singularize_name
  
@@ -102,8 +102,8 @@ class Base(DeclarativeBase):
                 if callable(func) and not hasattr(func,'attched_event'):
                     event.listen(getattr(cls,col.name),'set',func,retval=True)
                     setattr(func,"attched_event",True)
-        if not hasattr(cls,'__system__') or not getattr(cls,"__system__") is True:
-            set_module_i18n(cls,cls.__module__)
+        # if not hasattr(cls,'__system__') or not getattr(cls,"__system__") is True:
+        #     set_module_i18n(cls,cls.__module__)
     
     @classmethod
     def _general_columns(self)->Tuple[Column]:
@@ -286,8 +286,8 @@ def get_meta(model_name: str = "") -> Dict[str, List]:
 class _serviceMeta(type):
     def __new__(cls, name, bases, attrs):
         obj = super().__new__(cls, name, bases, attrs)
-        if obj.__name__!="Service":
-            set_module_i18n(obj=obj,module_name=attrs['__module__'])
+        # if obj.__name__!="Service":
+        #     set_module_i18n(obj=obj,module_name=attrs['__module__'])
          
         return obj
 # class AlchemyEncoder(json.JSONEncoder):

@@ -468,6 +468,7 @@ def api_router(path: str = "", version: str = "", **allargs):
         setattr(puppetController, "__version__", version)
         setattr(puppetController, "__appdir__", abs_path)
         # for generate url_for function
+        
         url_path = path
         controller_path_name = get_snaked_name(
             get_controller_name(targetController.__name__))

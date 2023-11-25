@@ -3,7 +3,7 @@ import unittest
 
 
 from .core import generate_mvc_app
-from ._i18n import set_module_i18n
+# from ._i18n import set_module_i18n
 
 class _BaseUnitTest(unittest.TestCase):
     
@@ -11,8 +11,8 @@ class _BaseUnitTest(unittest.TestCase):
         super().__init__(*args,**kwargv)
     def __init_subclass__(cls,*args,**kwargs) -> None:  
         super().__init_subclass__(*args,**kwargs)    
-        if not cls.__name__ in ['ControllerTest','ServiceTest']:
-            set_module_i18n(cls,cls.__module__)
+        # if not cls.__name__ in ['ControllerTest','ServiceTest']:
+        #     set_module_i18n(cls,cls.__module__)
         
 class ControllerTest(_BaseUnitTest):
     
