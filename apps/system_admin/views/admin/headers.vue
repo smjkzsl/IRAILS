@@ -11,6 +11,12 @@
         <template #dropdown>
           <el-dropdown-menu> 
             <el-dropdown-item @click="exit_login">Exit</el-dropdown-item>
+            <el-dropdown-item @click="gotoProfile">Profile 
+              <el-icon style="padding: 5px;margin-top:3px;">
+                <user />
+              </el-icon>
+            
+          </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -21,16 +27,24 @@
 import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element_ui'
 import { ElIcon } from 'element_icon'
 import { user } from './api/api.js'
-
+ 
 export default {
   components: {
     ElDropdown, ElIcon, ElDropdownMenu, ElDropdownItem
+  },
+  setup(){
+    
   },
   methods:{
     async exit_login(){
       console.log("exit_login")
       await user.exit_login()
       window.location.href = "/"
+    },
+    gotoProfile() {
+      console.log("gotoProfile") 
+       
+      this.$router.push("/./profile")
     }
   },
   created() {
@@ -38,7 +52,7 @@ export default {
   },
   async mounted() {
     console.log('headers mounted')
-
+     
     this.user = await user.getCurrentUser()
   },
   data() {
