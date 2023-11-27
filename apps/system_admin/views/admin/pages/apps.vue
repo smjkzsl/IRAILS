@@ -157,7 +157,7 @@ export default {
 </script>
 <style  >
 .el-table__expanded-cell {
-  background: #fffbfb;
+   
   padding: 0px 5px 5px 50px !important;
 }
 

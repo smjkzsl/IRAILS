@@ -7,9 +7,9 @@
         <component :is="route.icon" style="margin-right:5px; width: 1.5em; height: 1.5em; color:#123456"></component>
         {{ route.label }}
       </template>
-      <router-link  v-for="menu in route.children" :key="menu.path" :to="menu.path">
+      <router-link v-for="menu in route.children" :key="menu.path" :to="menu.path">
 
-        <el-menu-item v-if="menu.name!='profile.vue'" :index="menu.path">
+        <el-menu-item v-if="menu.name != 'profile.vue'" :index="menu.path">
           <component :is="menu.icon" style="margin-right:5px; width: 1.5em; height: 1.5em; color:#123456"></component>
           {{ menu.label }}
         </el-menu-item>
@@ -70,8 +70,8 @@ export default {
           path: '/' + dir_name,
           icon: _icon,
           label: dir_name,
-          children: [] ,
-          
+          children: [],
+
         };
         let isHome = false
 
@@ -81,14 +81,14 @@ export default {
           isHome = _file == 'home.vue'
           let url = `pages/${_dir}/${_file}` // data[_name]['file_path']
           let _path = `${_dir}/${_file}`.replace(".vue", "")
-          _path =  '/' + (isHome ? '' : _path)
+          _path = '/' + (isHome ? '' : _path)
 
           menus.children.push({
             name: _file,
             path: _path,
             icon: icon,
             label: data[_dir][_i].title,
-             
+
             component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
           })
 

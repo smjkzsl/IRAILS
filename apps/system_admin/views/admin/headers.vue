@@ -1,6 +1,7 @@
 <template>
   <div class="toolbar">
     <span style="position: absolute;left:10px;font-weight: bold;font-size: x-large;">Irails</span>
+    
     <Suspense><el-dropdown>
 
         <span>{{ user.username }} <el-icon style="padding: 5px;margin-top:3px;">
@@ -9,42 +10,57 @@
 
 
         <template #dropdown>
-          <el-dropdown-menu> 
+          <el-dropdown-menu>
             <el-dropdown-item @click="exit_login">Exit</el-dropdown-item>
-            <el-dropdown-item @click="gotoProfile">Profile 
+            <el-dropdown-item @click="gotoProfile">Profile
               <el-icon style="padding: 5px;margin-top:3px;">
                 <user />
               </el-icon>
-            
-          </el-dropdown-item>
+
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </Suspense>
+
+    <button @click="toggleDark()">
+      <el-icon v-if="!isDark" ><Sunny /></el-icon>
+      <el-icon v-if="isDark" ><Moon /></el-icon> 
+      <span class="ml-2">{{ isDark ? '暗' : '亮' }}</span>
+    </button>
   </div>
 </template>
 <script>
+ 
 import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element_ui'
 import { ElIcon } from 'element_icon'
 import { user } from './api/api.js'
+ 
  
 export default {
   components: {
     ElDropdown, ElIcon, ElDropdownMenu, ElDropdownItem
   },
-  setup(){
-    
+  setup() {
+    return{
+      isDark : VueUse.useDark()
+    }
   },
-  methods:{
-    async exit_login(){
+  methods: {
+    async exit_login() {
       console.log("exit_login")
       await user.exit_login()
       window.location.href = "/"
     },
     gotoProfile() {
-      console.log("gotoProfile") 
-       
+      console.log("gotoProfile")
+
       this.$router.push("/./profile")
+    },
+    toggleDark (){
+      console.log(this.isDark)
+      this.isDark = !this.isDark
+      VueUse.useToggle(this.isDark)
     }
   },
   created() {
@@ -52,12 +68,12 @@ export default {
   },
   async mounted() {
     console.log('headers mounted')
-     
+
     this.user = await user.getCurrentUser()
   },
   data() {
     return {
-      user: {username:''}
+      user: { username: '' }
     }
   },
 

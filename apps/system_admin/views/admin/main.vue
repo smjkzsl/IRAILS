@@ -5,30 +5,31 @@
       <headers />
     </el-header>
     <el-container>
-      
-      
-      
-       
-      <el-aside ref="aside" :width="asideWidth"> 
+
+
+
+
+      <el-aside ref="aside" :width="asideWidth">
         <el-row class="aside-header">
-          <el-icon  @click="toggleLeft()"> 
-            <Fold  v-if="!isCollapse"/><Expand v-if="isCollapse"/> 
+          <el-icon @click="toggleLeft()">
+            <Fold v-if="!isCollapse" />
+            <Expand v-if="isCollapse" />
           </el-icon>
         </el-row>
         <el-row>
-          <menus style="width:100%;" :isCollapse="isCollapse" /> 
-        </el-row> 
+          <menus style="width:100%;" :isCollapse="isCollapse" />
+        </el-row>
       </el-aside>
-      
-    
+
+
       <el-container class="el-main">
-        
-          <router-view></router-view>
-         
+
+        <router-view></router-view>
+
       </el-container>
     </el-container>
     <el-container>
-      <el-footer>Copyright 2023 ©  bruce chou</el-footer>
+      <el-footer>Copyright 2023 © bruce chou</el-footer>
     </el-container>
 
 
@@ -36,25 +37,30 @@
 </template>
 
 <script>
- 
 
-import { ref,relative,nextTick } from 'vue'
+
+
+import { ref, relative, nextTick } from 'vue'
 
 import { Menu as IconMenu, Message, Setting } from 'element_icon'
 
 import menus from './menus.vue'
 import headers from './headers.vue'
 
+
+
+
+
 export default {
   components: {
     IconMenu, Message, Setting, menus, headers
   },
-  methods:{
-    async toggleLeft(){
-       
-      this.isCollapse=!this.isCollapse
+  methods: {
+    async toggleLeft() {
+
+      this.isCollapse = !this.isCollapse
       await nextTick()
-      this.asideWidth=this.isCollapse?"100px":'200px'
+      this.asideWidth = this.isCollapse ? "100px" : '200px'
     },
   },
   setup() {
@@ -62,8 +68,11 @@ export default {
     let asideWidth = ref("200px")
     const isCollapse = ref(false)
 
-    return {isCollapse,asideWidth}
+    return { isCollapse, asideWidth }
   },
+  created() {
+    
+  }
 }
 
 </script>
@@ -76,58 +85,64 @@ body {
 
 .layout-container-demo .el-header {
   position: relative;
-  border-bottom: 1px solid #EEE;
+  border-bottom: 1px solid;
 }
+
 .layout-container-demo .el-footer {
   position: relative;
   bottom: 0px;
   text-align: center;
 }
 
-.layout-container-demo .aside-header{
+.layout-container-demo .aside-header {
   position: relative;
-   
+
   justify-content: end;
-    align-items: end;
+  align-items: end;
   height: 38px;
-  top:0px;
+  top: 0px;
   width: 100%;
-  cursor:pointer;
+  cursor: pointer;
   padding: 10px;
   font-size: 1.2em;
-  border-bottom: 1px dashed #EEE;
+  /* border-bottom: 1px dashed ; */
 }
-.layout-container-demo .aside-header i:hover{
-  color:rgb(102, 130, 231);
-  
+
+.layout-container-demo .aside-header i:hover {
+  color: rgb(102, 130, 231);
+
 }
+
 .layout-container-demo .el-aside {
-  
+
   text-align: right;
-  position: relative  ;
-  height: calc(100vh - 120px); 
+  position: relative;
+  height: calc(100vh - 120px);
   top: 0px;
   bottom: 0px;
-  border-right: 1px solid #EEE;
+  border-right: 1px;
 }
-.el-aside ul,.el-menu{
+
+.el-aside ul,
+.el-menu {
   border-right: none !important;
 }
- 
+
 
 .layout-container-demo .el-main {
   padding: 0;
   position: relative;
-  height: calc(100vh - 120px); 
+  height: calc(100vh - 120px);
   left: 0px;
   top: 0px;
   bottom: 0;
   width: auto;
   /* max-width: calc(100% - 200px); */
-  
+
 }
-.layout-container-demo .el-footer{
+
+.layout-container-demo .el-footer {
   height: 60px;
-  border-top: 1px solid #EEE;
+  border-top: 1px;
 }
 </style>
