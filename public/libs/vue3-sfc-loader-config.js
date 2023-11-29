@@ -2,15 +2,16 @@ const vue3_loader_options = {
 
     moduleCache: {
         'vue': Vue,
-        element_ui: ElementPlus,
+        'element_ui': ElementPlus,
         'element-plus': ElementPlus,
-        element_icon: ElementPlusIconsVue,
-        '/public/libs/vue-router@4.2.1/dist/vue-router.global.js': VueRouter
+        'element_icon': ElementPlusIconsVue,
+        'vue-router_global': VueRouter,
+        'vue-i18n_global': VueI18n,
 
     },
 
     async getFile(url) {
-        const allowed_exts = ['js', 'vue', 'css']
+        const allowed_exts = ['js', 'vue', 'css','json']
         const ext = url.split(".").slice(-1)[0]
         if (ext) {
             if (!allowed_exts.includes(ext)) {

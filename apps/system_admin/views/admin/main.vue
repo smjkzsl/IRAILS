@@ -34,22 +34,21 @@
 
 
   </el-container>
+   
 </template>
 
 <script>
 
 
 
-import { ref, relative, nextTick } from 'vue'
+import { ref, relative, nextTick,Vue } from 'vue'
 
 import { Menu as IconMenu, Message, Setting } from 'element_icon'
 
 import menus from './menus.vue'
 import headers from './headers.vue'
-
-
-
-
+const i18n = require('./api/i18n.js')
+i18n.setupI18n({locale:'zh'})
 
 export default {
   components: {

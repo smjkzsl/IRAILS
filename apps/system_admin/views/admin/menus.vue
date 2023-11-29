@@ -21,12 +21,11 @@
  
 <script>
 // import applist_page from './pages/apps.vue'
-import VueRouter from "/public/libs/vue-router@4.2.1/dist/vue-router.global.js"
+import VueRouter from "vue-router_global"
 import { system } from './api/api.js'
+
 import { ref } from 'vue'
-
-
-
+ 
 import { Menu as IconMenu, Message, Setting } from 'element_icon'
 
 const router = VueRouter.createRouter({
@@ -34,8 +33,8 @@ const router = VueRouter.createRouter({
   routes: [],
 })
 app.use(router)
-console.log(app.router)
-window._router = router
+window.router=router
+
 
 export default {
   components: {

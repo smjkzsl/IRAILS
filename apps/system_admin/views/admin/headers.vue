@@ -28,6 +28,9 @@
       <el-icon v-if="isDark" ><Moon /></el-icon> 
       <span class="ml-2">{{ isDark ? '暗' : '亮' }}</span>
     </button>
+    <button v-if="$i18n" v-for="locale in  $i18n.availableLocales" @click="toggleLan(locale)">
+      <span>{{ locale }}</span>
+    </button>
   </div>
 </template>
 <script>
@@ -35,14 +38,17 @@
 import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element_ui'
 import { ElIcon } from 'element_icon'
 import { user } from './api/api.js'
- 
- 
+import {ref} from 'vue'
+const i18n = require('./api/i18n.js')
+const {  useI18n } = require("vue-i18n_global")
 export default {
   components: {
     ElDropdown, ElIcon, ElDropdownMenu, ElDropdownItem
   },
   setup() {
+     
     return{
+       
       isDark : VueUse.useDark()
     }
   },
@@ -61,10 +67,14 @@ export default {
       console.log(this.isDark)
       this.isDark = !this.isDark
       VueUse.useToggle(this.isDark)
+    },
+    toggleLan(locale){
+      i18n.setI18nLanguage(i18n._i18n,locale)
     }
   },
   created() {
     console.log('headers created')
+     
   },
   async mounted() {
     console.log('headers mounted')

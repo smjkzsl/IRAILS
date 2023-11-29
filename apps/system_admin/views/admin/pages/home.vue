@@ -5,13 +5,18 @@
     <el-descriptions-item label="Telephone" label-align="right" align="center">18100000000</el-descriptions-item>
     <el-descriptions-item label="Place" label-align="right" align="center">Suzhou</el-descriptions-item>
     <el-descriptions-item label="Remarks" label-align="right" align="center">
-      <el-tag size="small">School</el-tag>
+      <el-tag size="small">School<p>{{ $t("message.hello") }} {{ $t("ok") }} {{ $t("let.go") }}</p></el-tag>
     </el-descriptions-item>
     <el-descriptions-item label="Address" label-align="right" align="center">No.1188, Wuzhong Avenue, Wuzhong District,
       Suzhou, Jiangsu
       Province</el-descriptions-item>
   </el-descriptions>
 </template>
+<script>
+  const {t}= require("../api/i18n.js")
+  
+  
+</script>
 <style scoped>
 .my-label {
   background: var(--el-color-success-light-9);

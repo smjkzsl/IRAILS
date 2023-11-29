@@ -94,6 +94,11 @@ def mount_app_statics(app,app_name,debug=False):
                 app.mount(_url, MvcStaticFiles(directory=_dir), name=_dir)
         else:
             _log.warn(f"StaticDir:{_dir} do not exists!")
+    #mount app static locales dir
+    _locales_dir = os.path.normpath(app.apps[app_name]['app_dir'] + '/views/locales')
+    if os.path.exists(_locales_dir):
+        _url = f"/{app_name}/locales"
+        app.mount(_url, MvcStaticFiles(directory=_locales_dir), name=_locales_dir)
     return __roots
 def mount_statics(app, debug=False):
     __roots = {}

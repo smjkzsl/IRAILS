@@ -50,6 +50,7 @@ class MvcApp(FastAPI):
          hook before auth, if one of `before_auth` is return success then never to call the lastest
         '''
         ret = False;user:auth.BaseUser = None
+        
         cur_func = None
         for func in self.__before_auth_func:
             cur_func = func
@@ -61,13 +62,19 @@ class MvcApp(FastAPI):
                 else:
                     ret = self.__casbin_auth._auth(request=request,user=user)
                 break
-            
+        
+        if kwargs['auth_type'].lower()=='none':
+            ret = True
+        if kwargs['auth_type'].lower()=='public' and user:
+            ret = True
+
         if (not ret) and (not user or not user.is_authenticated):
             #recive and check user right or generate a anoymous user
             ret, user = await self.casbin_auth.authenticate(request, **kwargs)
         elif ret and not user:
             _module_name = func.__module__
-            raise RuntimeError(_("guest user be must a anoymous user,check "+f"`before_auth` in `{_module_name}`"))
+            user = auth.DomainUser( )
+            # raise RuntimeError(_("guest user be must a anoymous user,check "+f"`before_auth` in `{_module_name}`"))
         return ret ,user
     
     def generate_auth_user(self, user: Union[database.Base, Dict]) -> auth.DomainUser:
