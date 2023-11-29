@@ -425,8 +425,10 @@ def api_router(path: str = "", version: str = "", **allargs):
                     return ret, user
 
                 #--auth failed--
+                
                 accept_header = request.headers.get("Accept")
-
+                content_type = request.headers.get("Content-Type")
+                is_json_mode = accept_header == 'application/json' or content_type=='application/json'
                 
                 _redirect_url = ""  # if this has value, will redirect if in mvc mode
                 code = StateCodes.HTTP_401_UNAUTHORIZED
@@ -455,14 +457,14 @@ def api_router(path: str = "", version: str = "", **allargs):
                             _auth_url, str(request.url))
 
                 if _redirect_url:
-                    if accept_header == "application/json":
+                    if is_json_mode:
                         return JSONResponse(content={"message": code_str},
                                             status_code=code), None
                     else:
                         return RedirectResponse(_redirect_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
                 else:
 
-                    if accept_header == "application/json":
+                    if is_json_mode:
                         return JSONResponse(content={"message": code_str},
                                             status_code=code), None
 
@@ -482,8 +484,8 @@ def api_router(path: str = "", version: str = "", **allargs):
         _view_url_path: str = url_path.replace(
             "{controller}", controller_path_name).replace("{version}", version)
         if not _view_url_path:
-            _view_url_path = f"/{controller_path_name}"
-
+            _view_url_path = f"/{app_name}/{controller_path_name}"
+        # _view_url_path = f"{app_name}/{_view_url_path}"
         controller_current_view_path = abs_path + '/views/' + controller_path_name
         if version:
             controller_current_view_path += '/' + version
