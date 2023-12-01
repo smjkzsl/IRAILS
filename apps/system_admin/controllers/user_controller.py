@@ -35,7 +35,13 @@ class UserController(BaseController):
         if hasattr(user,'payload'):
             del user.payload
         return user
-    
+    @api.get("/i18n_list",auth="none")
+    def i18n_list(self):
+        from irails._i18n import get_all
+        rets = get_all()
+        return rets
+         
+
     @api.get("/api_keys")
     def api_keys(self):
         user = self.request.user

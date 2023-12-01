@@ -3,10 +3,11 @@
   <div class="app-lists">
     <div class="headers">
       <el-text class="mx-1" type="primary">Filter:</el-text>
-      <el-radio-group v-model="states" @change="filter_change">
-        <el-radio-button label="installed" />
-        <el-radio-button label="uninstalled" />
-        <el-radio-button label="all" />
+      <el-radio-group v-model="states" >
+        <el-radio-button  label="installed" >{{ $t('installed') }}</el-radio-button>
+        <el-radio-button label="uninstalled">{{ $t('uninstalled') }}</el-radio-button> 
+        <el-radio-button label="all">{{ $t('all') }}</el-radio-button> 
+        
       </el-radio-group>
     </div>
     <Suspense>
@@ -36,14 +37,14 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="App Name" prop="app_name" width="150" />
-          <el-table-column label="Version" prop="version" width="80" />
-          <el-table-column label="Author" prop="author" width="150" />
-          <el-table-column label="License" prop="license" width="100" />
-          <el-table-column label="Title" prop="title" />
-          <el-table-column label="Category" prop="category" width="120" />
-          <el-table-column label="Description" prop="description" width="350" />
-          <el-table-column fixed="right" label="Operations" width="140">
+          <el-table-column :label="$t('App Name')" prop="app_name" width="150" />
+          <el-table-column :label="$t('Version')" prop="version" width="80" />
+          <el-table-column :label="$t('Author')" prop="author" width="150" />
+          <el-table-column :label="$t('License')" prop="license" width="100" />
+          <el-table-column :label="$t('Title')" prop="title" />
+          <el-table-column :label="$t('Category')" prop="category" width="120" />
+          <el-table-column :label="$t('Description')" prop="description" width="350" />
+          <el-table-column fixed="right" :label="$t('Operations')" width="140">
             <template #default="scope">
               <el-button link type="primary" size="small" v-if="scope.row.is_installed"
                 @click="uninstall(scope.$index, scope.row)">Uninstall</el-button>
@@ -70,12 +71,15 @@ export default {
   components: {
     ElTable, ElTableColumn ,IconView
   },
-  methods: {
-    filter_change(value) {
-
-      this.states = value
+  watch: {
+    states( ) {
+      console.log(this.states) //这里还是翻译后的文本，并不正确
       this.getData()
     },
+  },
+
+  methods: {
+     
     async install(index, row) {
 
 
@@ -120,7 +124,7 @@ export default {
 
       const t = this.states || 'installed'
       const res = await system.getAppList(t);
-      console.log(res);
+      console.log(this.states,res);
 
       this.applist = res
 

@@ -4,5 +4,16 @@
        
     },
     "ok":"确实ok",
-    "let.go":"让他去"
+    "let.go":"让他去",
+    "installed":"已安装",
+    "uninstalled":"未安装",
+    "all":"全部",
+    "App Name":"应用名称",
+    "Version":"版本",
+    "Author":"作者",
+    "License":"协议",
+    "Title":"标题",
+    "Category":"分类",
+    "Description":"描述",
+    "Operations":"操作"
 }

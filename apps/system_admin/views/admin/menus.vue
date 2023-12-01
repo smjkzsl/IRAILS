@@ -11,7 +11,7 @@
 
         <el-menu-item v-if="menu.name != 'profile.vue'" :index="menu.path">
           <component :is="menu.icon" style="margin-right:5px; width: 1.5em; height: 1.5em; color:#123456"></component>
-          {{ menu.label }}
+          {{ $t(menu.label) }}
         </el-menu-item>
       </router-link>
     </el-sub-menu>
@@ -28,12 +28,14 @@ import { ref } from 'vue'
  
 import { Menu as IconMenu, Message, Setting } from 'element_icon'
 
+
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: [],
 })
 app.use(router)
 window.router=router
+
 
 
 export default {
@@ -43,7 +45,8 @@ export default {
   props: {
     isCollapse: Boolean
   },
-  created() {
+  async created() {
+      
     console.log('menus created')
   },
   mounted() {
@@ -52,6 +55,7 @@ export default {
   },
   methods: {
     async getPages() {
+      
       let data = await system.getPagesList()
       console.log(data)
       var compare = (a, b) => a.file == 'home.vue' ? -1 : 0
@@ -81,12 +85,12 @@ export default {
           let url = `pages/${_dir}/${_file}` // data[_name]['file_path']
           let _path = `${_dir}/${_file}`.replace(".vue", "")
           _path = '/' + (isHome ? '' : _path)
-
+           
           menus.children.push({
             name: _file,
             path: _path,
             icon: icon,
-            label: data[_dir][_i].title,
+            label:   (data[_dir][_i].title),
 
             component: () => import(url),// 设置 component 属性为一个函数，该函数会动态地加载路由对应的组件
           })
@@ -105,6 +109,8 @@ export default {
   setup(props) {
     console.log('menus.vue has props', props)
     const routes = ref(router.options.routes)
+    
+    
     return {
       routes, props
     }

@@ -1,8 +1,9 @@
 <template>
+  <el-config-provider :locale="locale">
   <el-container class="layout-container-demo">
 
     <el-header style="text-align: right; font-size: 12px">
-      <headers />
+      <headers @lang="lang_change"/>
     </el-header>
     <el-container>
 
@@ -34,26 +35,33 @@
 
 
   </el-container>
-   
+</el-config-provider>
 </template>
 
 <script>
 
+ 
 
 
-import { ref, relative, nextTick,Vue } from 'vue'
-
-import { Menu as IconMenu, Message, Setting } from 'element_icon'
-
+import { ref, relative, nextTick,Vue ,inject} from 'vue'
+import { ElConfigProvider } from 'element-plus'
 import menus from './menus.vue'
 import headers from './headers.vue'
+import { Menu as IconMenu, Message, Setting } from 'element_icon'
+import zhCn from '/public/libs/element-plus@2.3.3/dist/locale/zh-cn.js'
+import en from '/public/libs/element-plus@2.3.3/dist/locale/en.js'
+import zhTw from '/public/libs/element-plus@2.3.3/dist/locale/zh-tw.js'
+
+
 const i18n = require('./api/i18n.js')
+
 i18n.setupI18n({locale:'zh'})
 
 export default {
   components: {
-    IconMenu, Message, Setting, menus, headers
+    IconMenu, Message, Setting, menus, headers,ElConfigProvider
   },
+   
   methods: {
     async toggleLeft() {
 
@@ -61,16 +69,24 @@ export default {
       await nextTick()
       this.asideWidth = this.isCollapse ? "100px" : '200px'
     },
+    lang_change(lang){
+      console.log("lang_change",lang)
+      this.locale = this.languages[lang]
+    }
   },
   setup() {
-    // const state = relative({aside:ref('aside')})
+    const languages={
+      'zh':zhCn,
+      'en':en,
+      'zh-tw':zhTw
+    }
     let asideWidth = ref("200px")
     const isCollapse = ref(false)
-
-    return { isCollapse, asideWidth }
+    let locale  = ref(zhCn)
+    return { isCollapse, asideWidth,languages,locale, }
   },
   created() {
-    
+     
   }
 }
 

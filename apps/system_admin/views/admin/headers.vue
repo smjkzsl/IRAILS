@@ -38,15 +38,16 @@
 import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element_ui'
 import { ElIcon } from 'element_icon'
 import { user } from './api/api.js'
-import {ref} from 'vue'
+import { ref, provide } from "vue"
+
+
 const i18n = require('./api/i18n.js')
-const {  useI18n } = require("vue-i18n_global")
 export default {
   components: {
     ElDropdown, ElIcon, ElDropdownMenu, ElDropdownItem
   },
   setup() {
-     
+    
     return{
        
       isDark : VueUse.useDark()
@@ -68,8 +69,9 @@ export default {
       this.isDark = !this.isDark
       VueUse.useToggle(this.isDark)
     },
-    toggleLan(locale){
-      i18n.setI18nLanguage(i18n._i18n,locale)
+    toggleLan(locale){ 
+      i18n.setI18nLanguage(app._i18n,locale)
+      this.$emit('lang',locale)
     }
   },
   created() {

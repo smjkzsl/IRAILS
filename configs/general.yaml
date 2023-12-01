@@ -26,6 +26,8 @@ errors:
 i18n:
   lang:
   - zh
+  - en
+  - ja
   url_lang_key: lang
 log:
   datefmt: '%Y-%M-%d %H:%M:%S'

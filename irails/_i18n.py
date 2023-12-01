@@ -6,11 +6,60 @@ import os,sys
 import gettext
 
 from typing import Callable
+
+from typing import Optional
  
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
  
 translator:gettext.GNUTranslations = None
+ 
+def get_all():
+    """
+    `return` 
+     [
+        {
+            "zh": { 
+                "key": "val"
+            }
+        },
+        {
+            "en": {
+                "key": "val"
+            }
+        },
+        {
+            "ja": {}
+        }
+    ] 
+    """
+    t=translator
+    if t._fallback: #skip default system translator
+        t=t._fallback
+
+    from .config import config
+    cfg = config.get('i18n')
+    if not cfg:
+        lan = default_langs
+    else:
+        lan = cfg.get('lang',default_langs)
+    ret = {}
+    for l in lan:
+        ret.update({l:_get_catalogs(t,l)})
+    return ret
+
+def _get_catalogs(t:gettext.GNUTranslations,lang:str):
+    _catalogs={}
+    info = t.info() 
+    if info['language'].startswith(lang):
+        _catalogs.update(t._catalog)
+    if t._fallback:
+        _catalogs.update(_get_catalogs(t._fallback,lang))
+    
+    return _catalogs
+
+ 
+
 
 def load_module(module_name:str,module_path:str):
     # if module_name in sys.modules:

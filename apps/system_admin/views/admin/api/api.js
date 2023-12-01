@@ -31,6 +31,7 @@ async function request(url, options = {}) {
 
 }
 const api = {
+    request:request,
     user: {
         path: '/system_admin/user',
         async getCurrentUser() {
@@ -39,7 +40,10 @@ const api = {
         },
         async exit_login() {
             return await request(`${this.path}/logout`)
-        }
+        },
+        async get_i18n_list() {
+            return await request(`${this.path}/i18n_list`)
+        }, 
     },
     modelManager: {
         path: '/system_admin/model_manager',
