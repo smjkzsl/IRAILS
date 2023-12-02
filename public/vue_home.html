@@ -19,14 +19,30 @@
     <script src="/public/libs/vue3-sfc-loader.js"></script>
     <script src="/public/libs/vue3-sfc-loader-config.js"></script>
     <script>
-        var app = Vue.createApp(Vue.defineAsyncComponent(() => window['vue3-sfc-loader'].loadModule('${ main }', vue3_loader_options)))
+        const loader_caches = {
+            moduleCache: {
+                'vue': Vue,
+                'element_ui': ElementPlus,
+                'element-plus': ElementPlus,
+                'element_icon': ElementPlusIconsVue,
+                'vue-router_global': VueRouter,
+                'vue-i18n_global': VueI18n,
+
+            }
+        }
+        const vue_loader_configs = {
+            ...vue3_loader_options,
+            ...loader_caches
+        }
+        debugger
+        var app = Vue.createApp(Vue.defineAsyncComponent(() => window['vue3-sfc-loader'].loadModule('${ main }', vue_loader_configs)))
         for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
             app.component(key, component)
         }
         app.use(ElementPlus)
 
-       
-  
+
+
         app.mount(document.body);
     </script>
 </body>

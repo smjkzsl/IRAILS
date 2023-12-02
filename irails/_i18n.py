@@ -17,7 +17,7 @@ translator:gettext.GNUTranslations = None
 def get_all():
     """
     `return` 
-     [
+    {
         {
             "zh": { 
                 "key": "val"
@@ -31,7 +31,7 @@ def get_all():
         {
             "ja": {}
         }
-    ] 
+    }
     """
     t=translator
     if t._fallback: #skip default system translator

@@ -1,13 +1,7 @@
 const vue3_loader_options = {
 
     moduleCache: {
-        'vue': Vue,
-        'element_ui': ElementPlus,
-        'element-plus': ElementPlus,
-        'element_icon': ElementPlusIconsVue,
-        'vue-router_global': VueRouter,
-        'vue-i18n_global': VueI18n,
-
+         
     },
 
     async getFile(url) {
