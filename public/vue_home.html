@@ -8,7 +8,8 @@
 </head>
 
 <body>
-    <script src="/public/vue@3.2.36/dist/vue.global.js"></script>
+    <!-- <script src="/public/vue@3.2.36/dist/vue.global.js"></script> -->
+    <script src="/public/vue@3.3.9/vue.global.js"></script>
     <script src="/public/libs/element-plus@2.3.3/dist/index.full.js"></script>
     <script src="/public/libs/vue-router@4.2.1/dist/vue-router.global.js"></script>
     <script src="/public/libs/element-plus@2.3.3/icons-vue@2.1.0/dist/index.iife.min.js"></script>
@@ -34,7 +35,7 @@
             ...vue3_loader_options,
             ...loader_caches
         }
-        debugger
+         
         var app = Vue.createApp(Vue.defineAsyncComponent(() => window['vue3-sfc-loader'].loadModule('${ main }', vue_loader_configs)))
         for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
             app.component(key, component)

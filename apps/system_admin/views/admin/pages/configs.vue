@@ -10,8 +10,8 @@
 <script>
 import { ref, defineComponent  } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { system } from 'api/api.js'
-import   ConfigSection  from "./_component_configs.vue";
+import { system } from '/system_admin/admin/api/api.js'
+import   ConfigSection  from "/system_admin/admin/pages/_component_configs.vue";
 
  
  

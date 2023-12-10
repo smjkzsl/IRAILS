@@ -1,6 +1,6 @@
 const { createI18n, useI18n } = require("vue-i18n_global")
 const { nextTick } = require("vue")
-const { user, request } = require("./api.js")
+const { user, request } = require("/system_admin/admin/api/api.js")
 
 const i18n = {
     t(...args) {
@@ -9,8 +9,9 @@ const i18n = {
         return t(...args)
     },
 
-    SUPPORT_LOCALES: ['en', 'ja'],
-    locales_path: '../locales',
+     
+    default_locales_json_path: '../locales',
+    
     async fetch_i18n_list(_i18n,default_locale) {
         const i18n_list = await user.get_i18n_list()
         console.log('i18n_list', i18n_list)
@@ -75,7 +76,7 @@ const i18n = {
     },
     async loadLocaleMessages(_i18n, locale) {
         // load locale messages with dynamic import
-        const url = `${i18n.locales_path}/${locale}.json`;
+        const url = `${i18n.default_locales_json_path}/${locale}.json`;
         const res = await fetch(url);
         if (!res.ok)
             throw Object.assign(new Error(url + ' ' + res.statusText), { res });

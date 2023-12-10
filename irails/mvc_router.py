@@ -1,6 +1,4 @@
-"""
-"""
-from typing import Type,TYPE_CHECKING, Any, Callable, get_type_hints 
+from typing import Type 
 from fastapi import FastAPI,APIRouter  
 from .controller_utils import (TEMPLATE_PATH_KEY, 
                                VER_KEY, 
@@ -8,10 +6,7 @@ from .controller_utils import (TEMPLATE_PATH_KEY,
                                _get_leaf_controllers,
                                _register_controller_to_router, 
                                _route_method,
-                               )
-
-
- 
+                               ) 
 from ._i18n import _
 
 class InferringRouter(APIRouter):
@@ -39,7 +34,7 @@ def register_controllers_to_app(app: FastAPI,
       create_controller function
 
     Returns:
-    None
+    router
     """
     router = InferringRouter()
 

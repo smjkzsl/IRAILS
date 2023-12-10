@@ -6,7 +6,8 @@ from fastapi.exceptions import HTTPException
 import jinja2
 
 from .config import ROOT_PATH, config
-from .log import _log
+from .log import get_logger
+_log=get_logger(__name__)
 from ._i18n import _
 env_configs = {}
 static_format = []
@@ -53,13 +54,17 @@ class _View(object):
         if not request or not isinstance(request, Request):
             raise ValueError(
                 _("request instance type must be fastapi.Request"))
-
-        if not view_path.endswith(".html"):
-            view_path = f"{view_path}.html"
-
-        context["request"] = request
+        #location view file absolute
         view_path_real = os.path.join(self.views_directory, view_path).replace(
             ROOT_PATH, "").replace("\\", "/")
+        #if not exists view file,the add the default extendtion (.html)
+        if not view_path.endswith(".html") and not os.path.exists(view_path_real):
+            view_path = f"{view_path}.html"
+            view_path_real = os.path.join(self.views_directory, view_path).replace(
+            ROOT_PATH, "").replace("\\", "/")
+
+        context["request"] = request
+        
         try:
             res = self._templates.TemplateResponse(
                 view_path, context, **kwargs)

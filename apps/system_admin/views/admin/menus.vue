@@ -22,7 +22,7 @@
 <script>
 // import applist_page from './pages/apps.vue'
 import VueRouter from "vue-router_global"
-import { system } from './api/api.js'
+import { system } from '/system_admin/admin/api/api.js'
 
 import { ref } from 'vue'
  

@@ -25,7 +25,8 @@ from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from alembic import command
 from alembic.config import Config 
 from ._utils import camelize_classname,pluralize_collection ,iJSONEncoder
-from .log import _log
+from .log import get_logger
+_log=get_logger(__name__)
 from ._i18n import _ #,set_module_i18n
 from .config import config,ROOT_PATH
 from ._utils import get_plural_name,get_singularize_name

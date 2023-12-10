@@ -5,8 +5,7 @@ from irails.config import IS_IN_irails
  
 from irails.core import application
 from irails.config import config
-from fastapi.logger import logger
-from irails.log import set_logger
+ 
 def main():
      
     if not IS_IN_irails:

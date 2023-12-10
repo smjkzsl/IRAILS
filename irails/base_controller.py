@@ -5,7 +5,8 @@ from fastapi.responses import RedirectResponse,HTMLResponse,PlainTextResponse
 from .view import _View
 from ._utils import get_controller_name,get_snaked_name
 from .config import config,ROOT_PATH
-from .log import _log
+from .log import get_logger
+_log=get_logger(__name__)
 import os,uuid
 from hashlib import md5
 from typing import Dict, Type

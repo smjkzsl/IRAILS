@@ -13,22 +13,25 @@ from fastapi.exception_handlers import (
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import traceback
-
-from starlette.staticfiles import PathLike
-from .config import config, ROOT_PATH
-from .log import _log
-from .midware_session import (SessionMiddleware, FileStorage,
-                              MemoryStorage, RedisStorage, SessionStorage, _SESSION_STORAGES)
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import Scope
-from .view import _View, env_configs, static_format
-from .config import config, ROOT_PATH
-from ._i18n import _
+from starlette.staticfiles import PathLike
 from fastapi.middleware import Middleware
 from starlette.middleware import Middleware as StarletteMiddleware
 from starlette.types import Receive, Scope, Send
 import jinja2
 import chardet
+
+from .config import config, ROOT_PATH
+from .log import get_logger
+from .midware_session import (SessionMiddleware, FileStorage,
+                              MemoryStorage, RedisStorage, SessionStorage, _SESSION_STORAGES)
+
+from .view import _View, env_configs, static_format
+from .config import config, ROOT_PATH
+from ._i18n import _
+
+_log = get_logger(__name__)
 
 errors = config.get("errors")
 if errors:
@@ -43,19 +46,12 @@ else:
 
 class MvcStaticFiles(StaticFiles):
 
-    def file_response(
-        self,
-        full_path: PathLike,
-        stat_result: os.stat_result,
-        scope: Scope,
-        status_code: int = 200,
-    ) -> Response:
+    def file_response(self,full_path: PathLike,stat_result: os.stat_result,scope: Scope,status_code: int = 200,) -> Response:
 
         if full_path in disabled_path_of_files:
             return Response(None, 404)
         ext = full_path.split(".")[-1] if full_path.find(".") > -1 else ""
-        if ext and ext in static_format:
-
+        if ext and ext in static_format: 
             context = {"request": Request(scope)}
             with open(full_path, 'rb') as f:
                 bstr = f.read()
@@ -67,39 +63,38 @@ class MvcStaticFiles(StaticFiles):
             return Response(txt)
         else:
             scope['root_path'] = scope['root_path'] + scope['path']
-            return super().file_response(
-                full_path,
-                stat_result,
-                scope,
-                status_code=status_code,
-
-            )
+            return super().file_response(full_path,stat_result,scope,status_code=status_code,)
 
 def mount_app_statics(app,app_name,debug=False):
     __roots = {}
+    _msg = []
     for _dir in app.apps[app_name]['view_dirs']: 
         _url: str = app.apps[app_name]['view_dirs'][_dir]
-        if not _url.startswith('/'):
-            _url = '/'+_url
+        _url = '/'+_url if not _url.startswith('/') else _url 
         _dir = os.path.normpath(_dir)
         if os.path.exists(_dir):
             if _url == '/':
                 __roots[_dir] = _url
             else:
-                if not _url.endswith("/"):
-                    _url += "/"
-                _url = _url.lower()
-                if debug:
-                    _log.info(f"StaticDir:{_dir} mounted: {_url}")
+                _url = _url.lower() + "/" if not _url.endswith("/") else _url.lower()
+                     
+                _msg.append(f"PATH:{_dir} =>[URL]: {_url}")
                 app.mount(_url, MvcStaticFiles(directory=_dir), name=_dir)
         else:
-            _log.warn(f"StaticDir:{_dir} do not exists!")
+            _msg.append(f"PATH:{_dir} do not exists!skiped.")
     #mount app static locales dir
     _locales_dir = os.path.normpath(app.apps[app_name]['app_dir'] + '/views/locales')
     if os.path.exists(_locales_dir):
+        
         _url = f"/{app_name}/locales"
+
         app.mount(_url, MvcStaticFiles(directory=_locales_dir), name=_locales_dir)
+        _msg.append(f"PATH:{_locales_dir} => [URL]: {_url}")
+    if debug:
+        
+        _log.info("\n" + "\n".join(_msg))
     return __roots
+
 def mount_statics(app, debug=False):
     __roots = {}
     root_app = ""

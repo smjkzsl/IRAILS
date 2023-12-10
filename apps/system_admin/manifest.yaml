@@ -1,5 +1,6 @@
 name: 'IRails Control panel'
 title: '系统管理'
+icon: 'system.svg'
 description: "IRails Project Management System\n\
 "
 version: '1.0'

@@ -37,11 +37,11 @@
  
 import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element_ui'
 import { ElIcon } from 'element_icon'
-import { user } from './api/api.js'
+import { user } from '/system_admin/admin/api/api.js'
 import { ref, provide } from "vue"
 
 
-const i18n = require('./api/i18n.js')
+const i18n = require('/system_admin/admin/api/i18n.js')
 export default {
   components: {
     ElDropdown, ElIcon, ElDropdownMenu, ElDropdownItem

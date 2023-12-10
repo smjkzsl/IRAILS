@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+   
+  <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+  <script src="/app/test/App.js"></script>
+  <body>
+  
+    <div id="demo"></div>
+    <script name="utils">
+        // import 会被转化为这个require方法
+        const require = (prop) => {
+             
+            return window[prop]
+        };
+      </script>
+    <script type="text/babel">
+        
+      const heading = <h1>Mozilla Developer Network</h1>;
+
+      class Hello extends React.Component {
+        render() {
+          return  <App/>
+        }
+      }
+
+      ReactDOM.render(<Hello />, document.getElementById('demo'))
+    </script>
+  </body>
+</html>

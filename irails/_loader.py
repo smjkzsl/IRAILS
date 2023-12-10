@@ -7,7 +7,8 @@ import yaml
 from .config import config, ROOT_PATH
 from ._i18n import load_app_translations
 from ._i18n import _
-from .log import _log
+from .log import get_logger
+_log=get_logger(__name__)
 
 app_dirs = []
 app_enabled = []

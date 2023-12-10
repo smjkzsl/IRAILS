@@ -14,7 +14,8 @@ from casbin.persist.adapter import Adapter
 # from .midware_casbin import CasbinMiddleware
 
 from .config import config, ROOT_PATH
-from .log import _log
+from .log import get_logger
+_log=get_logger(__name__)
 import jwt
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple, Type, Union, Dict

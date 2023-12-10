@@ -35,7 +35,7 @@ class ModelManagerController(BaseController):
         is_deleted = self.params(database.is_deleted_field)
         if is_deleted: # is_deleted = 'all' ?
             query_params.update({database.is_deleted_field:is_deleted})    
-
+        from sqlalchemy import or_,and_
         model = self._get_request_model()
         if model:
             columns = model._general_columns()

@@ -63,7 +63,7 @@
 </template>
 <script>
 import { ElTable, ElTableColumn, ref, toRaw } from 'vue'
-import { system } from 'api/api.js'
+import { system } from '/system_admin/admin/api/api.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { Edit, View as IconView } from 'element_icon'
 

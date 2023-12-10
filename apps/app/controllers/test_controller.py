@@ -21,6 +21,12 @@ class TestController(BaseController):
             p[file.filename] = [path,url]
         return {"files":p} 
     
+    @api.get('/react_home',auth='none')
+    def react_home(self ):
+        '''
+        :title React Home
+        '''
+        return self.view()
     
     @api.get("/",auth='none' )
     def home(self,request:Request): 

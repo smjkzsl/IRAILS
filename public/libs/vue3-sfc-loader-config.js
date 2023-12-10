@@ -1,11 +1,11 @@
 const vue3_loader_options = {
 
     moduleCache: {
-         
+
     },
 
     async getFile(url) {
-        const allowed_exts = ['js', 'vue', 'css','json']
+        const allowed_exts = ['js', 'vue', 'css', 'json']
         const ext = url.split(".").slice(-1)[0]
         if (ext) {
             if (!allowed_exts.includes(ext)) {
@@ -34,7 +34,7 @@ const vue3_loader_options = {
         set(key, str) {
 
             // naive storage space management
-            for (;;) {
+            for (; ;) {
 
                 try {
 
@@ -52,6 +52,18 @@ const vue3_loader_options = {
         get(key) {
 
             return window.localStorage.getItem(key);
-        },
+        }
+    },
+    async handleModule(type, getContentData, path, options) {
+        switch (type) {
+            case '.css':
+                options.addStyle(await getContentData(false));
+                return null;
+            case '.json':
+                const text = getContentData(false) ;
+                return JSON.parse(text);
+                
+
+        }
     }
 }

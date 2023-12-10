@@ -11,7 +11,8 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from .mvc_router import create_controller, Api as api,   register_controllers_to_app
 from .controller_utils import AUTH_KEY, DEFAULT_KEY,  get_docs
 from .config import config, ROOT_PATH, _project_name
-from .log import _log
+from .log import get_logger
+_log=get_logger(__name__)
 from . import midware
 from . import auth
 from . import database
