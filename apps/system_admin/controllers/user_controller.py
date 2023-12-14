@@ -22,11 +22,8 @@ def auth_api_key(request:Request,**kwargs):
 
 @route("/{app}/{controller}",auth='user')
 class UserController(BaseController):
-    @api.get("/current_user" )
-    def current(self):
-        '''
-        :nav false
-        '''
+
+    def get_current_user(self):
         import copy
         user = copy.copy(self.request.user)
         assert not user is self.request.user
@@ -35,6 +32,13 @@ class UserController(BaseController):
         if hasattr(user,'payload'):
             del user.payload
         return user
+    @api.get("/current_user" )
+    def current(self):
+        '''
+        :nav false
+        '''
+        return self.get_current_user()
+    
     @api.get("/i18n_list",auth="none")
     def i18n_list(self):
         from irails._i18n import get_all

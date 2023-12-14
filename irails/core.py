@@ -50,7 +50,21 @@ class MvcApp(FastAPI):
         '''
          hook before auth, if one of `before_auth` is return success then never to call the lastest
         '''
+        def set_flash(msg):
+            if 'flash' not in request.session:
+                request.session['flash'] = ''
+            if request.session['flash'] == "":
+                request.session['flash'] = msg
         ret = False;user:auth.BaseUser = None
+
+        auth_type = kwargs['auth_type'].lower() 
+        # if auth_type.lower() == 'none':
+        #     ret = True
+        if  not hasattr(application, 'casbin_auth') or \
+                application.casbin_auth is None: # project not need it or not config auth item
+            return True, None                
+        
+        kwargs['session'] = request.session 
         
         cur_func = None
         for func in self.__before_auth_func:
@@ -58,24 +72,85 @@ class MvcApp(FastAPI):
             user = cur_func(request,**kwargs)
             if  user:
                 request.scope['user'] = user
-                if kwargs['auth_type'].lower()=='none':
+                if auth_type=='none':
                     ret = True
                 else:
                     ret = self.__casbin_auth._auth(request=request,user=user)
                 break
         
-        if kwargs['auth_type'].lower()=='none':
+        if auth_type=='none':
             ret = True
-        if kwargs['auth_type'].lower()=='public' and user:
+        if auth_type=='public' and user:
             ret = True
 
         if (not ret) and (not user or not user.is_authenticated):
             #recive and check user right or generate a anoymous user
             ret, user = await self.casbin_auth.authenticate(request, **kwargs)
         elif ret and not user:
-            _module_name = func.__module__
-            user = auth.DomainUser( )
+             
+            user = auth.DomainUser()
+            request.scope['user'] = user
             # raise RuntimeError(_("guest user be must a anoymous user,check "+f"`before_auth` in `{_module_name}`"))
+        if user == auth.AUTH_EXPIRED:
+            set_flash(_(
+                    "your authencation has been expired!"))
+            user = auth.DomainUser()
+            request.scope['user'] = user
+            
+        if user and user.is_authenticated:  # continue singture
+            if auto_refresh_token:
+                application.casbin_auth.create_access_token(
+                    user=user, expires_delta=None, request=request)
+
+        if ret:  # auth successed
+            return ret, user
+
+        #--auth failed--
+        
+        accept_header = request.headers.get("Accept")
+        content_type = request.headers.get("Content-Type")
+        is_json_mode = accept_header == 'application/json' or content_type=='application/json'
+        
+        _redirect_url = ""  # if this has value, will redirect if in mvc mode
+        code = StateCodes.HTTP_401_UNAUTHORIZED
+        code_str = '401 UNAUTHORIZED'
+        if not ret and not user or not user.is_authenticated:
+            # not login user redirect to login page if has redirect page(is general page)
+            # if is json mode it's just return json message.
+            # getattr(application, f"{auth_type}_auth_url")
+            _auth_url = application.public_auth_url
+            if _auth_url:
+                # set flash message
+                set_flash(_("you are not authenticated,please login!"))
+                _redirect_url = add_redirect_param(
+                    _auth_url, str(request.url))
+        elif user and user.is_authenticated:
+            # user is right,but it's not authenticated this resource.
+            code = StateCodes.HTTP_403_FORBIDDEN
+            code_str = '403 FORBIDDEN'
+            msg = _('Failed Auth url:%s  [User:%s]') % (
+                str(request.url), str(user))
+            _log.debug(msg) 
+            _auth_url = application.user_auth_url
+            if _auth_url:
+                set_flash(msg)
+                _redirect_url = add_redirect_param(
+                    _auth_url, str(request.url))
+
+        if _redirect_url:
+            if is_json_mode:
+                return JSONResponse(content={"message": code_str},
+                                    status_code=code), None
+            else:
+                return RedirectResponse(_redirect_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
+        else:
+
+            if is_json_mode:
+                return JSONResponse(content={"message": code_str},
+                                    status_code=code), None
+
+            return RedirectResponse(request.headers.get("Referer") or '/',
+                                    status_code=StateCodes.HTTP_303_SEE_OTHER), None
         return ret ,user
     
     def generate_auth_user(self, user: Union[database.Base, Dict]) -> auth.DomainUser:
@@ -389,89 +464,7 @@ def api_router(path: str = "", version: str = "", **allargs):
                 url = self.request.headers.get("Referer") or '/'
                 return RedirectResponse(url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
 
-            @classmethod
-            async def _auth__(cls, request: Request, response: Response, **kwargs):
-                '''called by .controller_util.py->route_method'''
-                def set_flash(msg):
-                    if 'flash' not in request.session:
-                        request.session['flash'] = ''
-                    if request.session['flash'] == "":
-                        request.session['flash'] = msg
-                ret = False;user:auth.BaseUser = None
-
-                auth_type = kwargs['auth_type'] 
-                # if auth_type.lower() == 'none':
-                #     ret = True
-                if  not hasattr(application, 'casbin_auth') or \
-                        application.casbin_auth is None: # project not need it or not config auth item
-                    return True, None                
-                
-                kwargs['session'] = request.session 
-                
-
-                if application._auth:
-                    ret , user = await application._auth(request,**kwargs) 
-
-                if user == auth.AUTH_EXPIRED:
-                    set_flash(_(
-                        "your authencation has been expired!"))
-                    user = None 
-
-                if user and user.is_authenticated:  # continue singture
-                    if auto_refresh_token:
-                        application.casbin_auth.create_access_token(
-                            user=user, expires_delta=None, request=request)
-
-                if ret:  # auth successed
-                    return ret, user
-
-                #--auth failed--
-                
-                accept_header = request.headers.get("Accept")
-                content_type = request.headers.get("Content-Type")
-                is_json_mode = accept_header == 'application/json' or content_type=='application/json'
-                
-                _redirect_url = ""  # if this has value, will redirect if in mvc mode
-                code = StateCodes.HTTP_401_UNAUTHORIZED
-                code_str = '401 UNAUTHORIZED'
-                if not ret and not user or not user.is_authenticated:
-                    # not login user redirect to login page if has redirect page(is general page)
-                    # if is json mode it's just return json message.
-                    # getattr(application, f"{auth_type}_auth_url")
-                    _auth_url = application.public_auth_url
-                    if _auth_url:
-                        # set flash message
-                        set_flash(_("you are not authenticated,please login!"))
-                        _redirect_url = add_redirect_param(
-                            _auth_url, str(request.url))
-                elif user and user.is_authenticated:
-                    # user is right,but it's not authenticated this resource.
-                    code = StateCodes.HTTP_403_FORBIDDEN
-                    code_str = '403 FORBIDDEN'
-                    msg = _('Failed Auth url:%s  [User:%s]') % (
-                        str(request.url), str(user))
-                    _log.debug(msg) 
-                    _auth_url = application.user_auth_url
-                    if _auth_url:
-                        set_flash(msg)
-                        _redirect_url = add_redirect_param(
-                            _auth_url, str(request.url))
-
-                if _redirect_url:
-                    if is_json_mode:
-                        return JSONResponse(content={"message": code_str},
-                                            status_code=code), None
-                    else:
-                        return RedirectResponse(_redirect_url, status_code=StateCodes.HTTP_303_SEE_OTHER), None
-                else:
-
-                    if is_json_mode:
-                        return JSONResponse(content={"message": code_str},
-                                            status_code=code), None
-
-                    return RedirectResponse(request.headers.get("Referer") or '/',
-                                            status_code=StateCodes.HTTP_303_SEE_OTHER), None
-                return ret, user  # will never do here
+             
                 # end of _auth_
         setattr(puppetController, AUTH_KEY, allargs['auth'])
         setattr(puppetController, "__name__", targetController.__name__)

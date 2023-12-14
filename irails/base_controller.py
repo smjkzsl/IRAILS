@@ -70,24 +70,7 @@ class BaseController:
             'data':data
         }
     
-    # @property
-    # def _(self):
-    #     if hasattr(self,"__cached_i18n__"):
-    #         return getattr(self,'__cached_i18n__').gettext
-        
-    #     m = getattr(self,'__appdir__') 
-    #     languages = None
-    #     if 'lang' in self._session:
-    #         languages = self._session['lang']
-    #     else:
-    #         language_header = self._request.headers.get('accept-language')
-    #         if language_header:
-    #             languages = language_header.split(',')
-    #             if languages:
-    #                 languages = [languages[0]]
-    #     t = load_app_translations(module_dir=m,lan=languages)
-    #     setattr(self,'__cached_i18n__',t)
-    #     return t.gettext
+ 
     
     @property
     def log(self)->Logger:
@@ -291,74 +274,9 @@ class BaseController:
         
         url = self.request.url.scheme + "://" + self.request.url.netloc + save_file
         return save_file,url
-    async def __constructor__(base_controller_class:'BaseController',request:Request,response:Response):  
-        '''don't call this'''
+    
         
-        if not _session_key in request.cookies or not request.cookies[_session_key]:
-            request.cookies[_session_key] = str(uuid.uuid4())
-
-         
-        base_controller_class._request:Request = request
-        base_controller_class._response:Response = response 
-        base_controller_class._cookies:Dict[str,str] = request.cookies.copy()
-        # base_controller_class._session = await  _sessionManager.initSession(request,response )
-        base_controller_class._session = request.session
-         
-        params = {}
-        form_params = {}
-        query_params = {}
-        json_params = {}
-        try:
-            form_params =  await  request.form()
-        except Exception as e:
-            _log.info(_("when parsing `Form params` raised:")+str(e.args))
-            pass
-
-        
-        try:
-            json_params =  await  request.json()
-        except:
-            pass
-        query_params = request.query_params
-        base_controller_class._form = form_params
-        base_controller_class._query = query_params
-        base_controller_class._json = json_params
-        base_controller_class._params = params
-        def __init_flash(request:Request): 
-            request.state.keep_flash = False 
-            if 'flash' not in request.session:
-                request.session['flash'] ='' 
-            
-        __init_flash(request=request) 
-
-        if url_lang_key in query_params:
-            lang = query_params[url_lang_key]
-            request.session['lang'] = [lang]
-        
-    async def __destructor__(base_controller_class:'BaseController',new_response:Response):  
-        '''do not call this anywhere'''
-        def process_cookies(response:Response, cookies,old_cookies):
-            
-            for key in cookies: 
-                if   key != _session_key: 
-                    response.set_cookie(key,cookies[key])
-            for key in old_cookies:
-                if not key in cookies and key != _session_key:
-                    response.set_cookie(key=key,value="",max_age=0)   
-            response.set_cookie(key=_session_key,
-                                value=base_controller_class._request.cookies[_session_key],
-                                max_age = 14 * 24 * 60 * 60,  # 14 days, in seconds
-                                path  = "/",
-                                samesite  = "lax",
-                                httponly  = False ) 
-            
-        if new_response:
-            process_cookies(new_response,base_controller_class._cookies,base_controller_class._request.cookies)
-
-        def __clear_flash(request:Request):
-            if not request.state.keep_flash:
-                request.session['flash'] = ''
-        __clear_flash(base_controller_class._request)
+    
          
 
     

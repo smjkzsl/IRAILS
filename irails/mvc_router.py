@@ -6,6 +6,7 @@ from .controller_utils import (TEMPLATE_PATH_KEY,
                                _get_leaf_controllers,
                                _register_controller_to_router, 
                                _route_method,
+                               set_global_app
                                ) 
 from ._i18n import _
 
@@ -80,7 +81,8 @@ class Api:
     @classmethod
     def init(cls,app):
         cls.app = app
-
+        set_global_app(app=app)
+        
     @staticmethod
     def http(path,methods=['GET'],*args,**kwargs):
         return _route_method(path,method=methods,*args,**kwargs)

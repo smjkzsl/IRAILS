@@ -7,10 +7,17 @@ from functools import wraps, update_wrapper
 from typing import Callable, Dict, Set, Type
 import copy
 import typing_inspect
-from fastapi import APIRouter,Request,Response,HTTPException,Form,Depends
-from .cbv import cbv
+from fastapi import APIRouter,Request,Response,HTTPException,Form,Depends,FastAPI
+from .cbv import cbv,RESPONSE_VAR_NAME,REQUEST_VAR_NAME,controller_constructor,controller_destructor 
+
+
 from fastapi.openapi import  utils as fastapi_dependencies_utils
 from ._utils import get_snaked_name,get_controller_name
+global_app:FastAPI = None
+
+def set_global_app(app):
+    global global_app
+    global_app = app
 
 def _get_flat_params(dependant )  :
     flat_dependant =fastapi_dependencies_utils.get_flat_dependant(dependant, skip_repeats=True)
@@ -175,27 +182,27 @@ def _update_generic_parameters_signature(generic_dict: Dict, method: Callable):
     params = sig.parameters
 
     new_params = []
-    has_request:bool=False
-    has_response:bool=False
+    # has_request:bool=False
+    # has_response:bool=False
     for k, v in params.items():
         annotation = v.annotation #注释
-        if v.name=='request'  :
-            has_request = True
-        if v.name=="response"  :
-            has_response = True
+        # if v.name=='request'  :
+        #     has_request = True
+        # if v.name=="response"  :
+        #     has_response = True
         if typing_inspect.is_typevar(annotation):
             new_params.append(
                 inspect.Parameter(name=k, kind=v.kind, annotation=generic_dict[annotation], default=v.default))
         else:
             new_params.append(v)
      
-    if not has_request: 
-        new_params.append(inspect.Parameter('request', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Request,default=None))
+    # if not has_request: 
+    #     new_params.append(inspect.Parameter('request', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Request,default=None))
          
-    if not has_response: 
-        new_params.append(inspect.Parameter('response', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Response,default=None))
-    new_params.append(inspect.Parameter('__has_request__', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=bool,default=has_request))
-    new_params.append(inspect.Parameter('__has_response__', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=bool,default=has_response))
+    # if not has_response: 
+    #     new_params.append(inspect.Parameter('response', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Response,default=None))
+    # new_params.append(inspect.Parameter('__has_request__', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=bool,default=has_request))
+    # new_params.append(inspect.Parameter('__has_response__', inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=bool,default=has_response))
      
     
     return_val = generic_dict[sig.return_annotation] if typing_inspect.is_typevar(
@@ -308,42 +315,36 @@ def _route_method(path: str, method, *args, **mwargs):
     def wrapper(func ): 
         @wraps(func)
         async def actions_decorator(  *args, **kwargs):
-            
-            has_request = kwargs.get("__has_request__")
-            has_response = kwargs.get("__has_response__")
+        
             cls:BaseController = None
             if 'self' in kwargs:
                 cls = kwargs['self']
             else:
                 module = inspect.getmodule(func)
                 cls = getattr(module, func.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0]) 
+
             auth_type:str = getattr(func,AUTH_KEY) 
             if auth_type is None:
                 auth_type = getattr(cls,AUTH_KEY)
-            response:Response = None
-            result:Response = None
             
-            if 'request' in kwargs and 'response' in kwargs:
-                response  = kwargs["response"]
-                rqst:Request = kwargs['request']  
-                #auth first then call constructor
-                rqst.state.action  = func.__qualname__
-                if auth_type:
-                    auth_result,user = await cls._auth__(request=rqst,response=response,auth_type=auth_type)
-                    if isinstance(auth_result,Response): 
-                        return auth_result
-                    if not auth_result:
-                        # raise HTTPException(status_code=403, detail="未经授权的访问" )
-                        return Response('Unauthorized Access',403)
-                #_constructor = getattr(cls,'_constructor_')
-                await cls.__constructor__(request = rqst,response=response)
+            result:Response = None 
+        
+            response:Response  = getattr(cls,RESPONSE_VAR_NAME) if hasattr(cls,RESPONSE_VAR_NAME) else cls._request # kwargs["response"]
+            request:Request = getattr(cls,REQUEST_VAR_NAME) if hasattr(cls,REQUEST_VAR_NAME) else cls._response # kwargs['request']  
+            
+            #auth first then call constructor
+            request.state.action  = func.__qualname__
+             
+            auth_result,user = await global_app._auth(request=request,response=response,auth_type=auth_type)
+            if isinstance(auth_result,Response): 
+                return auth_result
+            if not auth_result:
+                # raise HTTPException(status_code=403, detail="未经授权的访问" )
+                return Response('Unauthorized Access',403)
+            if request:    
+                await controller_constructor(cls,request = request,response=response)
 
-            if 'request' in kwargs and not has_request:  
-                del kwargs['request']  
-            if 'response' in kwargs and not has_response:  
-                del kwargs['response']  
-            if '__has_request__' in kwargs:del kwargs["__has_request__"]  
-            if '__has_response__' in kwargs:del kwargs["__has_response__"]
+       
             if inspect.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
             else:
@@ -353,12 +354,9 @@ def _route_method(path: str, method, *args, **mwargs):
 
             if response and isinstance(result,Response): 
                 result.raw_headers.extend(response.raw_headers)
-            if isinstance(result,Response):
-                # _deconstructor = getattr(cls,'__destructor__')
-                ret = await cls.__destructor__(result)
-                if isinstance(ret,Response):
-                    result = ret
- 
+            if isinstance(result,Response): 
+                await controller_destructor(cls,result)
+                
             return result #end of decorator
             
         setattr(actions_decorator, PATH_KEY, path)

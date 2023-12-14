@@ -29,7 +29,7 @@ class TestController(BaseController):
         return self.view()
     
     @api.get("/",auth='none' )
-    def home(self,request:Request): 
+    async def home(self,request:Request): 
         '''
         :title Home
         '''
@@ -55,6 +55,16 @@ class TestController(BaseController):
                 else:
                     router_map[app_name][func] = application.apps[app_name]['route_map'][func]
         app_name = application.title
+
+
+        from irails.apps.system_admin.controllers.user_controller import UserController
+        u = UserController(request=self.request,response=self.response)
+        curuser =   u.get_current_user()
+        
+        return self.view( )
+
+
+
         return self.view()
     
     @api.get("/xml",auth='user')
