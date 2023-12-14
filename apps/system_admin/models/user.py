@@ -7,17 +7,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship,validates
 import hashlib,os
  
 
-class User(database.Base):
+class User(database.UserBase, database.Base):
      
-    id: Mapped[int] = mapped_column(primary_key=True)
+    
 
-    username: Mapped[str] = mapped_column(String(50),nullable=False)
-     
-    fullname: Mapped[str] = mapped_column(String(50))
-
-    domain:Mapped[str] = mapped_column(String(50),nullable=True, comment="user domain")
-    password = Column(String(50),comment="Password",nullable=False,info={'manager':False})
-    age: Mapped[str] = mapped_column(Integer())
+    
     roles:List['Role'] = []
 
     apikeys:List['ApiKey'] = []

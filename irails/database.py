@@ -19,7 +19,7 @@ from sqlalchemy import (Boolean, DateTime, Integer,
                         event,text,TextClause,Table,
                         inspect)
 import sqlalchemy
-from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query ,attributes
+from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query ,attributes,mapped_column,Mapped
 from sqlalchemy.ext.automap import automap_base 
 from sqlalchemy.sql._typing import _ColumnsClauseArgument
 from alembic import command
@@ -69,7 +69,13 @@ if cfg:
     i18n_json_data_field = cfg.get("i18n_json_data_field",'i18n_json_data')
 
 
-
+class UserBase(object):
+    id: Mapped[int] = mapped_column(primary_key=True) 
+    username: Mapped[str] = mapped_column(String(50),nullable=False) 
+    fullname: Mapped[str] = mapped_column(String(50))
+    domain:Mapped[str] = mapped_column(String(50),nullable=True, comment="user domain")
+    password = Column(String(50),comment="Password",nullable=False,info={'manager':False})
+    age: Mapped[str] = mapped_column(Integer())
             
 class Base(DeclarativeBase):
     __abstract__ = True 

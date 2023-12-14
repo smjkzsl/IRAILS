@@ -19,7 +19,7 @@ class ControllerTest(_BaseUnitTest):
     def __init__(self,*args,**kwargv) -> None:
         super().__init__(*args,**kwargv)
         if not hasattr(_BaseUnitTest,'application'):
-            _BaseUnitTest.application = generate_mvc_app()
+            _BaseUnitTest.application = generate_mvc_app('testmode')
         from fastapi.testclient import TestClient 
         self.client = TestClient(app=_BaseUnitTest.application)
         
@@ -40,7 +40,8 @@ class ServiceTest(_BaseUnitTest):
             alembic_ini = db_cfg.get("alembic_ini")
             ServiceTest.engine = init_database(db_uri,debug=True,cfg = db_cfg)
             check_init_auth(db_cfg)
-            if ServiceTest.engine:
-                check_migration(engine=ServiceTest.engine,uri= db_uri,alembic_ini= alembic_ini )
+            #test mode do not run migrate
+            # if ServiceTest.engine:
+            #     check_migration(engine=ServiceTest.engine,uri= db_uri,alembic_ini= alembic_ini )
             self.service = Service()
      

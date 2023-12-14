@@ -153,7 +153,7 @@ class MvcApp(FastAPI):
                                     status_code=StateCodes.HTTP_303_SEE_OTHER), None
         return ret ,user
     
-    def generate_auth_user(self, user: Union[database.Base, Dict]) -> auth.DomainUser:
+    def generate_auth_user(self, user: Union[database.UserBase, Dict]) -> auth.DomainUser:
         '''
         create new authencation user from givened data
         '''
@@ -606,6 +606,7 @@ def generate_mvc_app(env="general"):
     application.title = _project_name
 
     _log.info(_("loading irails apps..."))
+    _log.info("ENV:"+env)
     loaded, unloaded = collect_apps(debug=__is_debug, application=application)
 
     _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %
@@ -617,7 +618,7 @@ def generate_mvc_app(env="general"):
     db_cfg = check_init_database()
 
     auth_type, _adapter_uri, _casbin_adapter_class = check_init_auth(db_cfg)
-    if __is_debug:
+    if __is_debug and env=='general':
         # Check for database migrations
         check_db_migrate()
     # Initialize the authentication system if the adapter class and URI are present

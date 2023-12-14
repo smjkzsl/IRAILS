@@ -56,14 +56,12 @@ class TestController(BaseController):
                     router_map[app_name][func] = application.apps[app_name]['route_map'][func]
         app_name = application.title
 
-        #访问其它模块中的控制器函数，如果是一个被@api装饰的函数 ,不能直接调用
+        #访问其它模块中的控制器函数，实例化一个控制器需要提供两个参数，request(请求对象，不能为空) 和 response(可为None)
         from irails.apps.system_admin.controllers.user_controller import UserController
         u = UserController(request=self.request,response=self.response)
-        curuser =   u.current()
-        try:
-            curuser.send(None) #使用send函数
-        except StopIteration   as e:
-            aa =  e.value #从这里获取运行结果 
+         
+        aa = await u.current()
+         
              
         return self.view( )
 
