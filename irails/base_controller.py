@@ -70,7 +70,7 @@ class BaseController:
             'data':data
         }
     
- 
+    
     
     @property
     def log(self)->Logger:

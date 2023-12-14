@@ -317,9 +317,11 @@ def _route_method(path: str, method, *args, **mwargs):
         async def actions_decorator(  *args, **kwargs):
         
             cls:BaseController = None
-            if 'self' in kwargs:
+            if 'self' in kwargs: #normal run 
                 cls = kwargs['self']
-            else:
+            elif args: #from other app call controller methods
+                cls = args[0]
+            else: 
                 module = inspect.getmodule(func)
                 cls = getattr(module, func.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0]) 
 
@@ -333,7 +335,8 @@ def _route_method(path: str, method, *args, **mwargs):
             request:Request = getattr(cls,REQUEST_VAR_NAME) if hasattr(cls,REQUEST_VAR_NAME) else cls._response # kwargs['request']  
             
             #auth first then call constructor
-            request.state.action  = func.__qualname__
+            if not hasattr(request.state,'action') or not request.state.action:
+                request.state.action  = func.__qualname__
              
             auth_result,user = await global_app._auth(request=request,response=response,auth_type=auth_type)
             if isinstance(auth_result,Response): 
