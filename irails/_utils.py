@@ -51,6 +51,8 @@ def get_plural_name(name:str):
 
         Whitespace at the start and end is preserved.
 
+        >>> get_plural_name("horse")
+        >>> 'horses'
     """
     _pluralizer = __init_inflect()
     return _pluralizer.plural(name.lower())
@@ -61,14 +63,12 @@ def get_singularize_name(name:str):
         If count supplied, then return the singular if count is one of:
             1, a, an, one, each, every, this, that or if count is None
 
-        otherwise return text unchanged.
+        otherwise return text unchanged. 
+        Whitespace at the start and end is preserved.  
 
-        Whitespace at the start and end is preserved.
-
-        >>> p = engine()
-        >>> p.singular_noun('horses')
+        >>> get_singularize_name('horses')
         'horse'
-        >>> p.singular_noun('knights')
+        >>> get_singularize_name('knights')
         'knight'
     """
     _pluralizer = __init_inflect()

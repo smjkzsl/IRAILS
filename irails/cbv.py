@@ -91,6 +91,8 @@ async def controller_constructor(cls ,request:Request,response:Response):
     if url_lang_key in query_params:
         lang = query_params[url_lang_key]
         request.session['lang'] = [lang]
+        if hasattr(request,'user'):
+            request.scope['user'].lang = lang
         
  
 async def controller_destructor(cls,new_response:Response):  

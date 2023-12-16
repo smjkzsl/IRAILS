@@ -1,5 +1,5 @@
-import configparser
-from datetime import datetime, date
+
+ 
 import re,os,sys,json
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, overload
 from contextlib import contextmanager
@@ -21,13 +21,12 @@ from sqlalchemy import (Boolean, DateTime, Integer,
 import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase,Session,relationship,Query ,attributes,mapped_column,Mapped
 from sqlalchemy.ext.automap import automap_base 
-from sqlalchemy.sql._typing import _ColumnsClauseArgument
-from alembic import command
-from alembic.config import Config 
-from ._utils import camelize_classname,pluralize_collection ,iJSONEncoder
+ 
+
+from ._utils import camelize_classname,pluralize_collection  
 from .log import get_logger
 _log=get_logger(__name__)
-from ._i18n import _ #,set_module_i18n
+from ._i18n import _  
 from .config import config,ROOT_PATH
 from ._utils import get_plural_name,get_singularize_name
  
@@ -69,7 +68,7 @@ if cfg:
     i18n_json_data_field = cfg.get("i18n_json_data_field",'i18n_json_data')
 
 
-class UserBase(object):
+class UserBaseMixin(object):
     id: Mapped[int] = mapped_column(primary_key=True) 
     username: Mapped[str] = mapped_column(String(50),nullable=False) 
     fullname: Mapped[str] = mapped_column(String(50))
@@ -109,8 +108,7 @@ class Base(DeclarativeBase):
                 if callable(func) and not hasattr(func,'attched_event'):
                     event.listen(getattr(cls,col.name),'set',func,retval=True)
                     setattr(func,"attched_event",True)
-        # if not hasattr(cls,'__system__') or not getattr(cls,"__system__") is True:
-        #     set_module_i18n(cls,cls.__module__)
+     
     
     @classmethod
     def _general_columns(self)->Tuple[Column]:
@@ -213,15 +211,15 @@ def get_model(model_name:str,module_name:str="")->Base:
     model:Base = None
     if module_name:
         module =  sys.modules[module_name] if module_name in sys.modules else None
-        model = getattr(module,model_name)
+        model = getattr(module,model_name) if hasattr(module,model_name) else None
     else:
         if module_name in globals():
             module = globals()[module_name]
-            model = getattr(module,model_name)
-    if model  :
-        return model
-    else:
-        return None
+            model = getattr(module,model_name) if hasattr(module,model_name) else None
+        else:
+            model = getattr(Base,model_name) if hasattr(Base,model_name) else None
+    return model
+    
     
     
 def get_meta(model_name: str = "") -> Dict[str, List]:
@@ -290,31 +288,12 @@ def get_meta(model_name: str = "") -> Dict[str, List]:
 
      
  
-class _serviceMeta(type):
-    def __new__(cls, name, bases, attrs):
-        obj = super().__new__(cls, name, bases, attrs)
-        # if obj.__name__!="Service":
-        #     set_module_i18n(obj=obj,module_name=attrs['__module__'])
-         
-        return obj
-# class AlchemyEncoder(json.JSONEncoder):
-
-#     def default(self, obj):
-#         if isinstance(obj.__class__, Base):
-#             # an SQLAlchemy class
-#             fields = {}
-#             for field in [x for x in dir(obj) if not x.startswith('_') and x != 'metadata']:
-#                 data = obj.__getattribute__(field)
-#                 try:
-#                     json.dumps(data ) # this will fail on non-encodable values, like other classes
-#                     fields[field] = data
-#                 except TypeError:
-#                     fields[field] = None
-#             # a json-encodable dict
-#             return fields
-#         elif isinstance(obj, (datetime, date)):
-#             return obj.isoformat()
-#         return json.JSONEncoder.default(self, obj)
+# class _serviceMeta(type):
+#     def __new__(cls, name, bases, attrs):
+#         obj = super().__new__(cls, name, bases, attrs)
+ 
+#         return obj
+ 
 def to_json(records:List[Base])->str:
     """
     """
@@ -359,7 +338,7 @@ class ListPager:
         results = [row._asdict() for row in ret]
         return results
     
-class Service(metaclass=_serviceMeta):
+class Service( ):
     __all_generated = {}
     _session:Session = None
     _ = _ #the i18n traslation object ,it's will auto redirect the `app_name/locales` dir i18n configure
@@ -617,6 +596,9 @@ def sanitize_path(path):
     return sanitized_path
 
 def check_migration(engine:Engine,uri,alembic_ini,upgrade=None): 
+    from alembic import command
+    from alembic.config import Config 
+    import configparser
     if os.path.isabs(alembic_ini)==False:
         alembic_ini = os.path.abspath(os.path.join(ROOT_PATH,alembic_ini))
     def _update_uri_to_ini(): 

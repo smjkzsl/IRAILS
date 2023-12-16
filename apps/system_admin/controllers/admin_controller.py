@@ -9,7 +9,7 @@ application.docs_url = '/system_admin/admin/docs'
 application.redoc_url = '/system_admin/admin/redoc'
 
 
-@route(path='/{app}/{controller}', auth='user')
+@route(path='/{app}/{controller}', auth='user',default = "index")
 class AdminController(BaseController):
     @api.get('/index')
     def index(self):

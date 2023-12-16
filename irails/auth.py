@@ -6,9 +6,8 @@ import casbin
 from casbin.enforcer import Enforcer
 
 from fastapi import FastAPI, Request, Response
-from starlette.authentication import AuthenticationBackend, AuthenticationError, SimpleUser, AuthCredentials, BaseUser
-from starlette.middleware.authentication import AuthenticationMiddleware
-from starlette.authentication import BaseUser, SimpleUser, UnauthenticatedUser
+from starlette.authentication import AuthenticationBackend, AuthenticationError,   AuthCredentials, BaseUser
+ 
 from casbin.persist.adapters import FileAdapter
 from casbin.persist.adapter import Adapter
 # from .midware_casbin import CasbinMiddleware

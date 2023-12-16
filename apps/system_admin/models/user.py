@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship,validates
 import hashlib,os
  
 
-class User(database.UserBase, database.Base):
+class User(database.UserBaseMixin, database.Base):
      
     
 

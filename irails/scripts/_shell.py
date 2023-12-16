@@ -28,7 +28,7 @@ def shell_command() -> None:
     """
     import code
      
-    irails.generate_mvc_app()
+    irails.generate_mvc_app('shell')
     banner = (
         f"Python {sys.version} on {sys.platform}\n" 
         f"Env: IRails {irails.__version__} on {irails.application.title}"

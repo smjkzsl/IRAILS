@@ -153,7 +153,7 @@ class MvcApp(FastAPI):
                                     status_code=StateCodes.HTTP_303_SEE_OTHER), None
         return ret ,user
     
-    def generate_auth_user(self, user: Union[database.UserBase, Dict]) -> auth.DomainUser:
+    def generate_auth_user(self, user: Union[database.UserBaseMixin, Dict]) -> auth.DomainUser:
         '''
         create new authencation user from givened data
         '''
@@ -362,8 +362,15 @@ def api_router(path: str = "", version: str = "", **allargs):
     '''
     :param path :special path format ,ex. '/{controller}/{version}'
            if given any value,it's will be ensure {controller} flag in here auto
+           
+           full path expression is ['{app}','{controller}','{version}'] 
     :param version :str like 'v1.0' ,'2.0'..
            if given any value,the :path will have {controller} flag auto
+    
+    :addtional params
+            :auth set the auth type for member by default,may rewrite in member decorator args
+            :default set default index path to a exists member
+            eg. default='index' when get '/{controller}/' will execute member 'index' method
     '''
     if not 'auth' in allargs:
         allargs['auth'] = 'none'
