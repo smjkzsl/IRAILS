@@ -7,6 +7,7 @@ import irails
 from fastapi.testclient import TestClient
 
 setattr(irails.application,'__name__',"irails.application.shell")
+setattr(irails.core,'__is_debug',False)
 from irails.database import Service
 
 def create_context()->Dict:

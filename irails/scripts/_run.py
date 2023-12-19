@@ -29,7 +29,7 @@ def main():
     if args.debug: 
         kwargs['reload'] = args.debug 
         app_cfg = config.get('app')
-        apps_dirs = app_cfg.get("appdir") 
+        apps_dirs = app_cfg.get("appdirs") 
         kwargs['reload_dirs'] = apps_dirs
         kwargs['reload_includes'] = ['*.po']
         kwargs['reload_excludes'] = ['*.pyc']

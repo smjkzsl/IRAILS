@@ -3,7 +3,7 @@ app:
   - app
   - product
   - system_admin
-  appdir:
+  appdirs:
   - apps
   enabled:
   - app

@@ -172,10 +172,10 @@ def collect_apps(debug=False, do_load: bool = True, application: object = None):
     global app_dirs, app_enabled
     app_cfg = config.get('app')
     if app_cfg:
-        app_dirs = app_cfg.get("appdir")
+        app_dirs = app_cfg.get("appdirs")
         app_enabled = app_cfg.get("enabled")
     if not app_cfg or not app_dirs:
-        raise RuntimeError(_("Config error,app configs is empty."))
+        raise RuntimeError(_("config error,app configs is empty.please check `appdirs` section"))
     
     load_failed = 0
     loaded = 0

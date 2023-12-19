@@ -1,5 +1,5 @@
 app:
-  appdir:
+  appdirs:
   - apps
   enabled: null
   root: 
