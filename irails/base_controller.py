@@ -3,7 +3,7 @@ import re
 from fastapi import FastAPI,UploadFile,File,Header, Depends,HTTPException,Request,Response, status as StateCodes
 from fastapi.responses import RedirectResponse,HTMLResponse,PlainTextResponse
 from .view import _View
-from ._utils import get_controller_name,get_snaked_name
+from ._utils import get_controller_name,get_snaked_name,get_media_type
 from .config import config,ROOT_PATH
 from .log import get_logger
 _log=get_logger(__name__)
@@ -183,7 +183,7 @@ class BaseController:
                 context = getattr(context,'__dict__')
             else:
                 context = {}
-                
+          
             
         if content:
             if format=='html':

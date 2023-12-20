@@ -1,7 +1,5 @@
-fastapi==0.95.1
-starlette==0.26.1
+fastapi==0.95.2
 casbin==1.18.2
-pydantic==1.10.2
 PyJWT==2.6.0
 PyYAML==6.0
 redis==4.5.4
@@ -9,7 +7,7 @@ Jinja2==3.1.2
 inflect==6.0.4
 SQLAlchemy==2.0.9
 alembic==1.10.3
-uvicorn==0.21.1
+uvicorn==0.24.0
 polib==1.2.0 
 httpx==0.24.0
 websockets==11.0.2

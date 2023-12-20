@@ -524,8 +524,8 @@ def _register_controllers():
         for hash, dict_obj in application.apps[app_name]['routes'].items():
             controller_count += 1
             if dict_obj['label'] == 'new':
-                if __is_debug:
-                    _log.info(hash+" mountting...")
+                # if __is_debug:
+                #     _log.info(hash+" mountting...")
                 app_router = register_controllers_to_app(
                     application, dict_obj['obj'])
 
@@ -544,8 +544,8 @@ def _register_controllers():
                         methods = r.methods
                     else:
                         methods = r.name
-                    if __is_debug:
-                        _log.info((str(methods), r.path, funcname))
+                    # if __is_debug:
+                    #     _log.info((str(methods), r.path, funcname))
                     if not 'route_map' in application.apps[app_name]:
                         application.apps[app_name]['route_map'] = {}
                     application.apps[app_name]['is_installed'] = True
@@ -555,20 +555,20 @@ def _register_controllers():
                 is_startup = False
 
     if not (controller_count) > 0:
-        raise RuntimeError(_("not found any controller class"))
+        # raise RuntimeError(_("not found any controller class"))
+        return controller_count
+    else:
+        # _log.info(_("static files mouting..."))
 
-    _log.info(_("static files mouting..."))
-
-    if is_startup:
-        midware.init(app=application, debug=__is_debug)
-
+        if is_startup:
+            midware.init(app=application, debug=__is_debug)
+        return controller_count
 
 def check_db_migrate():
     db_cfg = config.get("database")
     if not db_cfg:
         return
-    if __is_debug:
-        _log.info(_("checking database migrations...."))
+     
     try:
 
         alembic_ini = db_cfg.get("alembic_ini", './configs/alembic.ini')
@@ -581,7 +581,7 @@ def check_db_migrate():
         _log.disabled = False
         _log.error(e.args)
 
-    _log.info(_("check database migrations finished."))
+    
 
 
 def check_init_auth(db_cfg):
@@ -612,14 +612,14 @@ def generate_mvc_app(env="general"):
 
     application.title = _project_name
 
-    _log.info(_("loading irails apps..."))
+    # _log.info(_("loading irails apps..."))
     _log.info("ENV:"+env)
     loaded, unloaded = collect_apps(debug=__is_debug, application=application)
 
     _log.info(_('Load Apps Completed,%s loaded,%s unloaded') %
               (loaded, unloaded))
 
-    _register_controllers()
+    controller_count = _register_controllers()
 
     _log.info(_("checking database configure..."))
     db_cfg = check_init_database()
@@ -627,9 +627,12 @@ def generate_mvc_app(env="general"):
     auth_type, _adapter_uri, _casbin_adapter_class = check_init_auth(db_cfg)
     if __is_debug and env=='general':
         # Check for database migrations
+        _log.info(_("checking database migrations...."))
         check_db_migrate()
+        _log.info(_("check database migrations finished."))
     # Initialize the authentication system if the adapter class and URI are present
 
+    
     _log.info(_("init casbin auth system..."))
     application.casbin_auth = __init_auth(
         application, auth_type, _casbin_adapter_class, _adapter_uri)

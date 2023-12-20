@@ -3,7 +3,7 @@ from datetime import datetime, date
 from json import JSONEncoder
 import re
 import os
-from typing import Any
+from typing import Any, Callable, List, Optional
 from .log import get_logger
 _log=get_logger(__name__)
 
@@ -13,6 +13,23 @@ snake_case_re = re.compile("(?<!^)(?=[A-Z][a-z])")
 controller_re = re.compile("([\\w]+)Controller")
 
 _pluralizer = None
+
+import mimetypes
+ 
+
+
+def get_media_type(extension):
+    """Get the media type for a given extension.
+
+    Args:
+        extension: The file extension.
+
+    Returns:
+        The media type, or None if the extension is not recognized.
+    """
+
+    return mimetypes.guess_type(extension)[0]
+
 def get_controller_name(controller_name):
     """
     >>> get_controller_name("TestController")

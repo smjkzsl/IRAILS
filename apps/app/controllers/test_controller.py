@@ -8,9 +8,7 @@ from pydantic import conlist
 
 @route(auth='none')
 class TestController(BaseController): 
-    def __init__(self) -> None:
-        
-        super().__init__()
+     
     
     
     @api.post("/test/upload")

@@ -639,11 +639,12 @@ def check_migration(engine:Engine,uri,alembic_ini,upgrade=None):
         raise InitDbError(e.args)
     _update_uri_to_ini()
     #  
+    # import io
     from typing import TextIO
-    io = TextIO()
+    _io = TextIO()  
     log_level =_log.level
 
-    alembic_cfg = Config(alembic_ini,stdout=io)    
+    alembic_cfg = Config(alembic_ini,stdout=_io)    
     try:
         command.check(config=alembic_cfg)
     except Exception as e: 
@@ -665,8 +666,8 @@ def check_migration(engine:Engine,uri,alembic_ini,upgrade=None):
         command.upgrade(alembic_cfg, to_revision)    
     else:
         command.downgrade(alembic_cfg,"-1")
-    io.close()
-    _log.level = log_level
+    _io.close()
+    _log = get_logger(__name__)
 def _test_connection():
     #test connect
     try:

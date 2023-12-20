@@ -83,7 +83,7 @@ def main():
     parser.add_argument('args', nargs=argparse.REMAINDER,help="test names in app `tests` dir...")
     args = parser.parse_args()  
     
-    
+    old_curdir = curdir
     try:
         if args.args:
             for name in args.args:
@@ -98,7 +98,10 @@ def main():
             do_test_project()
     except Exception as e:
         raise
- 
+    finally:
+        os.chdir(old_curdir)
+    
+    #print(f"count test:{len(test_results)}")
     ok = 0
     fail = 0
      

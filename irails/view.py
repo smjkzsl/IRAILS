@@ -9,6 +9,8 @@ from .config import ROOT_PATH, config
 from .log import get_logger
 _log=get_logger(__name__)
 from ._i18n import _
+from ._utils import get_media_type
+
 env_configs = {}
 static_format = []
 
@@ -55,16 +57,22 @@ class _View(object):
             raise ValueError(
                 _("request instance type must be fastapi.Request"))
         #location view file absolute
-        view_path_real = os.path.join(self.views_directory, view_path).replace(
-            ROOT_PATH, "").replace("\\", "/")
+        view_path_real = os.path.normpath(os.path.join(self.views_directory, view_path))
         #if not exists view file,the add the default extendtion (.html)
-        if not view_path.endswith(".html") and not os.path.exists(view_path_real):
-            view_path = f"{view_path}.html"
-            view_path_real = os.path.join(self.views_directory, view_path).replace(
-            ROOT_PATH, "").replace("\\", "/")
+        if not os.path.exists(view_path_real):
+            if  not view_path_real.endswith(".html") :
+                view_path_real = f"{view_path_real}.html"
+        
+                if not os.path.exists(view_path_real):
+                    raise FileNotFoundError(view_path_real)
+        #location view file relative
+        view_path_real = os.path.relpath(view_path_real,ROOT_PATH) 
+        # os.path.join(self.views_directory, view_path).replace( ROOT_PATH, "").replace("\\", "/")
 
         context["request"] = request
-        
+        if not 'media_type' in kwargs:
+            kwargs['media_type'] = get_media_type(view_path_real)      
+            
         try:
             res = self._templates.TemplateResponse(
                 view_path, context, **kwargs)

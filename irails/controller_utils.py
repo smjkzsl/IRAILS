@@ -359,7 +359,8 @@ def _route_method(path: str, method, *args, **mwargs):
                 result.raw_headers.extend(response.raw_headers)
             if isinstance(result,Response): 
                 await controller_destructor(cls,result)
-                
+             
+            # result.headers.update({'Server':'IRials'})   
             return result #end of decorator
             
         setattr(actions_decorator, PATH_KEY, path)

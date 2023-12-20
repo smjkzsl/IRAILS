@@ -165,7 +165,7 @@ def _load_app(abs_app_dir,app_name, manifest: dict,application=None):
     else:
         print(app_name+" 模块并未完全加载[" + ",".join(_modules) +"]")        
             
-    return cnt
+    return cnt  
 
 
 def collect_apps(debug=False, do_load: bool = True, application: object = None):

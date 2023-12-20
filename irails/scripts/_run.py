@@ -30,9 +30,9 @@ def main():
         kwargs['reload'] = args.debug 
         app_cfg = config.get('app')
         apps_dirs = app_cfg.get("appdirs") 
-        kwargs['reload_dirs'] = apps_dirs
-        kwargs['reload_includes'] = ['*.po']
-        kwargs['reload_excludes'] = ['*.pyc']
+        kwargs['reload_dirs'] = list(map(os.path.abspath ,apps_dirs))
+        # kwargs['reload_includes'] = []
+        kwargs['reload_excludes'] = ['*.pyc','*.po'] 
     
     uvicorn.run(app="irails.core:generate_mvc_app",**kwargs)      
        
