@@ -638,3 +638,23 @@ def generate_mvc_app(env="general"):
         application, auth_type, _casbin_adapter_class, _adapter_uri)
     _log.info(_("load irails apps finished."))
     return application
+
+def run_server(ip:str="0.0.0.0",port:int = 8080,hot_reload=False):
+    import uvicorn 
+  
+    kwargs = {}
+    kwargs['reload'] = hot_reload 
+    kwargs['host'] = ip
+    kwargs['port'] = port
+    
+    if hot_reload:
+        kwargs['factory'] = True
+        app_cfg =   config.get('app')
+        apps_dirs = app_cfg.get("appdirs") 
+        kwargs['reload_dirs'] = list(map(os.path.abspath ,apps_dirs))
+        # kwargs['reload_includes'] = []
+        kwargs['reload_excludes'] = ['*.pyc','*.po']  
+        uvicorn.run(app="irails.core:generate_mvc_app",**kwargs) 
+    else:
+        _app=generate_mvc_app()
+        uvicorn.run(_app,**kwargs)

@@ -667,7 +667,7 @@ def check_migration(engine:Engine,uri,alembic_ini,upgrade=None):
     else:
         command.downgrade(alembic_cfg,"-1")
     _io.close()
-    _log = get_logger(__name__)
+    _log.level=log_level
 def _test_connection():
     #test connect
     try:

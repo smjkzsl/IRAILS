@@ -1,11 +1,8 @@
 import argparse
-import os, sys
-import uvicorn
+import os
+import sys
+import irails
 from irails.config import IS_IN_irails
- 
-from irails.core import application
-from irails.config import config
- 
 def main():
      
     if not IS_IN_irails:
@@ -18,21 +15,8 @@ def main():
     parser.add_argument('-d','--debug',action='store_true',  help="enable debug mode")    
     args = parser.parse_args()
     
-    kwargs = { }
-    if args.host:
-        kwargs['host'] = args.host
-    if args.port:
-        kwargs['port'] = args.port
-     
-     
-    args.debug = config.get("debug",False)
-    if args.debug: 
-        kwargs['reload'] = args.debug 
-        app_cfg = config.get('app')
-        apps_dirs = app_cfg.get("appdirs") 
-        kwargs['reload_dirs'] = list(map(os.path.abspath ,apps_dirs))
-        # kwargs['reload_includes'] = []
-        kwargs['reload_excludes'] = ['*.pyc','*.po'] 
     
-    uvicorn.run(app="irails.core:generate_mvc_app",**kwargs)      
-       
+    
+    args.port = args.port or 8080
+    args.host = args.host or "127.0.0.1"
+    irails.core.run_server(args.host,args.port,args.debug)  
