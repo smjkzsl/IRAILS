@@ -19,7 +19,7 @@ cors:
   - '*'
   allow_origins:
   - '*'
-debug: true
+debug: false
 errors:
   error_404_page: '{ROOT.public_dir}/error_404.html'
   error_500_page: '{ROOT.public_dir}/error_500.html'
