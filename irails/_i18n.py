@@ -5,14 +5,22 @@ import importlib
 import os,sys
 import gettext
 
-from typing import Callable
-
-from typing import Optional
+from typing import Callable,Optional
+from .config import config
+ 
  
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
  
 translator:gettext.GNUTranslations = None
+trans_dic = {}          
+langs = ['en','zh'] 
+cfg = config.get('i18n')
+ 
+if   cfg: 
+    langs = cfg.get('lang',langs)
+for l in langs:
+    trans_dic[l] = None
  
 def get_all():
     """
@@ -36,16 +44,14 @@ def get_all():
     t=translator
     if t._fallback: #skip default system translator
         t=t._fallback
-
-    from .config import config
-    cfg = config.get('i18n')
-    if not cfg:
-        lan = default_langs
-    else:
-        lan = cfg.get('lang',default_langs)
+ 
     ret = {}
-    for l in lan:
-        ret.update({l:_get_catalogs(t,l)})
+    for l,t in trans_dic.items():
+        if t:
+            _t = t if t and not t._fallback else t._fallback 
+        if _t:
+            ret.update({l:_get_catalogs(_t,l)})
+
     return ret
 
 def _get_catalogs(t:gettext.GNUTranslations,lang:str):
@@ -100,10 +106,7 @@ def check_compile_po(localedir,lang):
                 del gettext._translations[key]
             do_mfgmft()
  
-__all_trans = {}          
-default_langs = ['en','zh'] 
 
-from .config import config
 is_debug = config.get("debug")
 if is_debug: #watch locale dir file change
     from watchdog.observers import Observer
@@ -133,8 +136,8 @@ if is_debug: #watch locale dir file change
             return current_time - modified_time < seconds
 
     def handler(hash,observer:Observer):
-        if hash in __all_trans:
-            del __all_trans[hash]
+        if l in trans_dic:
+            del trans_dic[l]
             a = hash.split("@") 
             module_name = a[0]
             lan = a[1]
@@ -168,54 +171,35 @@ if is_debug: #watch locale dir file change
 #             setattr(module,'_',t.gettext)
 
 
-def load_app_translations(module_dir,lan=None,add_debug_watch:bool=True) -> gettext.GNUTranslations: 
-    global __all_trans
-    
-    if  not lan:
-        from .config import config
-        cfg = config.get('i18n')
-        if not cfg:
-            lan = default_langs
-        else:
-            lan = cfg.get('lang',default_langs)
-        if not isinstance(lan,list):
-            lan=[lan]
-    
-    #check cached
-    key = f"{module_dir}@{lan}"
-    if key in __all_trans:
-        return __all_trans[key]
+def load_app_translations(module_dir,add_debug_watch:bool=True) -> gettext.GNUTranslations: 
      
     locales_dir = os.path.join(module_dir, "locales")
-
-
-        # observer.join()
-    ret = None
+ 
+     
     try:
-        
-        ret = gettext.translation("messages", locales_dir, languages=lan) 
-        
-        if not translator is None:
-            translator.add_fallback(ret)
+        for l in langs:
+            t = gettext.translation("messages", locales_dir, languages=[l])  
+            if not trans_dic[l] is None:
+                trans_dic[l].add_fallback(t)
+            else:
+                trans_dic[l] = t
 
         if is_debug and add_debug_watch:
-            event_handler = PoFileHandler(key,handler=handler )
+            event_handler = PoFileHandler(module_dir,handler=handler )
             observer = Observer()
             observer.schedule(event_handler=event_handler,path=locales_dir) 
             observer.start()
             event_handler.observer = observer
     except Exception as e:
          
-        ret = gettext
-    
-    #cache item
-    __all_trans[key] = ret
+        pass
 
-
-    return ret
+    return trans_dic[langs[0]]
  
  
 def __init_load_i18n():
+    # modify gettext find method
+    # load irails framework translations
 
     _dir = os.path.dirname(__file__)
     # Locate a .mo file using the gettext strategy
@@ -264,6 +248,12 @@ def __init_load_i18n():
     t = load_app_translations(_dir)
     return  t 
 translator = __init_load_i18n()
-_ = translator.gettext
 
+
+def _ (msg,lang=False):
+    if not lang:  lang = langs[0]
+    if lang not in trans_dic:
+        return msg
+
+    return trans_dic[lang].gettext(msg)
  
