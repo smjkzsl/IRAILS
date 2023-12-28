@@ -9,7 +9,7 @@ from typing import Callable,Optional
 from .config import config
  
  
-
+observers_dir = {}
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
  
 translator:gettext.GNUTranslations = None
@@ -41,13 +41,11 @@ def get_all():
         }
     }
     """
-    t=translator
-    if t._fallback: #skip default system translator
-        t=t._fallback
  
     ret = {}
     for l,t in trans_dic.items():
         if t:
+            #skip first the irails framework traslations
             _t = t if t and not t._fallback else t._fallback 
         if _t:
             ret.update({l:_get_catalogs(_t,l)})
@@ -116,85 +114,65 @@ if is_debug: #watch locale dir file change
         '''
         check if po file modified then delete loaded module's cached i18n 
         '''
-        def __init__(self,hash,handler:Callable ) -> None:
+        def __init__(self,hash,handler:Callable,ob:Observer=None ) -> None:
             self.hash = hash
             self.handler = handler
-            self.observer:Observer=None
+            self.observer:Observer=ob
             super().__init__()
         def on_modified(self, event):
             if not event.is_directory and callable(self.handler):
                  
-                if self.is_recently_modified(event.src_path):
+                if self.recently_modified(event.src_path) :
                     print(f"{event.src_path} has been modified") 
                     self.handler(self.hash,self.observer)
 
-        def is_recently_modified(self, file_name:str, seconds=1):  
+        def recently_modified(self, file_name:str, seconds=2):  
             if not file_name.endswith(".po"):
                 return False
             modified_time = os.path.getmtime(file_name)
             current_time = time.time()
-            return current_time - modified_time < seconds
+            return current_time - modified_time<seconds
 
     def handler(hash,observer:Observer):
-        if l in trans_dic:
-            del trans_dic[l]
-            a = hash.split("@") 
-            module_name = a[0]
-            lan = a[1]
-            # load_app_translations(module_name,lan,False)
-             
          
-        observer.stop()
-        observer.unschedule_all()
-
-# def set_module_i18n(obj, module_name ):
-     
-#     module = sys.modules[module_name]
-#     module_package = module.__package__ 
-      
-#     if module_package:
-#         if module_package in sys.modules:
-#             package_module = sys.modules[module_package]
-        
-#             service_package_path =  package_module.__path__[0]
-#             app_dirs = service_package_path.split(os.sep)
-#         else: #test  mode
-#             app_dirs = module_package.split(".")
-#             service_package_path = os.path.dirname(module.__file__)
-#         if len(app_dirs)>=2:
-#             app_dirs = app_dirs[-2:]
-#             setattr(obj,"__app_package__",".".join(app_dirs))
-#             app_dir = os.path.dirname(service_package_path)
-#             # auto set the i18n locales to the `app_name/locales`
-#             t = load_app_translations(app_dir)
-#             # setattr(obj,"_",t) #modify object
-#             setattr(module,'_',t.gettext)
+        for l,t in trans_dic.items():
+            trans_dic[l] = None
+        #reload
+        for mod_dir in observers_dir:  
+            observers_dir[mod_dir].stop()
+            observers_dir[mod_dir].unschedule_all()
+            load_app_translations(mod_dir)     
 
 
-def load_app_translations(module_dir,add_debug_watch:bool=True) -> gettext.GNUTranslations: 
-     
-    locales_dir = os.path.join(module_dir, "locales")
- 
-     
-    try:
-        for l in langs:
+def load_app_translations(module_dir,add_debug_watch:bool=True): 
+    
+    locales_dir = os.path.join(module_dir, "locales") 
+    if not os.path.exists(locales_dir):
+        return
+
+    
+    for l in langs:
+         
+        t = None 
+        try:
             t = gettext.translation("messages", locales_dir, languages=[l])  
+        except Exception as e: 
+            pass
+        if t: 
+            
             if not trans_dic[l] is None:
                 trans_dic[l].add_fallback(t)
             else:
-                trans_dic[l] = t
+                trans_dic[l] = t 
 
-        if is_debug and add_debug_watch:
-            event_handler = PoFileHandler(module_dir,handler=handler )
-            observer = Observer()
-            observer.schedule(event_handler=event_handler,path=locales_dir) 
-            observer.start()
-            event_handler.observer = observer
-    except Exception as e:
-         
-        pass
-
-    return trans_dic[langs[0]]
+    if is_debug and add_debug_watch: 
+        observer = Observer()
+        event_handler = PoFileHandler(module_dir,handler=handler,ob=observer )
+        observer.schedule(event_handler=event_handler,path=locales_dir) 
+        observer.start()
+        observers_dir[module_dir]=observer    
+    
+ 
  
  
 def __init_load_i18n():
@@ -245,9 +223,10 @@ def __init_load_i18n():
         return result
 
     gettext.find=__new_find #rewrite find method
-    t = load_app_translations(_dir)
-    return  t 
-translator = __init_load_i18n()
+    load_app_translations(_dir)
+
+
+__init_load_i18n()
 
 
 def _ (msg,lang=False):

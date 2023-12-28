@@ -17,7 +17,7 @@ from . import midware
 from . import auth
 from . import database
 from ._loader import collect_apps
-from ._utils import get_controller_name, get_snaked_name, copy_attr, singleton, add_redirect_param
+from ._utils import get_controller_name, get_snaked_name,  singleton, add_redirect_param
 from ._i18n import _
 
 __is_debug = config.get('debug', False)
