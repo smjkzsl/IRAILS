@@ -3,7 +3,7 @@ auth:
   auth_model: configs/casbin_templates/RBACT.conf
  
   adapter_table: 'casbin_rule' 
-  casbin_adapter: sqlalchemy
+  casbin_adapter: file
   secret_key: '123456'
   session_name: user
   type: jwt

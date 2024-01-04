@@ -75,7 +75,11 @@ def load_module(module_name:str,module_path:str):
         # sys.modules[module_name] = module
         return module
     return None
+
 def check_compile_po(localedir,lang): 
+    '''
+    check need auto compile po file to mo file if po file is newer
+    '''
     po_file = os.path.join(localedir, f'{lang}.po') 
     mo_file = os.path.join(localedir, f'{lang}.mo')
     def do_mfgmft():
@@ -86,7 +90,7 @@ def check_compile_po(localedir,lang):
             module.make(po_file,mo_file)
         else:
             print(f"not found tools file : {_tools_file}")
-    # 判断po文件是否存在
+    # 
     if os.path.exists(po_file): 
         if os.path.exists(mo_file):
             mod_time =  (os.stat(mo_file).st_mtime)
@@ -231,7 +235,7 @@ __init_load_i18n()
 
 def _ (msg,lang=False):
     if not lang:  lang = langs[0]
-    if lang not in trans_dic:
+    if lang not in trans_dic or trans_dic[lang] is None:
         return msg
 
     return trans_dic[lang].gettext(msg)

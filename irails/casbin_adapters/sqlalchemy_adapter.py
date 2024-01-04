@@ -55,8 +55,8 @@ class Adapter(persist.Adapter, persist.adapters.UpdateAdapter):
 
     def __init__(self, engine_uri, db_class=None, filtered=False):
          
-        if isinstance(engine_uri, str):
-            if engine_uri == str(database.engine.url) :
+        if isinstance(engine_uri, str) and engine_uri:
+            if database.engine and engine_uri == str(database.engine.url) :
                 self._engine = database.engine
             else:
                 self._engine = create_engine(engine_uri)

@@ -25,8 +25,10 @@ _session_name: str = ""
 default_domain = "system"
 
 cfg = config.get("auth")
-super_domain = cfg.get('super_domain', 'system')
-super_group = cfg.get('super_group', 'admin')
+
+super_domain = cfg.get('super_domain', 'system') if cfg else default_domain
+super_group = cfg.get('super_group', 'admin') if cfg else 'admin'
+ 
 casbin_enforcer: Enforcer = None
 _casbin_auth: 'CasbinAuth' = None
 
@@ -359,7 +361,7 @@ def init(app: FastAPI, backend: AuthenticationBackend, adapter_class: Type = Non
     __session_name = config.get("auth").get("session_name", 'user')
     global _casbin_auth, casbin_enforcer
 
-    adapter_uri = kwagrs.get('adapter_uri', None)
+    adapter_uri = kwagrs.get('adapter_uri', '')
 
     del kwagrs['adapter_uri']
     model_file = cfg.get("auth_model", './configs/casbin-model.conf')

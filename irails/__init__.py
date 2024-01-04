@@ -13,4 +13,4 @@ from .base_controller import BaseController
 from fastapi import Form,UploadFile,File
 from . import apps
 
-__version__="1.6.3"
+__version__="1.6.5"

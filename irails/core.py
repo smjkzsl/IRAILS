@@ -21,7 +21,7 @@ from ._utils import get_controller_name, get_snaked_name,  singleton, add_redire
 from ._i18n import _
 
 __is_debug = config.get('debug', False)
-auto_refresh_token = config.get("session").get('auto_refresh_token', True)
+auto_refresh_token = config.get("session",{}).get('auto_refresh_token', True)
 
 
 @singleton
@@ -37,7 +37,7 @@ class MvcApp(FastAPI):
         self.__apps = {}
         self.auth_user_class: auth.DomainUser = None
         self.__before_auth_func:List[Callable] = []
-        
+        self.mode = 1 # 0 is single mode ,just one app
         super().__init__(**kwargs)
         # set variable in MvcRouter
         api.init(self)
@@ -588,7 +588,7 @@ def check_init_auth(db_cfg):
     # Initializing the authentication system
     auth_type = config.get("auth", None)
     _casbin_adapter_class = None
-    _adapter_uri: str = None
+    _adapter_uri: str = ''
     if auth_type:
         auth_type = auth_type.get("type")
         if auth_type:
